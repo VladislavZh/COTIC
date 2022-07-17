@@ -53,7 +53,7 @@ class Transformer(nn.Module):
         assert seq.dim() == 2
         return seq.ne(0).type(torch.float).unsqueeze(-1)
 
-    def forward(self, event_time, diff_time, event_type):
+    def forward(self, event_time, event_type):
         """
         Return the hidden representations and predictions.
         For a sequence (l_1, l_2, ..., l_N), we predict (l_2, ..., l_N, l_{N+1}).
