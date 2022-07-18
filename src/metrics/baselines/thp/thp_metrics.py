@@ -84,12 +84,11 @@ class THPMetrics(MetricsCore):
             outputs - Tuple or torch.Tensor, model output
         
         return:
-            event_type_predicted - torch.Tensor, 1d Tensor with event type prediction
+            event_type_predicted - torch.Tensor, 2d Tensor with event type unnormalized predictions
         """
         event_type_prediction = outputs[1][0][:,:-1,:]
-        event_type_prediction = torch.max(event_type_prediction, dim=-1)[1]
         mask = inputs[1].ne(0)[:,1:]
-        return event_type_prediction[mask]
+        return event_type_prediction[mask,:]
     
     @staticmethod
     def softplus(x, beta):

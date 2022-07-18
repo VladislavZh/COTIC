@@ -3,10 +3,10 @@
 # specify here default training configuration
 defaults:
   - _self_
-  - datamodule: mnist.yaml
-  - model: mnist.yaml
+  - datamodule: base_datamodule.yaml
+  - model: thp.yaml
   - callbacks: default.yaml
-  - logger: null # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
+  - logger: comet.yaml # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
   - trainer: default.yaml
   - log_dir: default.yaml
 
@@ -24,17 +24,13 @@ defaults:
   # it's optional since it doesn't need to exist and is excluded from version control
   - optional local: default.yaml
 
-  # enable color logging
-  - override hydra/hydra_logging: colorlog
-  - override hydra/job_logging: colorlog
-
 # path to original working directory
 # hydra hijacks working directory by changing it to the new log directory
 # https://hydra.cc/docs/next/tutorials/basic/running_your_app/working_directory
 original_work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
-data_dir: ${original_work_dir}/data/
+data_dir: ${original_work_dir}/data/sinth_dset
 
 # pretty print config at the start of the run using Rich library
 print_config: True
