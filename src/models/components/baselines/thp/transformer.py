@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 
 from .encoder import Encoder
 from .final_layers import RNN_layers, Predictor
@@ -67,6 +68,7 @@ class Transformer(nn.Module):
         non_pad_mask = self.get_non_pad_mask(event_type)
 
         enc_output = self.encoder(event_type, event_time, non_pad_mask)
+
         if self.rnn_flag:
             enc_output = self.rnn(enc_output, non_pad_mask)
 

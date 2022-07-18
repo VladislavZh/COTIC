@@ -41,41 +41,50 @@ class BaseEventModule(LightningModule):
         self.save_hyperparameters(logger=False)
 
         self.net = net
-        self.metrics = metrics
+        self.train_metrics = metrics
+        self.val_metrics = metrics.copy()
+        self.test_metrics = metrics.copy()
 
     def forward(self, batch):
         return self.net(*batch)
 
-    def step(self, batch: Any):
-        ouputs = self.forward(batch)
-        loss = self.metrics.compute_loss_and_add_values(self, batch, outputs)
+    def step(self, batch: Any, stage: str):
+        outputs = self.forward(batch)
+
+        if stage == 'train':
+          loss = self.train_metrics.compute_loss_and_add_values(self, batch, outputs)
+        if stage == 'val':
+          loss = self.val_metrics.compute_loss_and_add_values(self, batch, outputs)
+        if stage == 'test':
+          loss = self.test_metrics.compute_loss_and_add_values(self, batch, outputs)
+
         return loss
 
     def training_step(self, batch: Any, batch_idx: int):
-        loss = self.step(batch)
+        loss = self.step(batch, 'train')
         
         self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
         
         return {"loss": loss}
 
     def training_epoch_end(self, outputs: List[Any]):
-        ll, return_time_metric, event_type_metric = self.metrics.compute_metrics()
-        self.metrics.clear_values()
+        ll, return_time_metric, event_type_metric = self.train_metrics.compute_metrics()
+        self.train_metrics.clear_values()
         
         self.log("train/log_likelihood", ll, on_step=False, on_epoch=True, prog_bar=True)
         self.log("train/return_time_metric", return_time_metric, on_step=False, on_epoch=True, prog_bar=True)
         self.log("train/event_type_metric", event_type_metric, on_step=False, on_epoch=True, prog_bar=True)
 
     def validation_step(self, batch: Any, batch_idx: int):
-        loss = self.step(batch)
+        loss = self.step(batch, 'val')
         
         self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
         
         return {"loss": loss}
 
     def validation_epoch_end(self, outputs: List[Any]):
-        ll, return_time_metric, event_type_metric = self.metrics.compute_metrics()
-        self.metrics.clear_values()
+        ll, return_time_metric, event_type_metric = self.val_metrics.compute_metrics()
+        self.val_metrics.clear_values()
         
         self.log("val/log_likelihood", ll, on_step=False, on_epoch=True, prog_bar=True)
         self.log("val/return_time_metric", return_time_metric, on_step=False, on_epoch=True, prog_bar=True)
@@ -83,15 +92,15 @@ class BaseEventModule(LightningModule):
 
 
     def test_step(self, batch: Any, batch_idx: int):
-        loss = self.step(batch)
+        loss = self.step(batch, 'test')
         
         self.log("test/loss", loss, on_step=False, on_epoch=True)
         
         return {"loss": loss}
 
     def test_epoch_end(self, outputs: List[Any]):
-        ll, return_time_metric, event_type_metric = self.metrics.compute_metrics()
-        self.metrics.clear_values()
+        ll, return_time_metric, event_type_metric = self.test_metrics.compute_metrics()
+        self.test_metrics.clear_values()
         
         self.log("test/log_likelihood", ll, on_step=False, on_epoch=True)
         self.log("test/return_time_metric", return_time_metric, on_step=False, on_epoch=True)

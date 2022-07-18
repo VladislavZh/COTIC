@@ -20,7 +20,7 @@ class MetricsCore(ABC):
             return_time_metric - metric for return times, takes y_pred, y_true as args
             event_type_metric - metric for event types, takes y_pred, y_true as args
         """
-        self.return_time_meric = return_time_metric
+        self.return_time_metric = return_time_metric
         self.event_type_metric = event_type_metric
         
         self.__return_time_target    = torch.Tensor([])
@@ -28,7 +28,10 @@ class MetricsCore(ABC):
         self.__return_time_predicted = torch.Tensor([])
         self.__event_type_predicted  = torch.Tensor([])
         self.__ll_per_event          = torch.Tensor([])
-        
+
+    @abstractmethod
+    def copy(self):
+      return        
     
     @property
     def return_time_target(self) -> torch.Tensor:
@@ -103,7 +106,7 @@ class MetricsCore(ABC):
     @staticmethod
     @abstractmethod
     def get_return_time_target(
-        inputs: Union[Tuple[...], torch.Tensor]
+        inputs: Union[Tuple, torch.Tensor]
     ) -> torch.Tensor:
         """
         Takes input batch and returns the corresponding return time targets as 1d Tensor
@@ -119,7 +122,7 @@ class MetricsCore(ABC):
     @staticmethod
     @abstractmethod
     def get_event_type_target(
-        inputs: Union[Tuple[...], torch.Tensor]
+        inputs: Union[Tuple, torch.Tensor]
     ) -> torch.Tensor:
         """
         Takes input batch and returns the corresponding event type targets as 1d Tensor
@@ -136,8 +139,8 @@ class MetricsCore(ABC):
     @abstractmethod
     def get_return_time_predicted(
         pl_module: LightningModule,
-        inputs: Union[Tuple[...], torch.Tensor],
-        outputs: Union[Tuple[...], torch.Tensor]
+        inputs: Union[Tuple, torch.Tensor],
+        outputs: Union[Tuple, torch.Tensor]
     ) -> torch.Tensor:
         """
         Takes lighning model, input batch and model outputs, returns the corresponding predicted return times as 1d Tensor
@@ -156,8 +159,8 @@ class MetricsCore(ABC):
     @abstractmethod
     def get_event_type_predicted(
         pl_module: LightningModule,
-        inputs: Union[Tuple[...], torch.Tensor],
-        outputs: Union[Tuple[...], torch.Tensor]
+        inputs: Union[Tuple, torch.Tensor],
+        outputs: Union[Tuple, torch.Tensor]
     ) -> torch.Tensor:
         """
         Takes lighning model, input batch and model outputs, returns the corresponding predicted event types as 1d Tensor
@@ -176,8 +179,8 @@ class MetricsCore(ABC):
     def compute_log_likelihood_per_event(
         self,
         pl_module: LightningModule,
-        inputs: Union[Tuple[...], torch.Tensor],
-        outputs: Union[Tuple[...], torch.Tensor]
+        inputs: Union[Tuple, torch.Tensor],
+        outputs: Union[Tuple, torch.Tensor]
     ) -> torch.Tensor:
         """
         Takes lighning model, input batch and model outputs, returns the corresponding log likelihood per event for each sequence in the batch as 1d Tensor of shape (bs,), 
@@ -197,8 +200,8 @@ class MetricsCore(ABC):
     def compute_loss(
         self,
         pl_module: LightningModule,
-        inputs: Union[Tuple[...], torch.Tensor],
-        outputs: Union[Tuple[...], torch.Tensor]
+        inputs: Union[Tuple, torch.Tensor],
+        outputs: Union[Tuple, torch.Tensor]
     ) -> torch.Tensor:
         """
         Takes lighning model, input batch and model outputs, returns the corresponding loss for backpropagation,
@@ -221,8 +224,8 @@ class MetricsCore(ABC):
             raise ValueError(f'Wrong event type target shape. Expected 1, got {len(self.__step_event_type_target.shape)}')
         if len(self.__step_return_time_predicted.shape) != 1:
             raise ValueError(f'Wrong predicted return time shape. Expected 1, got {len(self.__step_return_time_predicted.shape)}')
-        if len(self.__step_event_type_predicted.shape) != 1:
-            raise ValueError(f'Wrong predicted event type shape. Expected 1, got {len(self.__step_event_type_predicted.shape)}')
+        if len(self.__step_event_type_predicted.shape) != 2:
+            raise ValueError(f'Wrong predicted event type shape. Expected 2, got {len(self.__step_event_type_predicted.shape)}')
         if len(self.__step_ll_per_event.shape) != 1:
             raise ValueError(f'Wrong log likelihood shape. Expected 1, got {len(self.__step_ll_per_event.shape)}')
             
@@ -251,8 +254,8 @@ class MetricsCore(ABC):
     def compute_loss_and_add_values(
         self,
         pl_module: LightningModule,
-        inputs: Union[Tuple[...], torch.Tensor],
-        outputs: Union[Tuple[...], torch.Tensor]
+        inputs: Union[Tuple, torch.Tensor],
+        outputs: Union[Tuple, torch.Tensor]
     ) -> torch.Tensor:
         """
         Takes model, inputs and outputs, adds step targets and predictions and computes loss
@@ -286,7 +289,7 @@ class MetricsCore(ABC):
         Returns mean log likelihood per event, return time metric value and event type metric value
         """
         ll = torch.mean(self.ll_per_event)
-        return_time_metric = self.return_time_meric(self.return_time_predicted, self.return_time_target)
+        return_time_metric = self.return_time_metric(self.return_time_predicted, self.return_time_target)
         event_type_metric  = self.event_type_metric(torch.nn.functional.softmax(self.event_type_predicted, dim=1), self.event_type_target)
         return ll, return_time_metric, event_type_metric
         

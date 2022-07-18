@@ -35,7 +35,7 @@ class EventDataModule(LightningDataModule):
 
     def setup(self, stage: Optional[str] = None):
         if not self.data_train and not self.data_val and not self.data_test:
-            times, events = load_data(self.hparams.data_dir, unix_time)
+            times, events = load_data(self.hparams.data_dir, self.hparams.unix_time)
             dataset = EventData(times, events)
             N = len(dataset)
             lengths = [int(N * v) for v in self.hparams.train_val_test_split]

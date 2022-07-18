@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 import math
 
 from .encoder_layer import EncoderLayer

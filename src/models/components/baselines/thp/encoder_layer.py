@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 from .multi_head_attention import MultiHeadAttention
 from .feedforward_layer import PositionwiseFeedForward
 
