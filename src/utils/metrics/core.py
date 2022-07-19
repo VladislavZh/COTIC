@@ -20,6 +20,8 @@ class MetricsCore(ABC):
             return_time_metric - metric for return times, takes y_pred, y_true as args
             event_type_metric - metric for event types, takes y_pred, y_true as args
         """
+        self.def __save_init_params()
+        
         self.return_time_metric = return_time_metric
         self.event_type_metric = event_type_metric
         
@@ -29,9 +31,25 @@ class MetricsCore(ABC):
         self.__event_type_predicted  = torch.Tensor([])
         self.__ll_per_event          = torch.Tensor([])
 
-    @abstractmethod
-    def copy(self):
-      return        
+    def copy_empty(
+        self
+    ) -> Type[MetricsCore]:
+        """
+        Returns the object of the same time with the same initial parameters
+        """
+        return type(self)(**self.__init_params)
+    
+    def __save_init_params(
+        self
+    ) -> None:
+        """
+        Stores init args
+        """
+        current_frame = inspect.currentframe()
+        frame = current_frame.f_back
+        _, _, _, local_vars = inspect.getargvalues(frame)
+        del local_vars['self']
+        self.__init_params = local_vars
     
     @property
     def return_time_target(self) -> torch.Tensor:

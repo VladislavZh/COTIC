@@ -17,7 +17,7 @@ class THPMetrics(MetricsCore):
         self.scale_time_loss = scale_time_loss
 
     def copy(self):
-      return type(self)(self.return_time_metric, self.event_type_metric, self.scale_time_loss)
+        return type(self)(self.return_time_metric, self.event_type_metric, self.scale_time_loss)
         
     @staticmethod
     def get_return_time_target(
