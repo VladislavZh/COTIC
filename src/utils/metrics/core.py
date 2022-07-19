@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import inspect
 
 import torch
 from pytorch_lightning import LightningModule
@@ -20,7 +21,7 @@ class MetricsCore(ABC):
             return_time_metric - metric for return times, takes y_pred, y_true as args
             event_type_metric - metric for event types, takes y_pred, y_true as args
         """
-        self.def __save_init_params()
+        self.__save_init_params()
         
         self.return_time_metric = return_time_metric
         self.event_type_metric = event_type_metric
@@ -33,7 +34,7 @@ class MetricsCore(ABC):
 
     def copy_empty(
         self
-    ) -> Type[MetricsCore]:
+    ):
         """
         Returns the object of the same time with the same initial parameters
         """
