@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 
-
 class DilatedCausalConv1d(nn.Module):
     def __init__(self, hyperparams: dict, dilation_factor: int, in_channels: int, causal = True):
         super().__init__()

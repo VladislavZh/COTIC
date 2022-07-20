@@ -6,15 +6,17 @@ from src.utils.metrics import MetricsCore
 from typing import Union, Tuple
 
 
-class WNMetrics(MetricsCore):
+class WNIntensMetrics(MetricsCore):
     def __init__(
         self,
         return_time_metric,
-        event_type_metric
+        event_type_metric,
+        sim_size = 100
     ):
         super().__init__(return_time_metric, event_type_metric)
         self.type_loss_func = torch.nn.CrossEntropyLoss(ignore_index=-1, reduction='none')
-        self.return_time_loss_func = torch.nn.MSELoss()
+        self.time_loss_func = torch.nn.MSELoss()
+        self.sim_size = sim_size
         
     @staticmethod
     def get_return_time_target(
@@ -45,7 +47,7 @@ class WNMetrics(MetricsCore):
             inputs - Tuple or torch.Tensor, batch received from the dataloader
         
         return:
-            event_type_target - torch.Tensor,  1d Tensor with event type target
+            event_type_target - torch.Tensor, 1d Tensor with event type targets
         """
         event_type = inputs[1][:,1:]
         mask = inputs[1].ne(0)[:,1:]
@@ -68,7 +70,7 @@ class WNMetrics(MetricsCore):
         return:
             return_time_predicted - torch.Tensor, 1d Tensor with return time prediction
         """
-        return_time_prediction = outputs[0].squeeze_(-1)[:,:-1]
+        return_time_prediction = outputs[1][0].squeeze_(-1)[:,:-1]
         mask = inputs[1].ne(0)[:,1:]
         return return_time_prediction[mask]
     
@@ -89,9 +91,66 @@ class WNMetrics(MetricsCore):
         return:
             event_type_predicted - torch.Tensor, 2d Tensor with event type unnormalized predictions
         """
-        event_type_prediction = outputs[1][:,:-1,:]
+        event_type_prediction = outputs[1][1][:,:-1,:]
         mask = inputs[1].ne(0)[:,1:]
         return event_type_prediction[mask,:]
+    
+    @staticmethod
+    def compute_event(type_lambda, non_pad_mask):
+        """ Log-likelihood of events. """
+
+        # add 1e-9 in case some events have 0 likelihood
+        type_lambda += math.pow(10, -9)
+        type_lambda.masked_fill_(~non_pad_mask.bool(), 1.0)
+
+        result = torch.log(type_lambda)
+        return result
+    
+    @staticmethod
+    def compute_integral_unbiased(self, model, enc_output, event_time, non_pad_mask, type_mask, num_samples):
+        """ Log-likelihood of non-events, using Monte Carlo integration. """
+
+        diff_time = (event_time[:, 1:] - event_time[:, :-1]) * non_pad_mask[:, 1:]
+        temp_time = diff_time.unsqueeze(2) * \
+                    torch.rand([*diff_time.size(), num_samples], device=data.device)
+
+        all_lambda = model.get_lambdas(event_time[:,:-1], enc_output[:,:-1,:], temp_time, non_pad_mask[:,1:])
+        all_lambda = torch.sum(all_lambda, dim=(1,3)) / num_samples
+
+        unbiased_integral = all_lambda * diff_time
+        return unbiased_integral
+    
+    def event_and_non_event_log_likelihood(
+        self,
+        pl_module: LightningModule,
+        enc_output: torch.Tensor,
+        event_time: torch.Tensor,
+        event_type: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Computes log of the intensity and the integral
+        """
+
+        non_pad_mask = event_type.ne(0).type(torch.float)
+
+        type_mask = torch.zeros([*event_type.size(), pl_module.net.num_types], device=enc_output.device)
+        for i in range(pl_module.net.num_types):
+            type_mask[:, :, i] = (event_type == i + 1).bool().to(enc_output.device)
+
+        temp_time = (event_time[:, 1:] - event_time[:, :-1]) * non_pad_mask[:, 1:]
+        temp_time = temp_time.unsqueeze(2)
+        all_lambda = pl_module.net.get_lambdas(event_time[:,:-1], enc_output[:,:-1,:], temp_time, non_pad_mask[:,1:])[:,:,:,0]
+        type_lambda = torch.sum(all_lambda * type_mask, dim=2) #shape = (bs, L)
+
+        # event log-likelihood
+        event_ll = self.compute_event(type_lambda, non_pad_mask)
+        event_ll = torch.sum(event_ll, dim=-1)
+
+        # non-event log-likelihood, MC integration
+        non_event_ll = self.compute_integral_unbiased(pl_module.net, enc_output, event_time, non_pad_mask, type_mask)
+        non_event_ll = torch.sum(non_event_ll, dim=-1)
+
+        return event_ll, non_event_ll
     
     def compute_log_likelihood_per_event(
         self,
@@ -100,10 +159,26 @@ class WNMetrics(MetricsCore):
         outputs: Union[Tuple, torch.Tensor]
     ) -> torch.Tensor:
         """
-        Nan placeholder with bs shape
+        Takes lighning model, input batch and model outputs, returns the corresponding log likelihood per event for each sequence in the batch as 1d Tensor of shape (bs,), 
+        one can use self.step_[return_time_target/event_type_target/return_time_predicted/event_type_predicted] if needed
+        
+        args:
+            pl_module - LightningModule, training lightning model
+            inputs - Tuple or torch.Tensor, batch received from the dataloader
+            outputs - Tuple or torch.Tensor, model output
+        
+        return:
+            log_likelihood_per_seq - torch.Tensor, 1d Tensor with log likelihood per event prediction, shape = (bs,)
         """
-        bs = inputs[0].shape[0]
-        return torch.ones(bs)*torch.nan
+        event_ll, non_event_ll = self.event_and_non_event_log_likelihood(
+            pl_module,
+            outputs[0],
+            inputs[0],
+            inputs[1]
+        )
+        lengths = torch.sum(inputs[1].ne(0).type(torch.float), dim = 1)
+        results = (event_ll - non_event_ll)/lengths
+        return results
     
     def type_loss(self, prediction, types):
         """ Event prediction loss, cross entropy. """
@@ -147,7 +222,14 @@ class WNMetrics(MetricsCore):
         return:
             loss - torch.Tensor, loss for backpropagation
         """
-        type_loss = self.type_loss(outputs[1], inputs[1])
-        time_loss = self.time_loss(outputs[0], inputs[0], inputs[1])
+        event_ll, non_event_ll = self.event_and_non_event_log_likelihood(
+            pl_module,
+            outputs[0],
+            inputs[0],
+            inputs[1]
+        )
+        ll_loss = -torch.sum(event_ll - non_event_ll)
+        type_loss = self.type_loss(outputs[1][1], inputs[1])
+        time_loss = self.time_loss(outputs[1][0], inputs[0], inputs[1])
         
-        return type_loss + time_loss
+        return ll_loss, type_loss + time_loss
