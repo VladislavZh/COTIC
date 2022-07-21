@@ -126,13 +126,13 @@ class CCNNMetrics(MetricsCore):
         """
         delta_times = times[:,1:] - times[:,:-1]
         sim_delta_times = (torch.rand(list(delta_times.shape)+[sim_size]) * delta_times.unsqueeze(2)).sort(dim=2).values
-        full_times = torch.concat([sim_delta_times,delta_times.unsqueeze(2)], dim = 2)
+        full_times = torch.concat([sim_delta_times.to(times.device),delta_times.unsqueeze(2)], dim = 2)
         full_times = full_times + times[:,:-1].unsqueeze(2)
         full_times[delta_times<0,:] = 0
         full_times = full_times.flatten(1)
-        bos_full_times = torch.concat([torch.zeros(times.shape[0],1), full_times], dim = 1)
+        bos_full_times = torch.concat([torch.zeros(times.shape[0],1).to(times.device), full_times], dim = 1)
         
-        full_events = torch.concat([torch.zeros(list(delta_times.shape)+[features.shape[2],sim_size]), features[:,1:].unsqueeze(3)], dim=3)
+        full_events = torch.concat([torch.zeros(list(delta_times.shape)+[features.shape[2],sim_size]).to(times.device), features[:,1:].unsqueeze(3)], dim=3)
         bs, L, d, f_sim = full_events.shape
         full_events = full_events.transpose(2,3)
         full_events = full_events.reshape(bs, L*f_sim, d)
@@ -149,15 +149,17 @@ class CCNNMetrics(MetricsCore):
         for i in range(bos_full_times.shape[0]):
             true_ids_mask[i,true_ids_template[:lengths[i]]] = 1
             true_ids_mask = true_ids_mask.bool()
+            
+        all_lambda = pl_module.net.final(bos_full_times, bos_full_enc_output, lengths.to(enc_output.device), true_ids_mask, num_samples) # shape = (bs, (num_samples + 1) * L + 1, num_types)
+        
+        bs, _, num_types = all_lambda.shape
+        
+        between_lambda = all_lambda.transpose(1,2)[:,:,1:].reshape(bs, num_types, event_time.shape[1], num_samples + 1)[...,:-1].transpose(1,2)
 
         diff_time = (event_time[:, 1:] - event_time[:, :-1]) * non_pad_mask[:, 1:]
-        temp_time = diff_time.unsqueeze(2) * \
-                    torch.rand([*diff_time.size(), num_samples], device=enc_output.device)
+        between_lambda = torch.sum(between_lambda, dim=(2,3)) / num_samples
 
-        all_lambda = model.get_lambdas(event_time[:,:-1], enc_output[:,:-1,:], temp_time, non_pad_mask[:,1:])
-        all_lambda = torch.sum(all_lambda, dim=(2,3)) / num_samples
-
-        unbiased_integral = all_lambda * diff_time
+        unbiased_integral = between_lambda[:,:-1] * diff_time
         return unbiased_integral
     
     def event_and_non_event_log_likelihood(

@@ -3,6 +3,7 @@ import torch.nn as nn
 
 class PredictionHead(nn.Module):
     def __init__(
+        self,
         in_channels: int,
         num_types: int
     ) -> None:
