@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-class IntensPredictor:
+class IntensPredictor(nn.Module):
     def __init__(
         self,
         in_channels: int,

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-class PredictionHead:
+class PredictionHead(nn.Module):
     def __init__(
         in_channels: int,
         num_types: int

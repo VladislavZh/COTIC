@@ -17,7 +17,7 @@ net:
     hidden3: 64
     num_types: 5
 head:
-  __target__: src.models.components.baselines.wavenet_intens.PredictionHead
+  _target_: src.models.components.baselines.wavenet_intens.PredictionHead
   in_channels: 32
   num_types: 5
 metrics:
@@ -26,8 +26,14 @@ metrics:
     _target_: src.utils.metrics.MAE
   event_type_metric:
     _target_: src.utils.metrics.RocAuc
-optimizer:
-  name: adam
-  params:
-    lr: 1e-3
-    weight_decay: 1e-5
+optimizers:
+  0:
+      name: adam
+      params:
+        lr: 1e-3
+        weight_decay: 1e-5
+  1:
+      name: adam
+      params:
+        lr: 1e-3
+        weight_decay: 1e-5
