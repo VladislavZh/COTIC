@@ -191,6 +191,8 @@ class CCNNMetrics(MetricsCore):
         event_ll = self.compute_event(type_lambda, non_pad_mask)
         event_ll = torch.sum(event_ll, dim=-1)
 
+        print(event_ll)
+
         # non-event log-likelihood, MC integration
         non_event_ll = self.compute_integral_unbiased(pl_module.net, enc_output, event_time, lengths, non_pad_mask, type_mask, self.sim_size)
         non_event_ll = torch.sum(non_event_ll, dim=-1)
@@ -278,3 +280,4 @@ class CCNNMetrics(MetricsCore):
         time_loss = self.time_loss(outputs[1][0], inputs[0], inputs[1])
         
         return ll_loss, type_loss + time_loss
+    

@@ -11,7 +11,7 @@ net:
   hidden_2: 64
   hidden_3: 32
 head:
-  _target_: src.models.components.baselines.cont_cnn_dense.PredictionHead
+  _target_: src.models.components.cont_cnn_dense.PredictionHead
   in_channels: 16
   num_types: 5
 metrics:
@@ -20,6 +20,7 @@ metrics:
     _target_: src.utils.metrics.MAE
   event_type_metric:
     _target_: src.utils.metrics.RocAuc
+  sim_size: 10
 optimizers:
   0:
       name: adam

@@ -1,3 +1,3 @@
 from .ccnn import CCNN
-from .kernles import Kernel
+from .kernels import Kernel
 from .head import PredictionHead

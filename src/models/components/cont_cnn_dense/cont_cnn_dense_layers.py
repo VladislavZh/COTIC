@@ -48,7 +48,7 @@ class ContConv1dDense(nn.Module):
         S = times.unsqueeze(2).repeat(1,1,times.shape[1])
         S = S - S.transpose(1,2)
         
-        true_ids = torch.arange(times.shape[1])[None,:].repeat(times.shape[0], 1)
+        true_ids = torch.arange(times.shape[1])[None,:].repeat(times.shape[0], 1).to(times.device)
         true_ids = (true_ids < lengths[:, None])
         dt_mask = true_ids.unsqueeze(1).repeat(1,true_ids.shape[1],1)
         
@@ -58,10 +58,10 @@ class ContConv1dDense(nn.Module):
         else:
             conv_mask = torch.tril(torch.ones(true_ids.shape[1],true_ids.shape[1])) * \
                         torch.triu(torch.ones(true_ids.shape[1],true_ids.shape[1]), diagonal=(-kernel_size + 1))
-        len_mask = torch.arange(times.shape[1])[None,:,None].repeat(times.shape[0],1,times.shape[1])
+        len_mask = torch.arange(times.shape[1])[None,:,None].repeat(times.shape[0],1,times.shape[1]).to(times.device)
         len_mask = (len_mask<=(lengths[:,None,None]-1))
         conv_mask = conv_mask.bool()
-        dt_mask = dt_mask * conv_mask.unsqueeze(0) * len_mask
+        dt_mask = dt_mask * conv_mask.unsqueeze(0).to(times.device) * len_mask
 
         delta_times = torch.zeros_like(S)
         delta_times[dt_mask] = S[dt_mask]
@@ -88,7 +88,7 @@ class ContConv1dDenseSim(nn.Module):
     """
     def __init__(
         self,
-        kernel: Type[nn.Module],
+        kernel: nn.Module,
         kernel_size: int,
         in_channels: int,
         out_channels: int

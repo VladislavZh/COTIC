@@ -18,6 +18,7 @@ class CCNN(nn.Module):
         hidden_2: int,
         hidden_3: int
     ) -> None:
+        super().__init__()
         self.event_emb = nn.Embedding(num_types + 2, in_channels, padding_idx=0)
         
         self.in_channels = [in_channels] + [nb_filters] * nb_layers
@@ -28,11 +29,12 @@ class CCNN(nn.Module):
         
         self.final = nn.Sequential(ContConv1dDenseSim(Kernel(hidden_1, hidden_2, hidden_3, nb_filters, nb_filters), kernel_size, nb_filters, nb_filters), nn.ReLU(), nn.Linear(nb_filters, num_types), nn.Softplus())
         
-    def __add_bos(self, event_times, event_types, lengths)
+    def __add_bos(self, event_times, event_types, lengths):
         bs, L = event_times.shape
-        event_times = torch.concat([torch.zeros(bs, 1), event_times], dim = 1)
+        event_times = torch.concat([torch.zeros(bs, 1).to(event_times.device), event_times], dim = 1)
         max_event_type = torch.max(event_types) + 1
-        event_types = torch.concat([(torch.ones(bs,1) * max_event_type).long(), event_types], dim = 1)
+        tmp = (torch.ones(bs,1).to(event_types.device) * max_event_type).long()
+        event_types = torch.concat([tmp, event_types], dim = 1)
         lengths += 1
         return event_times, event_types, lengths
         
