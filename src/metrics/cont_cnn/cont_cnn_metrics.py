@@ -278,4 +278,3 @@ class CCNNMetrics(MetricsCore):
         time_loss = self.time_loss(outputs[1][0], inputs[0], inputs[1])
         
         return ll_loss, type_loss + time_loss
-    
