@@ -123,12 +123,12 @@ class WaveNetIntens(nn.Module):
         event_time = event_time.unsqueeze(2)
         
         # history
-        history = self.w @ hidden # (bs, L, num_types)
+        history = enc_output @ self.w.transpose(0,1) # (bs, L, num_types)
         history = history.unsqueeze(2)
         
         # future        
-        temp_enc = self.temporal_enc_future(delta_t, non_pad_mask.unsqueeze(-1)) # shape = (bs, L, n_times, hidden_size)
-        future_input = hidden.unsqueeze(2) + temp_enc
+        temp_enc = self.temporal_enc_future(delta_t, non_pad_mask.unsqueeze(-1).unsqueeze(-1)) # shape = (bs, L, n_times, hidden_size)
+        future_input = enc_output.unsqueeze(2) + temp_enc
         
         future = self.interpolator(future_input)
         

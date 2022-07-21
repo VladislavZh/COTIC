@@ -20,9 +20,9 @@ class IntensPredictor(nn.Module):
         self.layer_4 = nn.Linear(hidden3, num_types)
         
     def forward(self, x):
-        x = self.relu_1(self.layer_1(x)) + x
-        x = self.relu_2(self.layer_2(x)) + x
-        x = self.relu_3(self.layer_3(x)) + x
-        x = self.layer_4(x) + x
+        x = self.relu_1(self.layer_1(x))
+        x = self.relu_2(self.layer_2(x))
+        x = self.relu_3(self.layer_3(x))
+        x = self.layer_4(x)
         
         return x

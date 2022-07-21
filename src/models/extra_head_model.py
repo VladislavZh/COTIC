@@ -64,7 +64,7 @@ class ExtrHeadEventModule(LightningModule):
 
         return loss1, loss2
 
-    def training_step(self, batch: Any, batch_idx: int):
+    def training_step(self, batch: Any, batch_idx: int, optimizer_idx):
         loss1, loss2 = self.step(batch, 'train')
         
         self.log("train/loss", loss1 + loss2, on_step=False, on_epoch=True, prog_bar=False)
@@ -87,10 +87,7 @@ class ExtrHeadEventModule(LightningModule):
         
         self.log("val/loss", loss1 + loss2, on_step=False, on_epoch=True, prog_bar=False)
         
-        if optimizer_idx == 0:
-            return {"loss": loss1}
-        else:
-            return {"loss": loss2}
+        return {"loss": loss1 + loss2}
 
     def validation_epoch_end(self, outputs: List[Any]):
         ll, return_time_metric, event_type_metric = self.val_metrics.compute_metrics()
@@ -106,10 +103,7 @@ class ExtrHeadEventModule(LightningModule):
         
         self.log("test/loss", loss1 + loss2, on_step=False, on_epoch=True)
         
-        if optimizer_idx == 0:
-            return {"loss": loss1}
-        else:
-            return {"loss": loss2}
+        return {"loss": loss1 + loss2}
 
     def test_epoch_end(self, outputs: List[Any]):
         ll, return_time_metric, event_type_metric = self.test_metrics.compute_metrics()

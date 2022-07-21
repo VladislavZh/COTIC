@@ -15,7 +15,7 @@ class WNIntensMetrics(MetricsCore):
     ):
         super().__init__(return_time_metric, event_type_metric)
         self.type_loss_func = torch.nn.CrossEntropyLoss(ignore_index=-1, reduction='none')
-        self.time_loss_func = torch.nn.MSELoss()
+        self.return_time_loss_func = torch.nn.MSELoss()
         self.sim_size = sim_size
         
     @staticmethod
@@ -107,15 +107,15 @@ class WNIntensMetrics(MetricsCore):
         return result
     
     @staticmethod
-    def compute_integral_unbiased(self, model, enc_output, event_time, non_pad_mask, type_mask, num_samples):
+    def compute_integral_unbiased(model, enc_output, event_time, non_pad_mask, type_mask, num_samples):
         """ Log-likelihood of non-events, using Monte Carlo integration. """
 
         diff_time = (event_time[:, 1:] - event_time[:, :-1]) * non_pad_mask[:, 1:]
         temp_time = diff_time.unsqueeze(2) * \
-                    torch.rand([*diff_time.size(), num_samples], device=data.device)
+                    torch.rand([*diff_time.size(), num_samples], device=enc_output.device)
 
         all_lambda = model.get_lambdas(event_time[:,:-1], enc_output[:,:-1,:], temp_time, non_pad_mask[:,1:])
-        all_lambda = torch.sum(all_lambda, dim=(1,3)) / num_samples
+        all_lambda = torch.sum(all_lambda, dim=(2,3)) / num_samples
 
         unbiased_integral = all_lambda * diff_time
         return unbiased_integral
@@ -140,14 +140,14 @@ class WNIntensMetrics(MetricsCore):
         temp_time = (event_time[:, 1:] - event_time[:, :-1]) * non_pad_mask[:, 1:]
         temp_time = temp_time.unsqueeze(2)
         all_lambda = pl_module.net.get_lambdas(event_time[:,:-1], enc_output[:,:-1,:], temp_time, non_pad_mask[:,1:])[:,:,:,0]
-        type_lambda = torch.sum(all_lambda * type_mask, dim=2) #shape = (bs, L)
+        type_lambda = torch.sum(all_lambda * type_mask[:,1:], dim=2) #shape = (bs, L)
 
         # event log-likelihood
-        event_ll = self.compute_event(type_lambda, non_pad_mask)
+        event_ll = self.compute_event(type_lambda, non_pad_mask[:,:-1])
         event_ll = torch.sum(event_ll, dim=-1)
 
         # non-event log-likelihood, MC integration
-        non_event_ll = self.compute_integral_unbiased(pl_module.net, enc_output, event_time, non_pad_mask, type_mask)
+        non_event_ll = self.compute_integral_unbiased(pl_module.net, enc_output, event_time, non_pad_mask, type_mask, self.sim_size)
         non_event_ll = torch.sum(non_event_ll, dim=-1)
 
         return event_ll, non_event_ll
