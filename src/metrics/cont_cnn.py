@@ -147,7 +147,7 @@ class CCNNMetrics(MetricsCore):
         true_ids_template = torch.Tensor([(num_samples + 1) * i for i in range(event_time.shape[1])]).long()
         true_ids_mask = torch.zeros_like(bos_full_times)
         for i in range(bos_full_times.shape[0]):
-             true_ids_mask[i,true_ids_template[:lengths[i]]] = 1
+            true_ids_mask[i,true_ids_template[:lengths[i]]] = 1
             true_ids_mask = true_ids_mask.bool()
 
         diff_time = (event_time[:, 1:] - event_time[:, :-1]) * non_pad_mask[:, 1:]
