@@ -140,11 +140,15 @@ class CCNNMetrics(MetricsCore):
         return bos_full_times, bos_full_events
     
     @classmethod
-    def compute_integral_unbiased(model, enc_output, event_time, non_pad_mask, type_mask, num_samples):
+    def compute_integral_unbiased(cls, model, enc_output, event_time, lengths, non_pad_mask, type_mask, num_samples):
         """ Log-likelihood of non-events, using Monte Carlo integration. """
         
-        bos_full_times, bos_full_enc_output = self.__add_sim_times(event_time, enc_output, num_samples)
-        
+        bos_full_times, bos_full_enc_output = cls.__add_sim_times(event_time, enc_output, num_samples)
+        true_ids_template = torch.Tensor([(num_samples + 1) * i for i in range(event_time.shape[1])]).long()
+        true_ids_mask = torch.zeros_like(bos_full_times)
+        for i in range(bos_full_times.shape[0]):
+                true_ids_mask[i,true_ids_template[:lengths[i]]] = 1
+            true_ids_mask = true_ids_mask.bool()
 
         diff_time = (event_time[:, 1:] - event_time[:, :-1]) * non_pad_mask[:, 1:]
         temp_time = diff_time.unsqueeze(2) * \
@@ -186,7 +190,7 @@ class CCNNMetrics(MetricsCore):
         event_ll = torch.sum(event_ll, dim=-1)
 
         # non-event log-likelihood, MC integration
-        non_event_ll = self.compute_integral_unbiased(pl_module.net, enc_output, event_time, non_pad_mask, type_mask, self.sim_size)
+        non_event_ll = self.compute_integral_unbiased(pl_module.net, enc_output, event_time, lengths, non_pad_mask, type_mask, self.sim_size)
         non_event_ll = torch.sum(non_event_ll, dim=-1)
 
         return event_ll, non_event_ll
