@@ -5,10 +5,10 @@ net:
   in_channels: 32
   kernel_size: 5
   nb_filters: 32
-  nb_layers: 9
+  nb_layers: 5
   num_types: 5
   hidden_1: 32
-  hidden_2: 32
+  hidden_2: 64
   hidden_3: 32
 head:
   _target_: src.models.components.cont_cnn_dense.PredictionHead
