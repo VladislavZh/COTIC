@@ -192,11 +192,13 @@ class ContConv1dSim(nn.Module):
         # adding sim_times
         pre_conv_times = pre_conv_times.unsqueeze(-1).repeat(1,1,1,sim_size+1)
         pre_conv_times = pre_conv_times.flatten(2)
-        pre_conv_times = pre_conv_times[...,:-sim_size]
+        if sim_size>0:
+            pre_conv_times = pre_conv_times[...,:-sim_size]
         
         pre_conv_features = pre_conv_features.unsqueeze(-1).repeat(1,1,1,1,sim_size+1)
         pre_conv_features = pre_conv_features.flatten(3)
-        pre_conv_features = pre_conv_features[...,:-sim_size]
+        if sim_size>0:
+            pre_conv_features = pre_conv_features[...,:-sim_size]
         
         dt_mask = dt_mask.unsqueeze(-1).repeat(1,1,1,sim_size+1)
         dt_mask = dt_mask.flatten(2)

@@ -47,9 +47,10 @@ class MetricsCore(ABC):
         Stores init args
         """
         current_frame = inspect.currentframe()
-        frame = current_frame.f_back
+        frame = current_frame.f_back.f_back
         _, _, _, local_vars = inspect.getargvalues(frame)
         del local_vars['self']
+        del local_vars['__class__']
         self.__init_params = local_vars
     
     @property
@@ -321,4 +322,3 @@ class MetricsCore(ABC):
         self.__return_time_predicted = torch.Tensor([])
         self.__event_type_predicted  = torch.Tensor([])
         self.__ll_per_event          = torch.Tensor([])
-        
