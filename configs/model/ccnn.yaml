@@ -1,33 +1,34 @@
 _target_: src.models.extra_head_model.ExtrHeadEventModule
 
 net:
-  _target_: src.models.components.cont_cnn_dense.CCNN
+  _target_: src.models.components.cont_cnn.CCNN
   in_channels: 32
-  kernel_size: 5
-  nb_filters: 16
-  nb_layers: 9
+  kernel_size: 3
+  nb_filters: 32
+  nb_layers: 5
   num_types: 5
   hidden_1: 32
-  hidden_2: 64
+  hidden_2: 32
   hidden_3: 32
 head:
-  _target_: src.models.components.baselines.wavenet_intens.PredictionHead
+  _target_: src.models.components.cont_cnn_dense.PredictionHead
   in_channels: 32
   num_types: 5
 metrics:
-  _target_: src.metrics.baselines.wavenet.WNMetrics
+  _target_: src.metrics.cont_cnn.CCNNMetrics
   return_time_metric:
     _target_: src.utils.metrics.MAE
   event_type_metric:
     _target_: src.utils.metrics.RocAuc
+  sim_size: 5
 optimizers:
   0:
       name: adam
       params:
-        lr: 1e-3
+        lr: 1e-2
         weight_decay: 1e-5
   1:
       name: adam
       params:
-        lr: 1e-3
+        lr: 1e-2
         weight_decay: 1e-5
