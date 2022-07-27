@@ -24,7 +24,7 @@ class CCNN(nn.Module):
         self.in_channels = [in_channels] + [nb_filters] * nb_layers
         skip_connections = [False] + [True] * nb_layers
         include_zero_lag = [False] + [True] * nb_layers
-        self.dilation_factors = [2 ** i for i in range(0, hyperparams['nb_layers'])]
+        self.dilation_factors = [2 ** i for i in range(0, nb_layers)]
 
         self.num_types = num_types
         

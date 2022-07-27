@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+import numpy as np
+import torch.nn.functional as F
 
 from typing import Tuple
 
@@ -77,7 +79,7 @@ class ContConv1d(nn.Module):
         # convolutions
         pre_conv_times = F.conv1d(times.unsqueeze(1), kernel, padding = padding, dilation = dilation)
         pre_conv_features = F.conv1d(features.transpose(1,2), kernel.repeat(in_channels,1,1), padding = padding, dilation = dilation, groups=in_channels)
-        dt_mask = F.conv1d(non_pad_mask.long().unsqueeze(1), kernel.long(), padding = padding, dilation = dilation).bool()
+        dt_mask = F.conv1d(non_pad_mask.float().unsqueeze(1), kernel.float(), padding = padding, dilation = dilation).long().bool()
         
         # deleting extra values
         pre_conv_times = pre_conv_times[:,:,:-(padding + dilation * (1 - int(include_zero_lag)))]
@@ -169,14 +171,14 @@ class ContConv1dSim(nn.Module):
             dt_mask - torch.Tensor of shape = (bs, kernel_size, (sim_size+1)*(max_len-1)+1)), bool tensor that indicates delta_times true values
         """
         # parameters
-        padding = (kernel_size - 1) * dilation
-        kernel = torch.eye(kernel_size).unsqueeze(1)
+        padding = (kernel_size - 1) * 1
+        kernel = torch.eye(kernel_size).unsqueeze(1).to(times.device)
         in_channels = true_features.shape[2]
         
         # true values convolutions
-        pre_conv_times = F.conv1d(true_times.unsqueeze(1), kernel, padding = padding, dilation = dilation)
-        pre_conv_features = F.conv1d(true_features.transpose(1,2), kernel.repeat(in_channels,1,1), padding = padding, dilation = dilation, groups=features.shape[2])
-        dt_mask = F.conv1d(non_pad_mask.long().unsqueeze(1), torch.eye(kernel_size).unsqueeze(1).long(), padding = padding, dilation = dilation).bool()
+        pre_conv_times = F.conv1d(true_times.unsqueeze(1), kernel, padding = padding, dilation = 1)
+        pre_conv_features = F.conv1d(true_features.transpose(1,2), kernel.repeat(in_channels,1,1), padding = padding, dilation = 1, groups=true_features.shape[2])
+        dt_mask = F.conv1d(non_pad_mask.float().unsqueeze(1), kernel.float(), padding = padding, dilation = 1).long().bool()
         
         # deleting extra values
         pre_conv_times = pre_conv_times[:,:,:-padding]
