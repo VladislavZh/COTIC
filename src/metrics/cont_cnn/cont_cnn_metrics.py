@@ -109,7 +109,6 @@ class CCNNMetrics(MetricsCore):
     @staticmethod
     def __add_sim_times(
         times: torch.Tensor,
-        features: torch.Tensor,
         sim_size: int
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
@@ -132,25 +131,14 @@ class CCNNMetrics(MetricsCore):
         full_times = full_times.flatten(1)
         bos_full_times = torch.concat([torch.zeros(times.shape[0],1).to(times.device), full_times], dim = 1)
         
-        full_events = torch.concat([torch.zeros(list(delta_times.shape)+[features.shape[2],sim_size]).to(times.device), features[:,1:].unsqueeze(3)], dim=3)
-        bs, L, d, f_sim = full_events.shape
-        full_events = full_events.transpose(2,3)
-        full_events = full_events.reshape(bs, L*f_sim, d)
-        bos_full_events = torch.concat([features[:,0,:].unsqueeze(1), full_events], dim = 1)
-        return bos_full_times, bos_full_events
+        return bos_full_times
     
     @classmethod
     def compute_integral_unbiased(cls, model, enc_output, event_time, lengths, non_pad_mask, type_mask, num_samples):
         """ Log-likelihood of non-events, using Monte Carlo integration. """
         
-        bos_full_times, bos_full_enc_output = cls.__add_sim_times(event_time, enc_output, num_samples)
-        true_ids_template = torch.Tensor([(num_samples + 1) * i for i in range(event_time.shape[1])]).long()
-        true_ids_mask = torch.zeros_like(bos_full_times)
-        for i in range(bos_full_times.shape[0]):
-            true_ids_mask[i,true_ids_template[:lengths[i]]] = 1
-            true_ids_mask = true_ids_mask.bool()
-            
-        all_lambda = model.final(bos_full_times, bos_full_enc_output, lengths.to(enc_output.device), true_ids_mask, num_samples) # shape = (bs, (num_samples + 1) * L + 1, num_types)
+        bos_full_times = cls.__add_sim_times(event_time, num_samples)
+        all_lambda = model.final(bos_full_times, event_time, enc_output, non_pad_mask.bool(), num_samples) # shape = (bs, (num_samples + 1) * L + 1, num_types)
         
         bs, _, num_types = all_lambda.shape
         
@@ -180,10 +168,7 @@ class CCNNMetrics(MetricsCore):
             type_mask[:, :, i] = (event_type == i + 1).bool().to(enc_output.device)
         
         event_time = torch.concat([torch.zeros(event_time.shape[0],1).to(event_time.device), event_time], dim = 1)
-        lengths = (torch.sum(event_type.ne(0).type(torch.float), dim = 1) + 1).long()
-        true_ids = torch.arange(event_time.shape[1])[None,:].repeat(event_time.shape[0], 1).to(event_type.device)
-        true_ids = (true_ids < lengths[:, None])
-        all_lambda = pl_module.net.final(event_time, enc_output, lengths.to(enc_output.device), true_ids, 0)
+        all_lambda = pl_module.net.final(event_time, event_time, enc_output, non_pad_mask.bool(), 0)
 
         type_lambda = torch.sum(all_lambda[:,1:,:] * type_mask, dim=2) #shape = (bs, L)
 
