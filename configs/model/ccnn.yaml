@@ -23,12 +23,12 @@ metrics:
   sim_size: 5
 optimizers:
   0:
-      name: adamax
+      name: adam
       params:
         lr: 1e-2
         weight_decay: 1e-5
   1:
-      name: adamax
+      name: adam
       params:
         lr: 1e-2
         weight_decay: 1e-5
