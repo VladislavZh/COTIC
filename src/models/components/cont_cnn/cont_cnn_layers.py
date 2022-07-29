@@ -135,7 +135,8 @@ class ContConv1dSim(nn.Module):
         kernel: nn.Module,
         kernel_size: int,
         in_channels: int,
-        out_channels: int
+        out_channels: int,
+        dropout=0.1
     ):
         """
         args:
