@@ -17,6 +17,7 @@ class ContConv1d(nn.Module):
         in_channels: int,
         out_channels: int,
         dilation: int = 1,
+        dropout=0.1,
         include_zero_lag: bool = False,
         skip_connection: bool = False
     ):
@@ -45,6 +46,9 @@ class ContConv1d(nn.Module):
         self.out_channels = out_channels
         self.include_zero_lag = include_zero_lag
         self.skip_connection = skip_connection
+        
+        self.norm = nn.LayerNorm(out_channels)
+        self.dropout = nn.Dropout(dropout)
         
     @staticmethod
     def __conv_matrix_constructor(
@@ -118,6 +122,7 @@ class ContConv1d(nn.Module):
         out = out.sum(dim=(1,3))
         if self.skip_connection:
             out = out + features
+        self.dropout(self.norm(out))
         return out
 
 
@@ -144,6 +149,9 @@ class ContConv1dSim(nn.Module):
         self.kernel_size = kernel_size
         self.in_channels = in_channels
         self.out_channels = out_channels
+        
+        self.norm = nn.LayerNorm(out_channels)
+        self.dropout = nn.Dropout(dropout)
         
     @staticmethod
     def __conv_matrix_constructor(
@@ -232,5 +240,7 @@ class ContConv1dSim(nn.Module):
         kernel_values[dt_mask,:,:] = self.kernel(delta_times[dt_mask].unsqueeze(1))
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1,3))
+        
+        self.dropout(self.norm(out))
         
         return out
