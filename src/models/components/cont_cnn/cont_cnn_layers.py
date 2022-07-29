@@ -194,6 +194,8 @@ class ContConv1dSim(nn.Module):
             pre_conv_times = pre_conv_times[:,:,:-padding]
             pre_conv_features = pre_conv_features[:,:,:-padding]
             dt_mask = dt_mask[:,:,:-padding] * non_pad_mask.unsqueeze(1)
+        else:
+            dt_mask = dt_mask * non_pad_mask.unsqueeze(1)
         
         # reshaping features output
         bs, L, dim = true_features.shape
