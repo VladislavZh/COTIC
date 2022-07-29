@@ -190,9 +190,10 @@ class ContConv1dSim(nn.Module):
         dt_mask = F.conv1d(non_pad_mask.float().unsqueeze(1), kernel.float(), padding = padding, dilation = 1).long().bool()
         
         # deleting extra values
-        pre_conv_times = pre_conv_times[:,:,:-padding]
-        pre_conv_features = pre_conv_features[:,:,:-padding]
-        dt_mask = dt_mask[:,:,:-padding] * non_pad_mask.unsqueeze(1)
+        if padding>0:
+            pre_conv_times = pre_conv_times[:,:,:-padding]
+            pre_conv_features = pre_conv_features[:,:,:-padding]
+            dt_mask = dt_mask[:,:,:-padding] * non_pad_mask.unsqueeze(1)
         
         # reshaping features output
         bs, L, dim = true_features.shape
