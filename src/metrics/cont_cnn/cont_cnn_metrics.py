@@ -207,7 +207,7 @@ class CCNNMetrics(MetricsCore):
             inputs[0],
             inputs[1]
         )
-        lengths = torch.sum(inputs[1].ne(0).type(torch.float), dim = 1)
+        lengths = torch.mean(inputs[1].ne(0).type(torch.float), dim = 1)
         results = (event_ll - non_event_ll)/lengths
         return results
     
@@ -220,7 +220,7 @@ class CCNNMetrics(MetricsCore):
 
         loss = self.type_loss_func(prediction.transpose(1, 2), truth)
 
-        loss = torch.sum(loss)
+        loss = torch.mean(loss)
         return loss
     
     def time_loss(self, prediction, event_time, event_type):
