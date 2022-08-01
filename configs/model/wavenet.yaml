@@ -7,7 +7,7 @@ net:
     kernel_size: 5
     nb_filters: 16
   in_channels: 32
-  num_types: 5
+  num_types: 16
 metrics:
   _target_: src.metrics.baselines.wavenet.WNMetrics
   return_time_metric:
