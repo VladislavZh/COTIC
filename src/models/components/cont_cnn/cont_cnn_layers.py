@@ -122,7 +122,7 @@ class ContConv1d(nn.Module):
         out = out.sum(dim=(1,3))
         if self.skip_connection:
             out = out + features
-        self.dropout(self.norm(out))
+        #self.dropout(self.norm(out))
         return out
 
 
@@ -245,6 +245,6 @@ class ContConv1dSim(nn.Module):
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1,3))
         
-        self.dropout(self.norm(out))
+        #self.dropout(self.norm(out))
         
         return out
