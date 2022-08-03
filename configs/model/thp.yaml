@@ -2,7 +2,7 @@ _target_: src.models.base_model.BaseEventModule
 
 net:
   _target_: src.models.components.baselines.thp.Transformer
-  num_types: 5
+  num_types: 8
   d_model: 256
   d_rnn: 128
   d_inner: 1024
@@ -17,7 +17,7 @@ metrics:
   return_time_metric:
     _target_: src.utils.metrics.MAE
   event_type_metric:
-    _target_: src.utils.metrics.RocAuc
+    _target_: src.utils.metrics.Accuracy
 optimizer:
   name: adam
   params:
