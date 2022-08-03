@@ -19,7 +19,7 @@ metrics:
   return_time_metric:
     _target_: src.utils.metrics.MAE
   event_type_metric:
-    _target_: src.utils.metrics.RocAuc
+    _target_: src.utils.metrics.Accuracy
   sim_size: 5
 optimizers:
   0:
