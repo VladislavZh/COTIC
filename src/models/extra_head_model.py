@@ -62,7 +62,6 @@ class ExtrHeadEventModule(LightningModule):
         if stage == 'test':
             loss1, loss2 = self.test_metrics.compute_loss_and_add_values(self, batch, outputs)
 
-        print(loss1)
         return loss1, loss2
 
     def training_step(self, batch: Any, batch_idx: int, optimizer_idx):
