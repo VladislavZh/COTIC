@@ -245,6 +245,6 @@ class ContConv1dSim(nn.Module):
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1,3))
         
-        out = self.dropout(self.norm(out))
+        # out = self.dropout(self.norm(out))
         
         return out
