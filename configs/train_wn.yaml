@@ -4,7 +4,7 @@
 defaults:
   - _self_
   - datamodule: base_datamodule.yaml
-  - model: wavenet_intens.yaml
+  - model: wavenet.yaml
   - callbacks: default.yaml
   - logger: comet.yaml # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
   - trainer: default.yaml
@@ -30,8 +30,8 @@ defaults:
 original_work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
-data_dir: ${original_work_dir}/data/sinth_dset
-unix_time: False
+data_dir: ${original_work_dir}/data/amz7k
+unix_time: True
 
 # pretty print config at the start of the run using Rich library
 print_config: True
