@@ -4,7 +4,7 @@
 defaults:
   - _self_
   - datamodule: base_datamodule.yaml
-  - model: wavenet.yaml
+  - model: wavenet_intens.yaml
   - callbacks: default.yaml
   - logger: comet.yaml # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
   - trainer: default.yaml
