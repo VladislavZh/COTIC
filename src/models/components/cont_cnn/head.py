@@ -9,7 +9,7 @@ class PredictionHead(nn.Module):
     ) -> None:
         super().__init__()
         self.return_time_prediction = nn.Sequential(nn.Linear(in_channels, 1))#,nn.ReLU(),nn.Linear(128,1))
-        self.event_type_prediction = nn.Sequential(nn.Linear(in_channels, 1))#,nn.ReLU(),nn.Linear(128,num_types))
+        self.event_type_prediction = nn.Sequential(nn.Linear(in_channels, num_types))#,nn.ReLU(),nn.Linear(128,num_types))
         
     def forward(
         self,
