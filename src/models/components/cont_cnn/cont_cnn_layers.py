@@ -54,11 +54,11 @@ class ContConv1d(nn.Module):
         self.norm = nn.LayerNorm(out_channels)
         self.dropout = nn.Dropout(dropout)
         
-    def __temporal_enc(self, time, non_pad_mask):
+    def __temporal_enc(self, time):
         result = time.unsqueeze(-1) / self.position_vec.to(time.device)
         result[..., 0::2] = torch.sin(result[..., 0::2])
         result[..., 1::2] = torch.cos(result[..., 1::2])
-        return result * non_pad_mask
+        return result
         
     @staticmethod
     def __conv_matrix_constructor(
@@ -127,7 +127,7 @@ class ContConv1d(nn.Module):
         delta_times, features_kern, dt_mask = self.__conv_matrix_constructor(times, features, non_pad_mask, self.kernel_size, self.dilation, self.include_zero_lag)
         bs, k, L = delta_times.shape
         kernel_values = torch.zeros(bs,k,L,self.in_channels, self.out_channels).to(times.device)
-        kernel_values[dt_mask,:,:] = self.kernel(self.__temporal_enc(delta_times[dt_mask], non_pad_mask))
+        kernel_values[dt_mask,:,:] = self.kernel(self.__temporal_enc(delta_times[dt_mask]))
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1,3))
         if self.skip_connection:
@@ -168,11 +168,11 @@ class ContConv1dSim(nn.Module):
         self.norm = nn.LayerNorm(out_channels)
         self.dropout = nn.Dropout(dropout)
         
-    def __temporal_enc(self, time, non_pad_mask):
+    def __temporal_enc(self, time):
         result = time.unsqueeze(-1) / self.position_vec.to(time.device)
         result[..., 0::2] = torch.sin(result[..., 0::2])
         result[..., 1::2] = torch.cos(result[..., 1::2])
-        return result * non_pad_mask
+        return result
         
     @staticmethod
     def __conv_matrix_constructor(
@@ -261,7 +261,7 @@ class ContConv1dSim(nn.Module):
 
         bs, k, L = delta_times.shape
         kernel_values = torch.zeros(bs,k,L,self.in_channels, self.out_channels).to(times.device)
-        kernel_values[dt_mask,:,:] = self.kernel(self.__temporal_enc(delta_times[dt_mask], non_pad_mask))
+        kernel_values[dt_mask,:,:] = self.kernel(self.__temporal_enc(delta_times[dt_mask]))
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1,3))
         
