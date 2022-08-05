@@ -6,7 +6,7 @@ class Kernel(nn.Module):
     """
     def __init__(self, hidden1, hidden2, hidden3, in_channels, out_channels):
         super().__init__()
-        self.layer_1 = nn.Linear(1, hidden1)
+        self.layer_1 = nn.Linear(in_channels, hidden1)
         self.relu_1 = nn.ReLU()
         self.layer_2 = nn.Linear(hidden1, hidden2)
         self.relu_2 = nn.ReLU()
@@ -32,7 +32,7 @@ class LinearKernel(nn.Module):
     """
     def __init__(self, in_channels, out_channels, dropout=0.1):
         super().__init__()
-        self.layer = nn.Linear(1, in_channels * out_channels)
+        self.layer = nn.Linear(in_channels, in_channels * out_channels)
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.dropout = nn.Dropout(dropout)

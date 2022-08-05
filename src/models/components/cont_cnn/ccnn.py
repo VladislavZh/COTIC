@@ -28,9 +28,9 @@ class CCNN(nn.Module):
 
         self.num_types = num_types
         
-        self.convs = nn.ModuleList([ContConv1d(LinearKernel(self.in_channels[i], nb_filters), kernel_size, self.in_channels[i], nb_filters, self.dilation_factors[i], include_zero_lag[i], skip_connections[i]) for i in range(nb_layers)])
+        self.convs = nn.ModuleList([ContConv1d(Kernel(hidden1, hidden2, hidden3, self.in_channels[i], nb_filters), kernel_size, self.in_channels[i], nb_filters, self.dilation_factors[i], include_zero_lag[i], skip_connections[i]) for i in range(nb_layers)])
         
-        self.final_list = nn.ModuleList([ContConv1dSim(LinearKernel(nb_filters, nb_filters), 1, nb_filters, nb_filters), nn.ReLU(), nn.Linear(nb_filters, num_types), nn.Softplus()])
+        self.final_list = nn.ModuleList([ContConv1dSim(Kernel(hidden1, hidden2, hidden3, nb_filters, nb_filters), 1, nb_filters, nb_filters), nn.ReLU(), nn.Linear(nb_filters, num_types), nn.Softplus()])
         
     def __add_bos(self, event_times, event_types, lengths):
         bs, L = event_times.shape
