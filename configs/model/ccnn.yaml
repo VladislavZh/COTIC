@@ -30,5 +30,5 @@ optimizers:
   1:
       name: adam
       params:
-        lr: 1e-4
+        lr: 1e-2
         weight_decay: 1e-5
