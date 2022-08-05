@@ -61,6 +61,8 @@ class ExtrHeadEventModule(LightningModule):
             loss1, loss2 = self.val_metrics.compute_loss_and_add_values(self, batch, outputs)
         if stage == 'test':
             loss1, loss2 = self.test_metrics.compute_loss_and_add_values(self, batch, outputs)
+            
+        print(loss1)
 
         return loss1, loss2
 
