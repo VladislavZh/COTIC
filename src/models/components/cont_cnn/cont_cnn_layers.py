@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
+import math
 
 from typing import Tuple
 
@@ -17,6 +18,7 @@ class ContConv1d(nn.Module):
         in_channels: int,
         out_channels: int,
         dilation: int = 1,
+        dropout=0.1,
         include_zero_lag: bool = False,
         skip_connection: bool = False
     ):
@@ -45,6 +47,18 @@ class ContConv1d(nn.Module):
         self.out_channels = out_channels
         self.include_zero_lag = include_zero_lag
         self.skip_connection = skip_connection
+        
+        self.position_vec = torch.tensor(
+            [math.pow(10000.0, 2.0 * (i // 2) / self.in_channels) for i in range(self.in_channels)])
+        
+        self.norm = nn.LayerNorm(out_channels)
+        self.dropout = nn.Dropout(dropout)
+        
+    def __temporal_enc(self, time):
+        result = time.unsqueeze(-1) / self.position_vec.to(time.device)
+        result[..., 0::2] = torch.sin(result[..., 0::2])
+        result[..., 1::2] = torch.cos(result[..., 1::2])
+        return result
         
     @staticmethod
     def __conv_matrix_constructor(
@@ -113,11 +127,13 @@ class ContConv1d(nn.Module):
         delta_times, features_kern, dt_mask = self.__conv_matrix_constructor(times, features, non_pad_mask, self.kernel_size, self.dilation, self.include_zero_lag)
         bs, k, L = delta_times.shape
         kernel_values = torch.zeros(bs,k,L,self.in_channels, self.out_channels).to(times.device)
-        kernel_values[dt_mask,:,:] = self.kernel(delta_times[dt_mask].unsqueeze(1))
+        kernel_values[dt_mask,:,:] = self.kernel(self.__temporal_enc(delta_times[dt_mask]))
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1,3))
         if self.skip_connection:
             out = out + features
+        #out = self.dropout(self.norm(out))
+        out = self.norm(out)
         return out
 
 
@@ -130,7 +146,8 @@ class ContConv1dSim(nn.Module):
         kernel: nn.Module,
         kernel_size: int,
         in_channels: int,
-        out_channels: int
+        out_channels: int,
+        dropout=0.1
     ):
         """
         args:
@@ -144,6 +161,18 @@ class ContConv1dSim(nn.Module):
         self.kernel_size = kernel_size
         self.in_channels = in_channels
         self.out_channels = out_channels
+        
+        self.position_vec = torch.tensor(
+            [math.pow(10000.0, 2.0 * (i // 2) / self.in_channels) for i in range(self.in_channels)])
+        
+        self.norm = nn.LayerNorm(out_channels)
+        self.dropout = nn.Dropout(dropout)
+        
+    def __temporal_enc(self, time):
+        result = time.unsqueeze(-1) / self.position_vec.to(time.device)
+        result[..., 0::2] = torch.sin(result[..., 0::2])
+        result[..., 1::2] = torch.cos(result[..., 1::2])
+        return result
         
     @staticmethod
     def __conv_matrix_constructor(
@@ -181,9 +210,12 @@ class ContConv1dSim(nn.Module):
         dt_mask = F.conv1d(non_pad_mask.float().unsqueeze(1), kernel.float(), padding = padding, dilation = 1).long().bool()
         
         # deleting extra values
-        pre_conv_times = pre_conv_times[:,:,:-padding]
-        pre_conv_features = pre_conv_features[:,:,:-padding]
-        dt_mask = dt_mask[:,:,:-padding] * non_pad_mask.unsqueeze(1)
+        if padding>0:
+            pre_conv_times = pre_conv_times[:,:,:-padding]
+            pre_conv_features = pre_conv_features[:,:,:-padding]
+            dt_mask = dt_mask[:,:,:-padding] * non_pad_mask.unsqueeze(1)
+        else:
+            dt_mask = dt_mask * non_pad_mask.unsqueeze(1)
         
         # reshaping features output
         bs, L, dim = true_features.shape
@@ -229,8 +261,10 @@ class ContConv1dSim(nn.Module):
 
         bs, k, L = delta_times.shape
         kernel_values = torch.zeros(bs,k,L,self.in_channels, self.out_channels).to(times.device)
-        kernel_values[dt_mask,:,:] = self.kernel(delta_times[dt_mask].unsqueeze(1))
+        kernel_values[dt_mask,:,:] = self.kernel(self.__temporal_enc(delta_times[dt_mask]))
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1,3))
+        
+        # out = self.dropout(self.norm(out))
         
         return out
