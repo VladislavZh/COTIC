@@ -13,7 +13,7 @@ net:
 head:
   _target_: src.models.components.cont_cnn.IntensityBasedHead
   max_val: 200
-  sim_size: 200
+  sim_size: 40
 metrics:
   _target_: src.metrics.cont_cnn.CCNNMetrics
   return_time_metric:
