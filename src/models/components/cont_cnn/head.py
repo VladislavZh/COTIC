@@ -83,7 +83,7 @@ class IntensityBasedHead(nn.Module):
         lambda_int = torch.cumsum(between_lambda_all, dim = -1)/torch.arange(1, self.sim_size + 1)[None,None,:].to(times.device)*diff_time
         predicted_time = torch.sum(torch.exp(-lambda_int),dim=-1)*diff_time[...,-1]/self.sim_size
         
-        bos_full_times = torch.concat([times[:,:-1].unsqueeze(-1), predicted_time.unsqueeze(-1)], dim = -1)
+        bos_full_times = torch.concat([times[:,:-1].unsqueeze(-1), predicted_time.unsqueeze(-1)], dim = -1).flatten(1)
         all_lambda = pl_module.net.final(bos_full_times, times, enc_output, events.ne(0), 1) # shape = (bs, (num_samples + 1) * L + 1, num_types)
         
         predicted_event = torch.log(all_lambda.transpose(1,2)[:,:,1:].reshape(bs, num_types, times.shape[1]-1, 2)[...,0].transpose(1,2) + 1e-9)
