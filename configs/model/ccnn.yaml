@@ -12,7 +12,7 @@ net:
   hidden_3: 8
 head:
   _target_: src.models.components.cont_cnn.IntensityBasedHead
-  max_val: 200
+  max_val: 20
   sim_size: 40
 metrics:
   _target_: src.metrics.cont_cnn.CCNNMetrics

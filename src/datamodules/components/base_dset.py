@@ -40,7 +40,7 @@ class EventData(Dataset):
         dt = tensor_times[:,1:] - tensor_times[:,:-1]
         dt = dt[dt>0]
         dt_median = torch.median(dt)
-        print('Max dt =', torch.max(dt)/dt_median)
+        print('Mean dt =', torch.mean(dt)/dt_median)
         
         return tensor_times/dt_median, tensor_events.long()
     
