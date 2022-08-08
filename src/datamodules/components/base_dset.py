@@ -39,10 +39,10 @@ class EventData(Dataset):
             
         dt = tensor_times[:,1:] - tensor_times[:,:-1]
         dt = dt[dt>0]
-        dt = torch.median(dt)
-        print('Max dt =', torch.max(dt))
+        dt_median = torch.median(dt)
+        print('Max dt =', torch.max(dt)/dt_median)
         
-        return tensor_times/dt, tensor_events.long()
+        return tensor_times/dt_median, tensor_events.long()
     
     def __len__(self):
         return len(self.__times)
