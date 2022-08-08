@@ -68,7 +68,7 @@ class IntensityBasedHead(nn.Module):
         """ Log-likelihood of non-events, using Monte Carlo integration. """
         
         bos_full_times = self.__add_sim_times(times, self.max_val, self.sim_size)
-        all_lambda = pl_module.model.final(bos_full_times, times, enc_output, events.ne(0), self.sim_size) # shape = (bs, (num_samples + 1) * L + 1, num_types)
+        all_lambda = pl_module.net.final(bos_full_times, times, enc_output, events.ne(0), self.sim_size) # shape = (bs, (num_samples + 1) * L + 1, num_types)
         
         bs, _, num_types = all_lambda.shape
         
@@ -84,7 +84,7 @@ class IntensityBasedHead(nn.Module):
         predicted_time = torch.sum(torch.exp(-lambda_int),dim=-1)*diff_time[...,-1]/self.sim_size
         
         bos_full_times = torch.concat([times[:,:-1].unsqueeze(-1), predicted_time.unsqueeze(-1)], dim = -1)
-        all_lambda = pl_module.model.final(bos_full_times, times, enc_output, events.ne(0), 1) # shape = (bs, (num_samples + 1) * L + 1, num_types)
+        all_lambda = pl_module.net.final(bos_full_times, times, enc_output, events.ne(0), 1) # shape = (bs, (num_samples + 1) * L + 1, num_types)
         
         predicted_event = torch.log(all_lambda.transpose(1,2)[:,:,1:].reshape(bs, num_types, times.shape[1]-1, 2)[...,0].transpose(1,2) + 1e-9)
         
