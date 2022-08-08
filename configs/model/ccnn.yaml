@@ -12,8 +12,8 @@ net:
   hidden_3: 8
 head:
   _target_: src.models.components.cont_cnn.IntensityBasedHead
-  max_val: 50
-  sim_size: 100
+  max_val: 200
+  sim_size: 200
 metrics:
   _target_: src.metrics.cont_cnn.CCNNMetrics
   return_time_metric:
