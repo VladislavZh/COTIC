@@ -35,7 +35,8 @@ class ExtrHeadEventModule(LightningModule):
         net: torch.nn.Module,
         head: torch.nn.Module,
         metrics: MetricsCore,
-        optimizers: dict
+        optimizers: dict,
+        enc_output_only_head: bool = True
     ):
         super().__init__()
 
@@ -43,13 +44,17 @@ class ExtrHeadEventModule(LightningModule):
 
         self.net = net
         self.head = head
+        self.enc_output_only_head = enc_output_only_head
         self.train_metrics = metrics
         self.val_metrics = metrics.copy_empty()
         self.test_metrics = metrics.copy_empty()
 
     def forward(self, batch):
         net_output = self.net(*batch)
-        head_output = self.head(net_output)
+        if self.enc_output_only_head:
+            head_output = self.head(net_output)
+        else:
+            head_output = self.head(*batch, net_output, self)
         return net_output, head_output
 
     def step(self, batch: Any, stage: str):
