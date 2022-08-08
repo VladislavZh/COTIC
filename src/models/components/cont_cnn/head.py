@@ -101,8 +101,8 @@ class IntensityBasedHead(nn.Module):
     
     def forward(
         self,
-        times,
-        events,
+        event_times,
+        event_types,
         enc_output,
         pl_module
     ) -> Tuple[torch.Tensor, torch.Tensor]:
