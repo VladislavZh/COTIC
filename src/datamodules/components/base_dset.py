@@ -38,6 +38,8 @@ class EventData(Dataset):
             tensor_events[i,:l] = events[i] + 1
             
         dt = tensor_times[:,1:] - tensor_times[:,:-1]
+        print(dt)
+        print(tensor_times)
         dt = dt[dt>0]
         dt = torch.median(dt)
         print('Max dt =', torch.max(dt))
