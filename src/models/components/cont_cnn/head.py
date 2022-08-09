@@ -75,8 +75,8 @@ class IntensityBasedHead(nn.Module):
         between_lambda = all_lambda.transpose(1,2)[:,:,1:].reshape(bs, num_types, times.shape[1]-1, self.sim_size + 1)[...,:-1]
 
         diff_time = bos_full_times[:, :-1].reshape(bs, -1, self.sim_size + 1)
-        diff_time = diff_time - diff_time[...,0].clone().unsqueeze(-1) # shape = (bs, L, sim_size + 1)
-        diff_time = diff_time[...,1:] # shape = (bs, L, sim_size)
+        diff_time = diff_time.clone() - diff_time[...,0].clone().unsqueeze(-1) # shape = (bs, L, sim_size + 1)
+        diff_time = diff_time[...,1:].clone() # shape = (bs, L, sim_size)
         
         between_lambda_all = torch.sum(between_lambda, dim = 1)
         
