@@ -29,6 +29,7 @@ class IntensityBasedHead(nn.Module):
         super().__init__()
         self.max_val = max_val
         self.sim_size = sim_size
+        self.tmp = nn.Linear(1,1)
         
     @staticmethod
     def __add_sim_times(
