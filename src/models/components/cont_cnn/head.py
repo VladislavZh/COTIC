@@ -89,6 +89,8 @@ class IntensityBasedHead(nn.Module):
         
         predicted_event = torch.log(all_lambda.transpose(1,2)[:,:,1:].reshape(bs, num_types, times.shape[1]-1, 2)[...,0].transpose(1,2) + 1e-9)
         
+        predicted_time = torch.concat([predicted_time, torch.zeros(bs,1)], dim=-1)
+        
         return predicted_time, predicted_event
         
     def __add_bos(self, event_times, event_types, lengths):
