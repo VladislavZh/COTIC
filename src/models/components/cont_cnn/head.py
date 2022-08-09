@@ -29,7 +29,7 @@ class IntensityBasedHead(nn.Module):
         super().__init__()
         self.max_val = max_val
         self.sim_size = sim_size
-        self.tmp = nn.Linear(1,1)
+        self.a = nn.Parameter(torch.Tensor([0]))
         
     @staticmethod
     def __add_sim_times(
@@ -93,7 +93,7 @@ class IntensityBasedHead(nn.Module):
         predicted_time = torch.concat([predicted_time, torch.zeros(bs,1).to(times.device)], dim=-1)
         predicted_event = torch.concat([predicted_event, torch.zeros(bs,1,num_types).to(times.device)], dim=1)
 
-        return predicted_time, predicted_event
+        return predicted_time+self.a[0]*0, predicted_event+self.a[0]*0
         
     def __add_bos(self, event_times, event_types, lengths):
         bs, L = event_times.shape
