@@ -67,33 +67,32 @@ class IntensityBasedHead(nn.Module):
     ):
         """ Log-likelihood of non-events, using Monte Carlo integration. """
         
-        with torch.autograd.set_detect_anomaly(True):
-            bos_full_times = self.__add_sim_times(times, self.max_val, self.sim_size)
-            all_lambda = pl_module.net.final(bos_full_times, times, enc_output, events.ne(0), self.sim_size) # shape = (bs, (num_samples + 1) * L + 1, num_types)
+        bos_full_times = self.__add_sim_times(times, self.max_val, self.sim_size)
+        all_lambda = pl_module.net.final(bos_full_times, times, enc_output, events.ne(0), self.sim_size) # shape = (bs, (num_samples + 1) * L + 1, num_types)
 
-            bs, _, num_types = all_lambda.shape
+        bs, _, num_types = all_lambda.shape
 
-            between_lambda = all_lambda.transpose(1,2)[:,:,1:].reshape(bs, num_types, times.shape[1]-1, self.sim_size + 1)[...,:-1]
+        between_lambda = all_lambda.transpose(1,2)[:,:,1:].reshape(bs, num_types, times.shape[1]-1, self.sim_size + 1)[...,:-1]
 
-            diff_time = bos_full_times[:, :-1].reshape(bs, -1, self.sim_size + 1)
-            diff_time = diff_time.clone() - diff_time[...,0].clone().unsqueeze(-1) # shape = (bs, L, sim_size + 1)
-            diff_time = diff_time[...,1:].clone() # shape = (bs, L, sim_size)
+        diff_time = bos_full_times[:, :-1].reshape(bs, -1, self.sim_size + 1)
+        diff_time = diff_time.clone() - diff_time[...,0].clone().unsqueeze(-1) # shape = (bs, L, sim_size + 1)
+        diff_time = diff_time[...,1:].clone() # shape = (bs, L, sim_size)
 
-            between_lambda_all = torch.sum(between_lambda, dim = 1)
+        between_lambda_all = torch.sum(between_lambda, dim = 1)
 
-            lambda_int = torch.cumsum(between_lambda_all, dim = -1)/torch.arange(1, self.sim_size + 1)[None,None,:].to(times.device)*diff_time
-            predicted_time = torch.sum(torch.exp(-lambda_int),dim=-1)*diff_time[...,-1]/self.sim_size
+        lambda_int = torch.cumsum(between_lambda_all, dim = -1)/torch.arange(1, self.sim_size + 1)[None,None,:].to(times.device)*diff_time
+        predicted_time = torch.sum(torch.exp(-lambda_int),dim=-1)*diff_time[...,-1]/self.sim_size
 
-            bos_full_times = torch.concat([(times[:,:-1] + predicted_time).unsqueeze(-1), times[:,1:].unsqueeze(-1)], dim = -1).flatten(1)
-            bos_full_times = torch.concat([torch.zeros(bs, 1).to(times.device), bos_full_times], dim=-1)
-            all_lambda = pl_module.net.final(bos_full_times, times, enc_output, events.ne(0), 1) # shape = (bs, (num_samples + 1) * L + 1, num_types)
+        bos_full_times = torch.concat([(times[:,:-1].clone() + predicted_time.clone()).unsqueeze(-1), times[:,1:].clone().unsqueeze(-1)], dim = -1).flatten(1)
+        bos_full_times = torch.concat([torch.zeros(bs, 1).to(times.device), bos_full_times], dim=-1)
+        all_lambda = pl_module.net.final(bos_full_times, times, enc_output, events.ne(0), 1) # shape = (bs, (num_samples + 1) * L + 1, num_types)
 
-            predicted_event = torch.log(all_lambda.transpose(1,2)[:,:,1:].reshape(bs, num_types, times.shape[1]-1, 2)[...,0].transpose(1,2) + 1e-9)
+        predicted_event = torch.log(all_lambda.transpose(1,2)[:,:,1:].reshape(bs, num_types, times.shape[1]-1, 2)[...,0].transpose(1,2) + 1e-9)
 
-            predicted_time = torch.concat([predicted_time, torch.zeros(bs,1).to(times.device)], dim=-1)
-            predicted_event = torch.concat([predicted_event, torch.zeros(bs,1,num_types).to(times.device)], dim=1)
+        predicted_time = torch.concat([predicted_time, torch.zeros(bs,1).to(times.device)], dim=-1)
+        predicted_event = torch.concat([predicted_event, torch.zeros(bs,1,num_types).to(times.device)], dim=1)
 
-            return predicted_time, predicted_event
+        return predicted_time, predicted_event
         
     def __add_bos(self, event_times, event_types, lengths):
         bs, L = event_times.shape
