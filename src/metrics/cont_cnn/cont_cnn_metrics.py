@@ -147,7 +147,8 @@ class CCNNMetrics(MetricsCore):
         delta_lambda = delta_lambda[:,1:] - delta_lambda[:,:-1]
         diff = delta_lambda/delta_times
         diff = diff[mask[:,1:]]
-        
+        print(diff.shape)
+        print(diff)
         print(torch.max(diff))
         
         bs, _, num_types = all_lambda.shape
