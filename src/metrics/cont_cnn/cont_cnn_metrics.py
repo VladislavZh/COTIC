@@ -140,6 +140,14 @@ class CCNNMetrics(MetricsCore):
         bos_full_times = cls.__add_sim_times(event_time, num_samples)
         all_lambda = model.final(bos_full_times, event_time, enc_output, non_pad_mask.bool(), num_samples) # shape = (bs, (num_samples + 1) * L + 1, num_types)
         
+        tmp = all_lambda[all_lambda>0]
+        print('Min:', torch.min(tmp))
+        print('Max:', torch.max(tmp))
+        print('Median:', torch.median(tmp))
+        print('Mean:', torch.mean(tmp))
+        print('Std:', torch.std(tmp))
+        print('Max delta:', torch.max(tmp[1:]-tmp[:-1]))
+        
         bs, _, num_types = all_lambda.shape
         
         between_lambda = all_lambda.transpose(1,2)[:,:,1:].reshape(bs, num_types, event_time.shape[1]-1, num_samples + 1)[...,:-1].transpose(1,2)
