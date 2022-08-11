@@ -141,7 +141,7 @@ class CCNNMetrics(MetricsCore):
         all_lambda = model.final(bos_full_times, event_time, enc_output, non_pad_mask.bool(), num_samples) # shape = (bs, (num_samples + 1) * L + 1, num_types)
         
         # regularization
-        mask = (all_lambda > 0)
+        mask = (torch.sum(all_lambda, dim=-1) > 0)
         delta_times = bos_full_times[:,1:] - bos_full_times[:,:-1]
         delta_lambda = torch.sum(all_lambda, dim = -1)
         delta_lambda = delta_lambda[:,1:] - delta_lambda[:,:-1]
