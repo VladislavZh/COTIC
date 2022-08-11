@@ -148,13 +148,7 @@ class CCNNMetrics(MetricsCore):
         diff = delta_lambda/delta_times
         diff = diff[mask[:,1:]]
         
-        tmp = all_lambda[all_lambda>0]
-        print('Min:', torch.min(tmp))
-        print('Max:', torch.max(tmp))
-        print('Median:', torch.median(tmp))
-        print('Mean:', torch.mean(tmp))
-        print('Std:', torch.std(tmp))
-        print('Max delta:', torch.max(tmp[1:]-tmp[:-1]))
+        print(torch.max(diff))
         
         bs, _, num_types = all_lambda.shape
         
