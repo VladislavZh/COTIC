@@ -273,6 +273,7 @@ class CCNNMetrics(MetricsCore):
         type_loss = self.type_loss(outputs[1][1][:,1:], inputs[1])
         time_loss = self.time_loss(outputs[1][0][:,1:], inputs[0], inputs[1])
         
-        print(diff[diff==diff])
+        tmp = torch.abs(diff[diff==diff])
+        tmp = tmp[tmp<np.inf]
         
-        return ll_loss + torch.mean(torch.abs(diff[diff==diff])), type_loss + time_loss
+        return ll_loss + torch.mean(tmp), type_loss + time_loss
