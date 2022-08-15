@@ -1,3 +1,5 @@
+import numpy as np
+
 import torch
 from pytorch_lightning import LightningModule
 import math
@@ -149,7 +151,7 @@ class CCNNMetrics(MetricsCore):
         diff = diff[mask[:,1:]]
         print(diff.shape)
         print(diff)
-        print(torch.max(diff))
+        print(np.max(diff.cpu().detach().numpy()))
         
         bs, _, num_types = all_lambda.shape
         
