@@ -147,7 +147,7 @@ class CCNNMetrics(MetricsCore):
         delta_times = bos_full_times[:,1:] - bos_full_times[:,:-1]
         delta_lambda = torch.sum(all_lambda, dim = -1)
         delta_lambda = delta_lambda[:,1:] - delta_lambda[:,:-1]
-        diff = delta_lambda/delta_times
+        diff = delta_lambda#/delta_times
         diff = diff[mask[:,1:]]
         
         bs, _, num_types = all_lambda.shape
