@@ -276,4 +276,4 @@ class CCNNMetrics(MetricsCore):
         tmp = torch.abs(diff[diff==diff])
         tmp = tmp[tmp<np.inf]
         
-        return ll_loss + 0.01*torch.mean(tmp), type_loss + time_loss
+        return ll_loss + torch.mean(tmp), type_loss + time_loss
