@@ -94,11 +94,7 @@ The directory structure of new project looks like this:
 <br>
 
  
-<div align="center">
-
-![](https://github.com/ashleve/lightning-hydra-template/blob/resources/terminal.png)
-
-</div>
+ 
 
 ## Usage
 
@@ -149,7 +145,7 @@ python train.py trainer.max_epochs=20 datamodule.batch_size=64
 
 ## Metrics and comparison table
 
-## ⚡&nbsp;&nbsp;Your Superpowers
+## Details
 Here are the main points that may be needed when starting or developing code.
 
 <details>
@@ -417,7 +413,7 @@ pre-commit run -a
 
  
 
-## ℹ️&nbsp;&nbsp;Guide
+## Guide
 
 ### How To Get Started
 
@@ -828,12 +824,11 @@ This template was inspired by:
 <br>
 
 ## References
-<details>
 
 - [The Neural Hawkes Process: A Neurally
 Self-Modulating Multivariate Point Process](https://arxiv.org/pdf/1612.09328.pdf)
 - [Continuous Cnn For Nonuniform Time Series](https://ieeexplore.ieee.org/document/9414318)  
-</details>
+
 
 ## License
 
