@@ -13,10 +13,10 @@
 <br>
 
 ## Description  
-In this project, the problem of return time prediction time 
+In this project, the problem of return time prediction
 and event time prediction is considered. To solve this problem, 
-four models were considered: CNN, Transformer, WaveNet and 
-WaveNet with modifications. 
+four models were considered: Continuous Time CNN, Transformer Hawkes, WaveNet and 
+WaveNet with intensity interpolation. 
 Here is a convenient pipeline for working with them and 
 launching them. To get acquainted with the structure of 
 the code and the features, you can look at the 
@@ -144,7 +144,6 @@ python train.py trainer.max_epochs=20 datamodule.batch_size=64
 ``` 
 
 ## Metrics and comparison table
-
 ## Details
 Here are the main points that may be needed when starting or developing code.
 
