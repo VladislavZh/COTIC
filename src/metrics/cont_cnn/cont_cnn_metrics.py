@@ -143,7 +143,6 @@ class CCNNMetrics(MetricsCore):
         bs, _, num_types = all_lambda.shape
         
         between_lambda = all_lambda.transpose(1,2)[:,:,1:].reshape(bs, num_types, event_time.shape[1]-1, num_samples + 1)[...,:-1].transpose(1,2)
-        print(np.max(between_lambda.detach().cpu().numpy()))
 
         diff_time = (event_time[:, 1:] - event_time[:, :-1]) * non_pad_mask[:, 1:]
         between_lambda = torch.sum(between_lambda, dim=(2,3)) / num_samples
@@ -173,7 +172,6 @@ class CCNNMetrics(MetricsCore):
         all_lambda = pl_module.net.final(event_time, event_time, enc_output, non_pad_mask.bool(), 0)
 
         type_lambda = torch.sum(all_lambda[:,1:,:] * type_mask, dim=2) #shape = (bs, L)
-        print(np.max(type_lambda.detach().cpu().numpy()))
 
         # event log-likelihood
         event_ll = self.compute_event(type_lambda, non_pad_mask[:,1:])
