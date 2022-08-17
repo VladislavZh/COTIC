@@ -178,8 +178,8 @@ class CCNNMetrics(MetricsCore):
 
         type_lambda = torch.sum(all_lambda[:,1:,:] * type_mask, dim=2) #shape = (bs, L)
         print('True max:',np.max(type_lambda.detach().cpu().numpy()))
-        print('True min:',np.max(type_lambda[type_lambda>0].detach().cpu().numpy()))
-        print('True mean:',np.max(type_lambda[type_lambda>0].detach().cpu().numpy()))
+        print('True min:',np.min(type_lambda[type_lambda>0].detach().cpu().numpy()))
+        print('True mean:',np.mean(type_lambda[type_lambda>0].detach().cpu().numpy()))
 
         # event log-likelihood
         event_ll = self.compute_event(type_lambda, non_pad_mask[:,1:])
