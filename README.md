@@ -1,4 +1,7 @@
+
+
 <div align="center">
+
 
 # COHORTNEY
 
@@ -22,13 +25,19 @@ launching them. To get acquainted with the structure of
 the code and the features, you can look at the 
 information provided below.
 
+
+
 ## Metrics and comparison table
 
-	model|top-1
-	:---:|:---:	
-	WN|24.7%
-	THP|23.6%
-	CCNN|1
+model|log likelihood|
+:---:|:---:	|
+WN()|1337.1|
+[THP](https://arxiv.org/pdf/2002.09291.pdf)|1337.1|
+CCNN|1337.1|
+	
+
+	
+	
 
 ## Datasets description
 
