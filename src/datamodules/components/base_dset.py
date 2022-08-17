@@ -36,13 +36,8 @@ class EventData(Dataset):
         for i, l in enumerate(lengths):
             tensor_times[i,:l] = times[i]
             tensor_events[i,:l] = events[i] + 1
-            
-        dt = tensor_times[:,1:] - tensor_times[:,:-1]
-        dt = dt[dt>0]
-        dt_median = torch.median(dt)
-        print('Mean dt =', torch.mean(dt)/dt_median)
         
-        return tensor_times/dt_median, tensor_events.long()
+        return tensor_times, tensor_events.long()
     
     def __len__(self):
         return len(self.__times)
