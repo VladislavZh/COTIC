@@ -6,14 +6,14 @@ net:
   kernel_size: 5
   nb_filters: 16
   nb_layers: 9
-  num_types: 8
+  num_types: 5
   hidden_1: 8
   hidden_2: 4
   hidden_3: 8
 head:
-  _target_: src.models.components.cont_cnn.IntensityBasedHead
-  max_val: 20
-  sim_size: 40
+  _target_: src.models.components.cont_cnn.PredictionHead
+  in_channels: 16
+  num_types: 5
 metrics:
   _target_: src.metrics.cont_cnn.CCNNMetrics
   return_time_metric:
@@ -32,4 +32,4 @@ optimizers:
       params:
         lr: 1e-3
         weight_decay: 1e-5
-enc_output_only_head: False
+enc_output_only_head: True
