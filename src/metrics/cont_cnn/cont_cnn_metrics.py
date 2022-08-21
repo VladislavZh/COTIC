@@ -144,8 +144,8 @@ class CCNNMetrics(MetricsCore):
         
         bs, _, num_types = all_lambda.shape
         
-        alpha = 1.01
-        beta = 0.001
+        alpha = 1.1
+        beta = 0.1
         tmp = all_lambda[all_lambda > 0]
         gamma_reg = torch.sum((alpha - 1) * torch.log(tmp + 1e-8) - beta * tmp)
         
