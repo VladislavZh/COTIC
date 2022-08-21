@@ -122,5 +122,5 @@ class ExtrHeadEventModule(LightningModule):
 
     def configure_optimizers(self):
         optimizer1 = get_optimizer(self.hparams.optimizers[0]['name'], self.net.parameters(), self.hparams.optimizers[0]['params'])
-        optimizer2 = get_optimizer(self.hparams.optimizers[1]['name'], nn.ModuleList([self.net.parameters(),self.head.parameters()]).parameters(), self.hparams.optimizers[1]['params'])
+        optimizer2 = get_optimizer(self.hparams.optimizers[1]['name'], torch.nn.ModuleList([self.net.parameters(),self.head.parameters()]).parameters(), self.hparams.optimizers[1]['params'])
         return [optimizer1, optimizer2], []
