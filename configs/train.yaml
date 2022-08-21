@@ -6,7 +6,7 @@ defaults:
   - datamodule: base_datamodule.yaml
   - model: ccnn.yaml
   - callbacks: default.yaml
-  - logger: comet.yaml # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
+  - logger: tensorboard.yaml # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
   - trainer: default.yaml
   - log_dir: default.yaml
 
