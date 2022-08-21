@@ -144,16 +144,18 @@ class CCNNMetrics(MetricsCore):
         
         bs, _, num_types = all_lambda.shape
         
+        alpha = 1.01
+        beta = 0.001
+        tmp = all_lambda[non_pad_mask.bool()]
+        gamma_reg = torch.sum((alpha - 1) * torch.log(tmp + 1e-8) - beta * tmp)
+        
         between_lambda = all_lambda.transpose(1,2)[:,:,1:].reshape(bs, num_types, event_time.shape[1]-1, num_samples + 1)[...,:-1].transpose(1,2)
-        print('Simu max:',np.max(between_lambda.detach().cpu().numpy()))
-        print('Simu min:',np.min(between_lambda[between_lambda>0].detach().cpu().numpy()))
-        print('Simu mean:',np.mean(between_lambda[between_lambda>0].detach().cpu().numpy()))
 
         diff_time = (event_time[:, 1:] - event_time[:, :-1]) * non_pad_mask[:, 1:]
         between_lambda = torch.sum(between_lambda, dim=(2,3)) / num_samples
 
         unbiased_integral = between_lambda * diff_time
-        return unbiased_integral
+        return unbiased_integral, gamma_reg
     
     def event_and_non_event_log_likelihood(
         self,
@@ -177,19 +179,16 @@ class CCNNMetrics(MetricsCore):
         all_lambda = pl_module.net.final(event_time, event_time, enc_output, non_pad_mask.bool(), 0)
 
         type_lambda = torch.sum(all_lambda[:,1:,:] * type_mask, dim=2) #shape = (bs, L)
-        print('True max:',np.max(type_lambda.detach().cpu().numpy()))
-        print('True min:',np.min(type_lambda[type_lambda>0].detach().cpu().numpy()))
-        print('True mean:',np.mean(type_lambda[type_lambda>0].detach().cpu().numpy()))
-
+        
         # event log-likelihood
         event_ll = self.compute_event(type_lambda, non_pad_mask[:,1:])
         event_ll = torch.sum(event_ll, dim=-1)
 
         # non-event log-likelihood, MC integration
-        non_event_ll = self.compute_integral_unbiased(pl_module.net, enc_output, event_time, non_pad_mask, type_mask, self.sim_size)
+        non_event_ll, gamma_reg = self.compute_integral_unbiased(pl_module.net, enc_output, event_time, non_pad_mask, type_mask, self.sim_size)
         non_event_ll = torch.sum(non_event_ll, dim=-1)
 
-        return event_ll, non_event_ll
+        return event_ll, non_event_ll, gamma_reg
     
     def compute_log_likelihood_per_event(
         self,
@@ -209,7 +208,7 @@ class CCNNMetrics(MetricsCore):
         return:
             log_likelihood_per_seq - torch.Tensor, 1d Tensor with log likelihood per event prediction, shape = (bs,)
         """
-        event_ll, non_event_ll = self.event_and_non_event_log_likelihood(
+        event_ll, non_event_ll, _ = self.event_and_non_event_log_likelihood(
             pl_module,
             outputs[0],
             inputs[0],
@@ -261,7 +260,7 @@ class CCNNMetrics(MetricsCore):
         return:
             loss - torch.Tensor, loss for backpropagation
         """
-        event_ll, non_event_ll = self.event_and_non_event_log_likelihood(
+        event_ll, non_event_ll, gamma_reg = self.event_and_non_event_log_likelihood(
             pl_module,
             outputs[0],
             inputs[0],
@@ -271,4 +270,4 @@ class CCNNMetrics(MetricsCore):
         type_loss = self.type_loss(outputs[1][1][:,1:], inputs[1])
         time_loss = self.time_loss(outputs[1][0][:,1:], inputs[0], inputs[1])
         
-        return ll_loss, type_loss + time_loss
+        return ll_loss - gamma_reg, type_loss + time_loss
