@@ -31,6 +31,7 @@ information provided below.
 ![](./pictures/Wavenet.png)
 
 * Transformer Hawkes
+
 ![](./pictures/Transformer_Hawkes.drawio.png)
 
 ## Metrics and comparison table
