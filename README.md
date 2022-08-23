@@ -27,7 +27,11 @@ information provided below.
 
 
 ## Architecture of model
-![Continuous CNN](./pictures/CNN.png)
+* WaveNet architecture with temporal encoding and intensity interpolation
+![](./pictures/Wavenet.png)
+
+* Transformer Hawkes
+![](./pictures/Transformer_Hawkes.drawio.png)
 
 ## Metrics and comparison table
 
@@ -41,7 +45,14 @@ CCNN|1337.1|
 	
 	
 
-## Datasets description
+## Datasets
+
+* LinkedIn
+* Amazon
+* IPTV
+* Synthetic Hawkes processes
+
+The datasets are taken from [cloud drive](https://drive.google.com/drive/folders/1xSjHx7SQDEefgCuAeP21NLOabIpL13XH).
 
 
 ## How to run
