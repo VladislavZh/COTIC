@@ -27,7 +27,7 @@ information provided below.
 
 
 ## Architecture of model
-![Continuous CNN](https://github.com/VladislavZh/CCNN/tree/ideas/preprocessing/pictures/CNN.png)
+![Continuous CNN](../preprocessing/pictures/CNN.png)
 
 ## Metrics and comparison table
 
