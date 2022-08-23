@@ -27,7 +27,7 @@ information provided below.
 
 
 ## Architecture of model
-![Continuous CNN](../preprocessing/pictures/CNN.png)
+![Continuous CNN](./pictures/CNN.png)
 
 ## Metrics and comparison table
 
