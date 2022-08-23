@@ -29,10 +29,11 @@ information provided below.
 ## Architecture of model
 * WaveNet architecture with temporal encoding and intensity interpolation
 ![](./pictures/Wavenet.png)
-
+ 
 * Transformer Hawkes
 
-![](./pictures/Transformer_Hawkes.drawio.png)
+<img src="./pictures/Transformer_Hawkes.drawio.png" width="400" />
+ 
 
 ## Metrics and comparison table
 
