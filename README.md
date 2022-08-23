@@ -23,7 +23,7 @@ the code and the features, you can look at the
 information provided below.
 
 ## Architecture of model
-![Image alt](https://github.com/{username}/{repository}/raw/{branch}/{path}/image.png)
+![Continuous CNN](https://github.com/VladislavZh/CCNN/tree/ideas/preprocessing/pictures/CNN.png)
 ## The main logical parts of our project 
 
 - **Predefined Structure**: clean and scalable so that work can easily be extended and replicated | [#Project Structure](#project-structure)
