@@ -21,6 +21,9 @@ Here is a convenient pipeline for working with them and
 launching them. To get acquainted with the structure of 
 the code and the features, you can look at the 
 information provided below.
+
+## Architecture of model
+![Image alt](https://github.com/{username}/{repository}/raw/{branch}/{path}/image.png)
 ## The main logical parts of our project 
 
 - **Predefined Structure**: clean and scalable so that work can easily be extended and replicated | [#Project Structure](#project-structure)
