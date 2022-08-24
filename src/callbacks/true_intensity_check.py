@@ -20,7 +20,7 @@ class PrintingCallback(Callback):
         self.data_path = data_path
         files = os.listdir(self.data_path)
         if 'process_params.json' in files:
-            with open('sinth_dset/process_params.json', 'r') as f:
+            with open(data_path+'/process_params.json', 'r') as f:
                 params = json.load(f)
             self.true_model = Hawkes(torch.Tensor(params['baseline']), torch.Tensor(params['adjacency']), torch.Tensor(params['decay']))
         else:
