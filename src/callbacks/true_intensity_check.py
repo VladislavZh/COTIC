@@ -1,6 +1,8 @@
 from pytorch_lightning.callbacks import Callback
 import json
 import numpy as np
+import torch
+from typing import Tuple
 
 from .hawkes import Hawkes
 
