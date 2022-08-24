@@ -3,6 +3,7 @@ import json
 import numpy as np
 import torch
 from typing import Tuple
+import os
 
 from .hawkes import Hawkes
 
