@@ -70,18 +70,22 @@ class PrintingCallback(Callback):
         times = times.unsqueeze(0)
         events = events.unsqueeze(0)
         
-        full_times = self.__add_sim_times(times, self.sim_size)
-        
+        full_times = self.__add_sim_times(torch.concat([torch.zeros(1,1),times], dim = 1), self.sim_size)
+        print(full_times.shape)
         if self.true_model:
             tracked_intensity_true = []
             for t in full_times[0]:
                 tracked_intensity_true.append(float(torch.sum(self.true_model.intensity(t.cpu(), times[0].cpu(), events[0].cpu()))))
             tracked_intensity_true = np.array(tracked_intensity_true)
         
-        enc_output = pl_module(times, events)
+        times = times.to(pl_module.device)
+        events = events.to(pl_module.device)
+        full_times = full_times.to(pl_module.device)
+
+        enc_output = pl_module.net(times, events)
         event_time = torch.concat([torch.zeros(times.shape[0],1).to(times.device), times], dim = 1)
         non_pad_mask = torch.concat([torch.ones(event_time.shape[0],1).to(event_time.device),  events.ne(0).long()], dim = 1).long()
-        tracked_intensity = torch.sum(model.final(full_times, event_time, enc_output, non_pad_mask, self.sim_size), dim=-1).detach().cpu().numpy() # shape = (bs, (num_samples + 1) * L + 1, num_types)
+        tracked_intensity = torch.sum(pl_module.net.final(full_times, event_time, enc_output, non_pad_mask, self.sim_size), dim=-1).detach().cpu().numpy() # shape = (bs, (num_samples + 1) * L + 1, num_types)
         
         fig = plt.figure(figsize=(16,9), dpi=300)
         if self.true_model:
