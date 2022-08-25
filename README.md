@@ -27,6 +27,10 @@ information provided below.
 
 
 ## Architecture of model
+
+* Continuous time CNN
+![](./pictures/CNN_for_1D.drawio (1).png)
+
 * WaveNet architecture with temporal encoding and intensity interpolation
 ![](./pictures/Wavenet.png)
  
