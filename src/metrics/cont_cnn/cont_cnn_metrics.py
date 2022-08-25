@@ -144,18 +144,17 @@ class CCNNMetrics(MetricsCore):
         
         return bos_full_times
     
-    @classmethod
-    def compute_integral_unbiased(cls, model, enc_output, event_time, non_pad_mask, type_mask, num_samples):
+    def compute_integral_unbiased(self, model, enc_output, event_time, non_pad_mask, type_mask, num_samples):
         """ Log-likelihood of non-events, using Monte Carlo integration. """
         
-        bos_full_times = cls.__add_sim_times(event_time, num_samples)
+        bos_full_times = self.__add_sim_times(event_time, num_samples)
         all_lambda = model.final(bos_full_times, event_time, enc_output, non_pad_mask.bool(), num_samples) # shape = (bs, (num_samples + 1) * L + 1, num_types)
         
         bs, _, num_types = all_lambda.shape
         
         if self.gamma_reg:
             tmp = all_lambda[all_lambda > 0]
-            gamma_reg = torch.sum((alpha - 1) * torch.log(tmp + 1e-8) - beta * tmp)
+            gamma_reg = torch.sum((self.alpha - 1) * torch.log(tmp + 1e-8) - self.beta * tmp)
         else:
             gamma_reg = None
         
