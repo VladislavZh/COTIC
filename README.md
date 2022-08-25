@@ -89,7 +89,7 @@ python train.py trainer.gpus=1
 
 Train different model architectures with comet logger:
 
-Change api_key, project_name, workspace in [configs/logger/comet.yaml](configs/loggers/comet.yaml) 
+Change api_key, project_name, workspace in [configs/logger/comet.yaml](configs/logger/comet.yaml) 
 
 ```bash
 python train.py --config-name=train.yaml data_dir=/content/data/ 
