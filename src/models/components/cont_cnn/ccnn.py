@@ -70,4 +70,4 @@ class CCNN(nn.Module):
         out = self.final_list[0](times, true_times, true_features, non_pad_mask, sim_size)
         for layer in self.final_list[1:]:
             out = layer(out)
-        return out/100
+        return out
