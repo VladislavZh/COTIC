@@ -223,7 +223,7 @@ class CCNNMetrics(MetricsCore):
             inputs[0],
             inputs[1]
         )
-        lengths = torch.mean(inputs[1].ne(0).type(torch.float), dim = 1)
+        lengths = torch.sum(inputs[1].ne(0).type(torch.float), dim = 1)
         results = (event_ll - non_event_ll)/lengths
         return results
     
