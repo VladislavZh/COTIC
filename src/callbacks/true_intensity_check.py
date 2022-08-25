@@ -15,9 +15,11 @@ class PrintingCallback(Callback):
     def __init__(
         self,
         data_path: str,
+        work_dir: str,
         sim_size = 40
     ) -> None:
         self.data_path = data_path
+        self.work_dir = work_dir
         files = os.listdir(self.data_path)
         if 'process_params.json' in files:
             with open(data_path+'/process_params.json', 'r') as f:
@@ -94,7 +96,7 @@ class PrintingCallback(Callback):
             plt.plot(full_times.detach().cpu().numpy()[0], tracked_intensity_true, label = "True model")
         plt.plot(full_times.detach().cpu().numpy()[0], tracked_intensity, label = "Predicted model")
         plt.legend(loc="upper right", bbox_to_anchor=(1,1))
-        plt.savefig('imgs/{}.pdf'.format(self.idx))
+        plt.savefig(self.work_dir+'/imgs/{}.pdf'.format(self.idx))
         self.idx += 1
         self.experiment.log_figure(figure=plt)
         

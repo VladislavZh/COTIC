@@ -13,12 +13,21 @@ class CCNNMetrics(MetricsCore):
         self,
         return_time_metric,
         event_type_metric,
-        sim_size = 100
+        sim_size = 100,
+        gamma_reg = False,
+        alpha = None,
+        beta = None
     ):
         super().__init__(return_time_metric, event_type_metric)
         self.type_loss_func = torch.nn.CrossEntropyLoss(ignore_index=-1, reduction='none')
         self.return_time_loss_func = torch.nn.MSELoss()
         self.sim_size = sim_size
+        self.gamma_reg = gamma_reg
+        if self.gamma_reg:
+            assert alpha is not None
+            assert beta is not None
+        self.alpha = alpha
+        self.beta = beta
         
     @staticmethod
     def get_return_time_target(
@@ -144,10 +153,11 @@ class CCNNMetrics(MetricsCore):
         
         bs, _, num_types = all_lambda.shape
         
-        alpha = 1.01
-        beta = 0.001
-        tmp = all_lambda[all_lambda > 0]
-        gamma_reg = torch.sum((alpha - 1) * torch.log(tmp + 1e-8) - beta * tmp)
+        if self.gamma_reg:
+            tmp = all_lambda[all_lambda > 0]
+            gamma_reg = torch.sum((alpha - 1) * torch.log(tmp + 1e-8) - beta * tmp)
+        else:
+            gamma_reg = None
         
         between_lambda = all_lambda.transpose(1,2)[:,:,1:].reshape(bs, num_types, event_time.shape[1]-1, num_samples + 1)[...,:-1].transpose(1,2)
 
@@ -270,4 +280,7 @@ class CCNNMetrics(MetricsCore):
         type_loss = self.type_loss(outputs[1][1][:,1:], inputs[1])
         time_loss = self.time_loss(outputs[1][0][:,1:], inputs[0], inputs[1])
         
-        return ll_loss - gamma_reg, type_loss + time_loss
+        if gamma_reg is not None:
+            return ll_loss - gamma_reg, type_loss + time_loss
+        else:
+            return ll_loss, type_loss + time_loss

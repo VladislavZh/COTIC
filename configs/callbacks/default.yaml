@@ -26,3 +26,4 @@ rich_progress_bar:
 true_intensity_check:
   _target_: src.callbacks.true_intensity_check.PrintingCallback
   data_path: ${data_dir}
+  work_dir: ${original_work_dir}
