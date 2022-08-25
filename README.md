@@ -92,7 +92,7 @@ Train different model architectures with comet logger:
 Change api_key, project_name, workspace in [configs/logger/comet.yaml](configs/logger/comet.yaml) 
 
 ```bash
-python train.py --config-name=train.yaml data_dir=/content/data/ 
+python train.py --config-name=train.yaml data_dir=/content/data/ model.net.num_types=count_of_event_type
 ```
 
 *data_dir* should be a folder with csv files where each file represent a sequence with event and timestamp.
