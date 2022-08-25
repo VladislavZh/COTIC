@@ -200,7 +200,7 @@ class ContConv1dSim(nn.Module):
             dt_mask - torch.Tensor of shape = (bs, kernel_size, (sim_size+1)*(max_len-1)+1)), bool tensor that indicates delta_times true values
         """
         # parameters
-        padding = (kernel_size - 1) * 1
+        padding = (kernel_size) * 1
         kernel = torch.eye(kernel_size).unsqueeze(1).to(times.device)
         in_channels = true_features.shape[2]
         
@@ -211,9 +211,9 @@ class ContConv1dSim(nn.Module):
         
         # deleting extra values
         if padding>0:
-            pre_conv_times = pre_conv_times[:,:,:-padding]
-            pre_conv_features = pre_conv_features[:,:,:-padding]
-            dt_mask = dt_mask[:,:,:-padding] * non_pad_mask.unsqueeze(1)
+            pre_conv_times = pre_conv_times[:,:,:-(padding+1)]
+            pre_conv_features = pre_conv_features[:,:,:-(padding+1)]
+            dt_mask = dt_mask[:,:,:-(padding+1)] * non_pad_mask.unsqueeze(1)
         else:
             dt_mask = dt_mask * non_pad_mask.unsqueeze(1)
         
