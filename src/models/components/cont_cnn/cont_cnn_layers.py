@@ -127,7 +127,7 @@ class ContConv1d(nn.Module):
         delta_times, features_kern, dt_mask = self.__conv_matrix_constructor(times, features, non_pad_mask, self.kernel_size, self.dilation, self.include_zero_lag)
         bs, k, L = delta_times.shape
         kernel_values = torch.zeros(bs,k,L,self.in_channels, self.out_channels).to(times.device)
-        kernel_values[dt_mask,:,:] = self.kernel(self.__temporal_enc(delta_times[dt_mask]))
+        kernel_values[dt_mask,:,:] = self.kernel(delta_times[dt_mask].unsqueeze(-1))#self.kernel(self.__temporal_enc(delta_times[dt_mask]))
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1,3))
         if self.skip_connection:
@@ -261,7 +261,7 @@ class ContConv1dSim(nn.Module):
 
         bs, k, L = delta_times.shape
         kernel_values = torch.zeros(bs,k,L,self.in_channels, self.out_channels).to(times.device)
-        kernel_values[dt_mask,:,:] = self.kernel(self.__temporal_enc(delta_times[dt_mask]))
+        kernel_values[dt_mask,:,:] = self.kernel(delta_times[dt_mask].unsqueeze(-1))#self.kernel(self.__temporal_enc(delta_times[dt_mask]))
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1,3))
         
