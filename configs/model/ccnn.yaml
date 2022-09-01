@@ -22,7 +22,7 @@ metrics:
     _target_: src.utils.metrics.Accuracy
   sim_size: 40
   gamma_reg: True
-  alpha: 0.007
+  alpha: 1.007
   beta: 1e-5
 optimizers:
   0:
