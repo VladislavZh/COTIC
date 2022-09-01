@@ -23,7 +23,7 @@ metrics:
   sim_size: 40
   gamma_reg: True
   alpha: 1.007
-  beta: 1e-5
+  beta: 1e-1
 optimizers:
   0:
       name: adam
