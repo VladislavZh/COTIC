@@ -26,6 +26,18 @@ the code and the features, you can look at the
 information provided below.
 
 
+## Architecture of model
+
+* Continuous time CNN
+<img src="./pictures/CNN_for_1D.png" width="500" />
+ 
+* WaveNet architecture with temporal encoding and intensity interpolation
+![](./pictures/Wavenet.png)
+ 
+* Transformer Hawkes
+
+<img src="./pictures/Transformer_Hawkes.drawio.png" width="400" />
+ 
 
 ## Metrics and comparison table
 
@@ -39,7 +51,14 @@ CCNN|1337.1|
 	
 	
 
-## Datasets description
+## Datasets
+
+* LinkedIn
+* Amazon
+* IPTV
+* Synthetic Hawkes processes
+
+The datasets are taken from [cloud drive](https://drive.google.com/drive/folders/1xSjHx7SQDEefgCuAeP21NLOabIpL13XH).
 
 
 ## How to run
@@ -74,10 +93,10 @@ python train.py trainer.gpus=1
 
 Train different model architectures with comet logger:
 
-Change api_key, project_name, workspace in [configs/logger/comet.yaml](configs/loggers/comet.yaml) 
+Change api_key, project_name, workspace in [configs/logger/comet.yaml](configs/logger/comet.yaml) 
 
 ```bash
-python train.py --config-name=train.yaml data_dir=/content/data/ 
+python train.py --config-name=train.yaml data_dir=/content/data/ model.net.num_types=count_of_event_type
 ```
 
 *data_dir* should be a folder with csv files where each file represent a sequence with event and timestamp.
