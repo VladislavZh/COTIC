@@ -92,7 +92,7 @@ class RMTPPModule(LightningModule):
         time_logits, event_logits = self.forward(time_input, event_input)
         loss_time = self.time_criterion(time_logits.view(-1), time_target.view(-1))
         loss_event = self.event_criterion(
-            event_logits.view(-1, self.n_class), event_target.view(-1)
+            event_logits.view(-1, self.num_class), event_target.view(-1)
         )
         loss = self.alpha * loss_time + loss_event
 
@@ -139,7 +139,7 @@ class RMTPPModule(LightningModule):
         )
 
     def validation_step(self, batch: Any, batch_idx: int):
-        loss, loss_time, loss_event = self.step(batch, "train")
+        loss, loss_time, loss_event = self.step(batch)
         self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
 
         return {"loss": loss}

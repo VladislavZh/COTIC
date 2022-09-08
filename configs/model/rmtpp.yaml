@@ -1,12 +1,12 @@
 _target_: src.models.rmtpp_model.RMTPPModule
 
-num_class: 7,
-emb_dim: 10,
-hid_dim: 32,
-mlp_dim: 16,
-dropout: 0.1,
-alpha: 0.05,
-lr: 0.001,
+num_class: 7
+emb_dim: 10
+hid_dim: 32
+mlp_dim: 16
+dropout: 0.1
+alpha: 0.05
+lr: 0.001
 
 metrics:
   _target_: src.metrics.cont_cnn.CCNNMetrics

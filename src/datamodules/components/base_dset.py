@@ -35,7 +35,7 @@ class EventData(Dataset):
         
         for i, l in enumerate(lengths):
             tensor_times[i,:l] = times[i]
-            tensor_events[i,:l] = events[i] + 1
+            tensor_events[i,:l] = events[i]
         
         return tensor_times, tensor_events.long()
     

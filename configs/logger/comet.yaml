@@ -2,7 +2,7 @@
 
 comet:
  _target_: pytorch_lightning.loggers.comet.CometLogger
- api_key: eTfGsxdNWCvov8CuHEC0ug9ko
- project_name: amz-exps
- workspace: vladislavzh
+ api_key: L7rrUpzhTegxzPp5riPlWustd
+ project_name: baselines
+ workspace: vgrabar
  
