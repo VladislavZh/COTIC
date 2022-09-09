@@ -21,7 +21,7 @@ metrics:
   event_type_metric:
     _target_: src.utils.metrics.Accuracy
   sim_size: 10
-  gamma_reg: False
+  gamma_reg: True
   alpha: 1.007
   beta: 1e-1
 optimizers:
