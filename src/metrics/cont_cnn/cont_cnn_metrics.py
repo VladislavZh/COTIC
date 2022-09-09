@@ -155,7 +155,7 @@ class CCNNMetrics(MetricsCore):
         if self.gamma_reg:
             tmp = all_lambda[all_lambda > 0]
             #gamma_reg = torch.sum((self.alpha - 1) * torch.log(tmp + 1e-8) - self.beta * tmp)
-            gamma_reg = -0.1*torch.sum(torch.abs(tmp - 2))
+            gamma_reg = -0.1*torch.sum(torch.abs(tmp - 0.0252))
         else:
             gamma_reg = None
         
