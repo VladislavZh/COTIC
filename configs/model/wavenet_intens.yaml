@@ -8,18 +8,18 @@ net:
     nb_filters: 16
     hidden_size: 32
   in_channels: 32
-  num_types: 8
+  num_types: 64
   interpolator:
     _target_: src.models.components.baselines.wavenet_intens.IntensPredictor
     in_channels: 32
     hidden1: 64
     hidden2: 128
     hidden3: 64
-    num_types: 8
+    num_types: 64
 head:
   _target_: src.models.components.baselines.wavenet_intens.PredictionHead
   in_channels: 32
-  num_types: 8
+  num_types: 64
 metrics:
   _target_: src.metrics.baselines.wavenet_intens.WNIntensMetrics
   return_time_metric:
