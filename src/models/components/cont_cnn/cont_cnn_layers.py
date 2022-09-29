@@ -19,8 +19,7 @@ class ContConv1d(nn.Module):
         out_channels: int,
         dilation: int = 1,
         dropout=0.1,
-        include_zero_lag: bool = False,
-        skip_connection: bool = False
+        include_zero_lag: bool = False
     ):
         """
         args:
@@ -46,7 +45,11 @@ class ContConv1d(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.include_zero_lag = include_zero_lag
-        self.skip_connection = skip_connection
+        self.skip_connection = = nn.Conv1d(in_channels=in_channels,
+                                           out_channels=out_channels,
+                                           kernel_size=1)
+        
+        self.leaky_relu = nn.LeakyReLU(0.1)
         
         self.position_vec = torch.tensor(
             [math.pow(10000.0, 2.0 * (i // 2) / self.in_channels) for i in range(self.in_channels)])
@@ -129,9 +132,8 @@ class ContConv1d(nn.Module):
         kernel_values = torch.zeros(bs,k,L,self.in_channels, self.out_channels).to(times.device)
         kernel_values[dt_mask,:,:] = self.kernel(delta_times[dt_mask].unsqueeze(-1))#self.kernel(self.__temporal_enc(delta_times[dt_mask]))
         out = features_kern.unsqueeze(-1) * kernel_values
-        out = out.sum(dim=(1,3))
-        if self.skip_connection:
-            out = out + features
+        out = self.leaky_relu(out.sum(dim=(1,3)))
+        out = out + self.skip_connection(features)
         #out = self.dropout(self.norm(out))
         out = self.norm(out)
         return out

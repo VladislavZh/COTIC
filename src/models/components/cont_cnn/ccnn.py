@@ -22,13 +22,12 @@ class CCNN(nn.Module):
         self.event_emb = nn.Embedding(num_types + 2, in_channels, padding_idx=0)
         
         self.in_channels = [in_channels] + [nb_filters] * nb_layers
-        skip_connections = [False] + [True] * nb_layers
         include_zero_lag = [True] + [True] * nb_layers
         self.dilation_factors = [2 ** i for i in range(0, nb_layers)]
 
         self.num_types = num_types
         
-        self.convs = nn.ModuleList([ContConv1d(LinearKernel(self.in_channels[i], nb_filters), kernel_size, self.in_channels[i], nb_filters, self.dilation_factors[i], include_zero_lag[i], skip_connections[i]) for i in range(nb_layers)])
+        self.convs = nn.ModuleList([ContConv1d(LinearKernel(self.in_channels[i], nb_filters), kernel_size, self.in_channels[i], nb_filters, self.dilation_factors[i], include_zero_lag[i]) for i in range(nb_layers)])
         
         self.final_list = nn.ModuleList([ContConv1dSim(LinearKernel(nb_filters, nb_filters), 1, nb_filters, nb_filters), nn.ReLU(), nn.Linear(nb_filters, num_types), nn.Softplus()])
         
