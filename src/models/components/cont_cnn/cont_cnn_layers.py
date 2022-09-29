@@ -45,7 +45,7 @@ class ContConv1d(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.include_zero_lag = include_zero_lag
-        self.skip_connection = = nn.Conv1d(in_channels=in_channels,
+        self.skip_connection = nn.Conv1d(in_channels=in_channels,
                                            out_channels=out_channels,
                                            kernel_size=1)
         
