@@ -36,9 +36,6 @@ class ContConv1d(nn.Module):
         assert in_channels >= 1
         assert out_channels >= 1
         
-        if skip_connection:
-            assert in_channels == out_channels
-        
         self.kernel = kernel
         self.kernel_size = kernel_size
         self.dilation = dilation
