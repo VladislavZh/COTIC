@@ -129,7 +129,7 @@ class ContConv1d(nn.Module):
         kernel_values = torch.zeros(bs,k,L,self.in_channels, self.out_channels).to(times.device)
         kernel_values[dt_mask,:,:] = self.kernel(delta_times[dt_mask].unsqueeze(-1))#self.kernel(self.__temporal_enc(delta_times[dt_mask]))
         out = features_kern.unsqueeze(-1) * kernel_values
-        out = self.leaky_relu(out.sum(dim=(1,3)))
+        out = out.sum(dim=(1,3))
         out = out + self.skip_connection(features.transpose(1,2)).transpose(1,2)
         #out = self.dropout(self.norm(out))
         out = self.norm(out)

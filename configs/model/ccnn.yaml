@@ -20,7 +20,7 @@ metrics:
     _target_: src.utils.metrics.MAE
   event_type_metric:
     _target_: src.utils.metrics.Accuracy
-  sim_size: 40
+  sim_size: 10
   gamma_reg: False
   alpha: 1.007
   beta: 1e-1
