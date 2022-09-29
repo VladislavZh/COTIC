@@ -51,7 +51,7 @@ class ContConv1d(nn.Module):
         self.position_vec = torch.tensor(
             [math.pow(10000.0, 2.0 * (i // 2) / self.in_channels) for i in range(self.in_channels)])
         
-        self.norm = nn.LayerNorm(out_channels)
+        self.norm = nn.BatchNorm1d(out_channels)
         self.dropout = nn.Dropout(dropout)
         
     def __temporal_enc(self, time):
@@ -132,7 +132,7 @@ class ContConv1d(nn.Module):
         out = out.sum(dim=(1,3))
         out = out + self.skip_connection(features.transpose(1,2)).transpose(1,2)
         #out = self.dropout(self.norm(out))
-        out = self.norm(out)
+        out = self.norm(out.transpose(1,2)).transpose(1,2)
         return out
 
 
