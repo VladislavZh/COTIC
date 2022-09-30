@@ -4,12 +4,12 @@ import torch
 import numpy as np
 from pytorch_lightning import LightningModule
 
-from src.utils.metrics import MetricsCore
+from src.utils.metrics.scores import RocAuc, MAE
 
 
-class RMTPPModule(LightningModule):
+class RMTPPModule(torch.nn.Module):
     """
-    Base event sequence lightning module
+    Recurrent Marked Temporal Point Process (Du et al. 2016) lightning module
     """
 
     def __init__(
@@ -21,7 +21,7 @@ class RMTPPModule(LightningModule):
         dropout: float,
         alpha: float,
         lr: float,
-        metrics: MetricsCore,
+        weight_decay: float,
     ):
 
         super().__init__()
@@ -41,29 +41,30 @@ class RMTPPModule(LightningModule):
         self.event_linear = torch.nn.Linear(in_features=mlp_dim, out_features=num_class)
         self.time_linear = torch.nn.Linear(in_features=mlp_dim, out_features=1)
 
-        self.train_metrics = metrics
-        self.val_metrics = metrics.copy_empty()
-        self.test_metrics = metrics.copy_empty()
-        # losses
+        self.intensity_w = torch.nn.Parameter(torch.tensor(0.1, dtype=torch.float))
+        self.intensity_b = torch.nn.Parameter(torch.tensor(0.1, dtype=torch.float))
+        self.alpha = alpha
+        self.lr = lr
+        self.weight_decay = weight_decay
+
+        self.time_criterion = self.RMTPPLoss
         self.class_weights = np.ones(self.num_class)
+        self.labels = np.arange(1, self.num_class + 1)
         self.event_criterion = torch.nn.CrossEntropyLoss(
             weight=torch.FloatTensor(self.class_weights)
         )
-        self.intensity_w = torch.nn.Parameter(torch.tensor(0.1, dtype=torch.float))
-        self.intensity_b = torch.nn.Parameter(torch.tensor(0.1, dtype=torch.float))
-        self.time_criterion = self.RMTPPLoss
 
-        self.alpha = alpha
-        self.lr = lr
+        self.time_metric = MAE
+        self.event_metric = RocAuc
 
-    def RMTPPLoss(self, pred, gold):
+    def RMTPPLoss(self, pred, target):
         loss = torch.mean(
             pred
-            + self.intensity_w * gold
+            + self.intensity_w * target
             + self.intensity_b
             + (
                 torch.exp(pred + self.intensity_b)
-                - torch.exp(pred + self.intensity_w * gold + self.intensity_b)
+                - torch.exp(pred + self.intensity_w * target + self.intensity_b)
             )
             / self.intensity_w
         )
@@ -84,7 +85,7 @@ class RMTPPModule(LightningModule):
 
         return time_logits, event_logits
 
-    def step(self, batch: Any):
+    def step(self, batch: Any, stage: str):
 
         time_tensor, event_tensor = batch
         time_input, time_target = time_tensor[:, :-1], time_tensor[:, -1]
@@ -96,90 +97,154 @@ class RMTPPModule(LightningModule):
         )
         loss = self.alpha * loss_time + loss_event
 
-        return loss, loss_time, loss_event
-
-    def predict_step(self, batch: Any):
-
-        time_tensor, event_tensor = batch
-        time_input, time_target = time_tensor[:, :-1], time_tensor[:, -1]
-        event_input, event_target = event_tensor[:, :-1], event_tensor[:, -1]
-        time_logits, event_logits = self.forward(time_input, event_input)
         event_pred = np.argmax(event_logits.detach().cpu().numpy(), axis=-1)
         time_pred = time_logits.detach().cpu().numpy()
 
-        return event_pred, time_pred
+        return (
+            loss,
+            loss_time,
+            loss_event,
+            event_target,
+            time_target,
+            event_pred,
+            time_pred,
+        )
 
     def training_step(self, batch: Any, batch_idx: int):
-        loss, loss_time, loss_event = self.step(batch)
+        (
+            loss,
+            loss_time,
+            loss_event,
+            event_target,
+            time_target,
+            event_pred,
+            time_pred,
+        ) = self.step(batch)
 
         self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
+        self.log(
+            "train/loss_time", loss_time, on_step=False, on_epoch=True, prog_bar=False
+        )
+        self.log(
+            "train/loss_event", loss_event, on_step=False, on_epoch=True, prog_bar=False
+        )
 
-        return {"loss": loss}
+        return {
+            "loss": loss,
+            "loss_time": loss_time,
+            "loss_event": loss_event,
+            "event_target": event_target,
+            "time_target": time_target,
+            "event_pred": event_pred,
+            "time_pred": time_pred,
+        }
 
     def training_epoch_end(self, outputs: List[Any]):
-        ll, return_time_metric, event_type_metric = self.train_metrics.compute_metrics()
-        self.train_metrics.clear_values()
+        
+        predicted_events = outputs[0]["event_pred"]
+        gt_events = outputs[0]["event_target"]
+        predicted_times = outputs[0]["time_pred"]
+        gt_times = outputs[0]["time_target"]
+        for i in range(1, len(outputs)):
+            predicted_events = torch.cat([predicted_events, outputs[i]["event_pred"]], dim=0)
+            gt_events = torch.cat([gt_events, outputs[i]["event_target"]], dim=0)
+            predicted_times = torch.cat([predicted_times, outputs[i]["time_pred"]], dim=0)
+            gt_times = torch.cat([gt_times, outputs[i]["time_target"]], dim=0)
 
-        self.log(
-            "train/log_likelihood", ll, on_step=False, on_epoch=True, prog_bar=True
-        )
-        self.log(
-            "train/return_time_metric",
-            return_time_metric,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-        )
-        self.log(
-            "train/event_type_metric",
-            event_type_metric,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-        )
+        rocauc_train = self.event_metric(predicted_events, gt_events)
+        mae_train = self.time_metric(predicted_times, gt_times)
+        self.log("train/rocauc", rocauc_train, prog_bar=True)
+        self.log("train/mae", mae_train, prog_bar=True)
 
     def validation_step(self, batch: Any, batch_idx: int):
-        loss, loss_time, loss_event = self.step(batch)
-        self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
+        (
+            loss,
+            loss_time,
+            loss_event,
+            event_target,
+            time_target,
+            event_pred,
+            time_pred,
+        ) = self.step(batch)
 
-        return {"loss": loss}
+        self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
+        self.log(
+            "val/loss_time", loss_time, on_step=False, on_epoch=True, prog_bar=False
+        )
+        self.log(
+            "val/loss_event", loss_event, on_step=False, on_epoch=True, prog_bar=False
+        )
+
+        return {
+            "loss": loss,
+            "loss_time": loss_time,
+            "loss_event": loss_event,
+            "event_target": event_target,
+            "time_target": time_target,
+            "event_pred": event_pred,
+            "time_pred": time_pred,
+        }
 
     def validation_epoch_end(self, outputs: List[Any]):
-        ll, return_time_metric, event_type_metric = self.val_metrics.compute_metrics()
-        self.val_metrics.clear_values()
+        predicted_events = outputs[0]["event_pred"]
+        gt_events = outputs[0]["event_target"]
+        predicted_times = outputs[0]["time_pred"]
+        gt_times = outputs[0]["time_target"]
+        for i in range(1, len(outputs)):
+            predicted_events = torch.cat([predicted_events, outputs[i]["event_pred"]], dim=0)
+            gt_events = torch.cat([gt_events, outputs[i]["event_target"]], dim=0)
+            predicted_times = torch.cat([predicted_times, outputs[i]["time_pred"]], dim=0)
+            gt_times = torch.cat([gt_times, outputs[i]["time_target"]], dim=0)
 
-        self.log("val/log_likelihood", ll, on_step=False, on_epoch=True, prog_bar=True)
-        self.log(
-            "val/return_time_metric",
-            return_time_metric,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-        )
-        self.log(
-            "val/event_type_metric",
-            event_type_metric,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-        )
+        rocauc_val = self.event_metric(predicted_events, gt_events)
+        mae_val = self.time_metric(predicted_times, gt_times)
+        self.log("val/rocauc", rocauc_val, prog_bar=True)
+        self.log("val/mae", mae_val, prog_bar=True)
 
     def test_step(self, batch: Any, batch_idx: int):
-        loss, loss_time, loss_event = self.step(batch)
+        (
+            loss,
+            loss_time,
+            loss_event,
+            event_target,
+            time_target,
+            event_pred,
+            time_pred,
+        ) = self.step(batch)
 
         self.log("test/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
+        self.log(
+            "test/loss_time", loss_time, on_step=False, on_epoch=True, prog_bar=False
+        )
+        self.log(
+            "test/loss_event", loss_event, on_step=False, on_epoch=True, prog_bar=False
+        )
+
+        return {
+            "loss": loss,
+            "loss_time": loss_time,
+            "loss_event": loss_event,
+            "event_target": event_target,
+            "time_target": time_target,
+            "event_pred": event_pred,
+            "time_pred": time_pred,
+        }
 
     def test_epoch_end(self, outputs: List[Any]):
-        ll, return_time_metric, event_type_metric = self.test_metrics.compute_metrics()
-        self.test_metrics.clear_values()
+        predicted_events = outputs[0]["event_pred"]
+        gt_events = outputs[0]["event_target"]
+        predicted_times = outputs[0]["time_pred"]
+        gt_times = outputs[0]["time_target"]
+        for i in range(1, len(outputs)):
+            predicted_events = torch.cat([predicted_events, outputs[i]["event_pred"]], dim=0)
+            gt_events = torch.cat([gt_events, outputs[i]["event_target"]], dim=0)
+            predicted_times = torch.cat([predicted_times, outputs[i]["time_pred"]], dim=0)
+            gt_times = torch.cat([gt_times, outputs[i]["time_target"]], dim=0)
 
-        self.log("test/log_likelihood", ll, on_step=False, on_epoch=True)
-        self.log(
-            "test/return_time_metric", return_time_metric, on_step=False, on_epoch=True
-        )
-        self.log(
-            "test/event_type_metric", event_type_metric, on_step=False, on_epoch=True
-        )
+        rocauc_test = self.event_metric(predicted_events, gt_events)
+        mae_test = self.time_metric(predicted_times, gt_times)
+        self.log("test/rocauc", rocauc_test, prog_bar=True)
+        self.log("test/mae", mae_test, prog_bar=True)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(
