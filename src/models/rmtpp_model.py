@@ -4,10 +4,10 @@ import torch
 import numpy as np
 from pytorch_lightning import LightningModule
 
-from src.utils.metrics.scores import RocAuc, MAE
+from src.utils.metrics.scores import RocAuc, MAE, Accuracy
 
 
-class RMTPPModule(torch.nn.Module):
+class RMTPPModule(LightningModule):
     """
     Recurrent Marked Temporal Point Process (Du et al. 2016) lightning module
     """
@@ -55,7 +55,7 @@ class RMTPPModule(torch.nn.Module):
         )
 
         self.time_metric = MAE
-        self.event_metric = RocAuc
+        self.event_metric = Accuracy
 
     def RMTPPLoss(self, pred, target):
         loss = torch.mean(
@@ -77,7 +77,6 @@ class RMTPPModule(torch.nn.Module):
         lstm_input = torch.cat((event_embedding, input_time.unsqueeze(-1)), dim=-1)
         hidden_state, _ = self.lstm(lstm_input)
 
-        # hidden_state = torch.cat((hidden_state, input_time.unsqueeze(-1)), dim=-1)
         mlp_output = torch.tanh(self.mlp(hidden_state[:, -1, :]))
         mlp_output = self.mlp_dropout(mlp_output)
         event_logits = self.event_linear(mlp_output)
@@ -85,7 +84,7 @@ class RMTPPModule(torch.nn.Module):
 
         return time_logits, event_logits
 
-    def step(self, batch: Any, stage: str):
+    def step(self, batch: Any):
 
         time_tensor, event_tensor = batch
         time_input, time_target = time_tensor[:, :-1], time_tensor[:, -1]
@@ -96,9 +95,8 @@ class RMTPPModule(torch.nn.Module):
             event_logits.view(-1, self.num_class), event_target.view(-1)
         )
         loss = self.alpha * loss_time + loss_event
-
-        event_pred = np.argmax(event_logits.detach().cpu().numpy(), axis=-1)
-        time_pred = time_logits.detach().cpu().numpy()
+        event_pred = event_logits
+        time_pred = time_logits
 
         return (
             loss,
@@ -128,7 +126,6 @@ class RMTPPModule(torch.nn.Module):
         self.log(
             "train/loss_event", loss_event, on_step=False, on_epoch=True, prog_bar=False
         )
-
         return {
             "loss": loss,
             "loss_time": loss_time,
@@ -150,11 +147,17 @@ class RMTPPModule(torch.nn.Module):
             gt_events = torch.cat([gt_events, outputs[i]["event_target"]], dim=0)
             predicted_times = torch.cat([predicted_times, outputs[i]["time_pred"]], dim=0)
             gt_times = torch.cat([gt_times, outputs[i]["time_target"]], dim=0)
-
-        rocauc_train = self.event_metric(predicted_events, gt_events)
-        mae_train = self.time_metric(predicted_times, gt_times)
-        self.log("train/rocauc", rocauc_train, prog_bar=True)
-        self.log("train/mae", mae_train, prog_bar=True)
+    
+        event_metric_train = self.event_metric(predicted_events, gt_events)
+        time_metric_train = self.time_metric(predicted_times, gt_times)
+        print(predicted_events)
+        print(gt_events)
+        print(event_metric_train)
+        print("yo")
+        print(predicted_times)
+        print(gt_times)
+        self.log("train/accuracy", event_metric_train, prog_bar=True)
+        self.log("train/mae", time_metric_train, prog_bar=True)
 
     def validation_step(self, batch: Any, batch_idx: int):
         (
@@ -195,11 +198,11 @@ class RMTPPModule(torch.nn.Module):
             gt_events = torch.cat([gt_events, outputs[i]["event_target"]], dim=0)
             predicted_times = torch.cat([predicted_times, outputs[i]["time_pred"]], dim=0)
             gt_times = torch.cat([gt_times, outputs[i]["time_target"]], dim=0)
-
-        rocauc_val = self.event_metric(predicted_events, gt_events)
-        mae_val = self.time_metric(predicted_times, gt_times)
-        self.log("val/rocauc", rocauc_val, prog_bar=True)
-        self.log("val/mae", mae_val, prog_bar=True)
+        
+        event_metric_val = self.event_metric(predicted_events, gt_events)
+        time_metric_val = self.time_metric(predicted_times, gt_times)
+        self.log("val/accuracy", event_metric_val, prog_bar=True)
+        self.log("val/mae", time_metric_val, prog_bar=True)
 
     def test_step(self, batch: Any, batch_idx: int):
         (
@@ -241,10 +244,10 @@ class RMTPPModule(torch.nn.Module):
             predicted_times = torch.cat([predicted_times, outputs[i]["time_pred"]], dim=0)
             gt_times = torch.cat([gt_times, outputs[i]["time_target"]], dim=0)
 
-        rocauc_test = self.event_metric(predicted_events, gt_events)
-        mae_test = self.time_metric(predicted_times, gt_times)
-        self.log("test/rocauc", rocauc_test, prog_bar=True)
-        self.log("test/mae", mae_test, prog_bar=True)
+        event_metric_test = self.event_metric(predicted_events, gt_events)
+        time_metric_test = self.time_metric(predicted_times, gt_times)
+        self.log("test/accuracy", event_metric_test, prog_bar=True)
+        self.log("test/mae", time_metric_test, prog_bar=True)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(

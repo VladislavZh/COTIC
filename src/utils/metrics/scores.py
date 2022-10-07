@@ -35,22 +35,19 @@ class F1Score:
         target = target.detach().cpu().numpy()
         return float(f1_score(target, pred, labels, average="weighted"))
 
-class MAE:
-    def __call__(self, pred: torch.Tensor, target: torch.Tensor) -> float:
-        pred = pred.detach().cpu().numpy()
-        target = target.detach().cpu().numpy()
-        return float(np.mean(np.abs(pred - target)))
+def MAE(pred: torch.Tensor, target: torch.Tensor) -> float:
+    pred = pred.detach().cpu().numpy()
+    target = target.detach().cpu().numpy()
+    return float(np.mean(np.abs(pred - target)))
 
 
-class RocAuc:
-    def __call__(self, pred: torch.Tensor, target: torch.Tensor) -> float:
-        pred = pred.detach().cpu().numpy()
-        target = target.detach().cpu().numpy()
-        return float(roc_auc_score(target, pred, multi_class="ovr"))
+def RocAuc(pred: torch.Tensor, target: torch.Tensor) -> float:
+    pred = pred.detach().cpu().numpy()
+    target = target.detach().cpu().numpy()
+    return float(roc_auc_score(target, pred, multi_class="ovr"))
 
 
-class Accuracy:
-    def __call__(self, pred: torch.Tensor, target: torch.Tensor) -> float:
-        pred = np.argmax(pred.detach().cpu().numpy(), axis=-1)
-        target = target.detach().cpu().numpy() - 1
-        return accuracy_score(target, pred)
+def Accuracy(pred: torch.Tensor, target: torch.Tensor) -> float:
+    pred = np.argmax(pred.detach().cpu().numpy(), axis=-1)
+    target = target.detach().cpu().numpy() - 1
+    return accuracy_score(target, pred)
