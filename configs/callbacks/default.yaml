@@ -22,6 +22,9 @@ model_summary:
 
 rich_progress_bar:
   _target_: pytorch_lightning.callbacks.RichProgressBar
+  
+rf_trainer:
+  _target_: src.callbacks.rf_trainer.RFTraining
 
 # true_intensity_check:
 #   _target_: src.callbacks.true_intensity_check.PrintingCallback
