@@ -30,13 +30,14 @@ class CCNN(nn.Module):
         self.dilation_factors = [2 ** i for i in range(0, nb_layers)]
 
         self.num_types = num_types
-        
+        self.nb_filters = nb_filters
+
         self.convs = nn.ModuleList([ContConv1d(LinearKernel(self.in_channels[i], nb_filters), kernel_size, self.in_channels[i], nb_filters, self.dilation_factors[i], include_zero_lag[i]) for i in range(nb_layers)])
         
         self.final_list = nn.ModuleList([ContConv1dSim(LinearKernel(nb_filters, nb_filters), 1, nb_filters, nb_filters), nn.ReLU(), nn.Linear(nb_filters, num_types), nn.Softplus()])
         
-        self.classifier = RandomForestClassifier().fit(np.random.random(100, nb_filters), np.random.randint(self.num_types, size = (100,)))
-        self.regressor = RandomForestRegressor().fit(np.random.random(100, nb_filters), np.random.random(100))
+        self.classifier = RandomForestClassifier().fit(np.random.random((100, nb_filters)), np.random.randint(self.num_types, size = (100,)))
+        self.regressor = RandomForestRegressor().fit(np.random.random((100, nb_filters)), np.random.random(100))
         
         
     def __add_bos(self, event_times, event_types, lengths):
@@ -61,7 +62,6 @@ class CCNN(nn.Module):
             event_types - torch.Tensor, shape = (bs, L) event types
             lengths - torch.Tensor, shape = (bs,) sequence lengths
         """
-        bs, L = event_types.shape
         lengths = torch.sum(event_types.ne(0).type(torch.float), dim = 1).long()
         event_times, event_types, lengths = self.__add_bos(event_times, event_types, lengths)
         
@@ -71,12 +71,12 @@ class CCNN(nn.Module):
 
         for conv in self.convs:
             enc_output = torch.nn.functional.leaky_relu(conv(event_times, enc_output, non_pad_mask),0.1)
-            
-        X = enc_output.detach().cpu().numpy().reshape(bs*L, -1)
+        bs, L, _ = enc_output.shape
+        X = enc_output.detach().cpu().numpy().reshape(bs*L, self.nb_filters)
         return_time = self.regressor.predict(X).reshape(bs, L, 1)
-        event_type = self.classifier.predict_proba(X).reshape(bs, L, -1)
+        event_type = self.classifier.predict_proba(X).reshape(bs, L, self.num_types)
             
-        return enc_output, (return_time, event_type)
+        return enc_output, (torch.Tensor(return_time), torch.Tensor(event_type))
         
     def final(self, times, true_times, true_features, non_pad_mask, sim_size):
         out = self.final_list[0](times, true_times, true_features, non_pad_mask, sim_size)

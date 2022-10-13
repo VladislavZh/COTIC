@@ -58,14 +58,14 @@ class BaseEventModule(LightningModule):
         if stage == 'test':
             loss = self.test_metrics.compute_loss_and_add_values(self, batch, outputs)
 
-        return loss
+        return loss, outputs
 
     def training_step(self, batch: Any, batch_idx: int):
-        loss = self.step(batch, 'train')
+        loss, out = self.step(batch, 'train')
         
         self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
         
-        return {"loss": loss}
+        return {"loss": loss, "out": out}
 
     def training_epoch_end(self, outputs: List[Any]):
         ll, return_time_metric, event_type_metric = self.train_metrics.compute_metrics()
@@ -76,7 +76,7 @@ class BaseEventModule(LightningModule):
         self.log("train/event_type_metric", event_type_metric, on_step=False, on_epoch=True, prog_bar=True)
 
     def validation_step(self, batch: Any, batch_idx: int):
-        loss = self.step(batch, 'val')
+        loss, _ = self.step(batch, 'val')
         
         self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
         
@@ -92,7 +92,7 @@ class BaseEventModule(LightningModule):
 
 
     def test_step(self, batch: Any, batch_idx: int):
-        loss = self.step(batch, 'test')
+        loss, _ = self.step(batch, 'test')
         
         self.log("test/loss", loss, on_step=False, on_epoch=True)
         

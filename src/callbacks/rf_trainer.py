@@ -10,41 +10,6 @@ class RFTraining(Callback):
         self.embeddings = []
         self.return_time_target = []
         self.event_type_target = []
-        
-    @staticmethod
-    def get_return_time_target(
-        inputs: Union[Tuple, torch.Tensor]
-    ) -> torch.Tensor:
-        """
-        Takes input batch and returns the corresponding return time targets as 1d Tensor
-        
-        args:
-            inputs - Tuple or torch.Tensor, batch received from the dataloader
-        
-        return:
-            return_time_target - torch.Tensor, 1d Tensor with return time targets
-        """
-        event_time = inputs[0]
-        return_time = event_time[:,1:] - event_time[:,:-1]
-        mask = inputs[1].ne(0)[:,1:]
-        return return_time[mask]
-    
-    @staticmethod
-    def get_event_type_target(
-        inputs: Union[Tuple, torch.Tensor]
-    ) -> torch.Tensor:
-        """
-        Takes input batch and returns the corresponding event type targets as 1d Tensor
-        
-        args:
-            inputs - Tuple or torch.Tensor, batch received from the dataloader
-        
-        return:
-            event_type_target - torch.Tensor, 1d Tensor with event type targets
-        """
-        event_type = inputs[1][:,1:]
-        mask = inputs[1].ne(0)[:,1:]
-        return event_type[mask]
     
     def on_train_epoch_start(self, trainer, pl_module):
         self.embeddings = []
@@ -57,7 +22,7 @@ class RFTraining(Callback):
         return_time = event_time[:,1:] - event_time[:,:-1]
         event_type = batch[1][:,1:]
         
-        self.embeddings.append(outputs[0][mask,:].detach().cpu().numpy())
+        self.embeddings.append(outputs["out"][0][mask,:].detach().cpu().numpy())
         self.return_time_target.append(return_time[mask].detach().cpu().numpy())
         self.event_type_target.append(event_type[mask].detach().cpu().numpy())
     
