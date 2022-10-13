@@ -22,7 +22,7 @@ class RFTraining(Callback):
         return_time = event_time[:,1:] - event_time[:,:-1]
         event_type = batch[1][:,1:]
         
-        self.embeddings.append(outputs["out"][0][mask,:].detach().cpu().numpy())
+        self.embeddings.append(outputs["out"][0][:,1:-1,:][mask,:].detach().cpu().numpy())
         self.return_time_target.append(return_time[mask].detach().cpu().numpy())
         self.event_type_target.append(event_type[mask].detach().cpu().numpy())
     
