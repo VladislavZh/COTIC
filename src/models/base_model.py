@@ -57,7 +57,9 @@ class BaseEventModule(LightningModule):
             loss = self.val_metrics.compute_loss_and_add_values(self, batch, outputs)
         if stage == 'test':
             loss = self.test_metrics.compute_loss_and_add_values(self, batch, outputs)
-
+            
+        print(loss)
+        
         return loss, outputs
 
     def training_step(self, batch: Any, batch_idx: int):
