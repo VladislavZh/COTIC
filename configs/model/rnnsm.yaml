@@ -1,0 +1,17 @@
+_target_: src.models.rnnsm_model.RNNSMModule
+
+hid_dim: 16
+emb_dims: [20]
+cat_sizes: [22]
+input_size: 21
+lstm_hid_dim: 32
+n_num_feats: 1
+padding: 0
+w_trainable: False
+w: 0.2
+dropout: 0.2
+time_scale: 0.1
+prediction_start: 1385
+integration_end: 1400
+lr: 0.0005
+weight_decay: 0.00001
