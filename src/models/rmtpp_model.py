@@ -49,7 +49,6 @@ class RMTPPModule(LightningModule):
 
         self.time_criterion = self.RMTPPLoss
         self.class_weights = np.ones(self.num_class)
-        self.labels = np.arange(1, self.num_class + 1)
         self.event_criterion = torch.nn.CrossEntropyLoss(
             weight=torch.FloatTensor(self.class_weights)
         )
@@ -71,7 +70,7 @@ class RMTPPModule(LightningModule):
         return -1 * loss
 
     def forward(self, input_time, input_events):
-
+        
         event_embedding = self.embedding(input_events)
         event_embedding = self.emb_dropout(event_embedding)
         lstm_input = torch.cat((event_embedding, input_time.unsqueeze(-1)), dim=-1)
@@ -86,9 +85,7 @@ class RMTPPModule(LightningModule):
 
     def step(self, batch: Any):
 
-        time_tensor, event_tensor = batch
-        time_input, time_target = time_tensor[:, :-1], time_tensor[:, -1]
-        event_input, event_target = event_tensor[:, :-1], event_tensor[:, -1]
+        time_input, event_input, time_target, event_target = batch
         time_logits, event_logits = self.forward(time_input, event_input)
         loss_time = self.time_criterion(time_logits.view(-1), time_target.view(-1))
         loss_event = self.event_criterion(
@@ -150,12 +147,7 @@ class RMTPPModule(LightningModule):
     
         event_metric_train = self.event_metric(predicted_events, gt_events)
         time_metric_train = self.time_metric(predicted_times, gt_times)
-        print(predicted_events)
-        print(gt_events)
-        print(event_metric_train)
-        print("yo")
-        print(predicted_times)
-        print(gt_times)
+        print(time_metric_train)
         self.log("train/accuracy", event_metric_train, prog_bar=True)
         self.log("train/mae", time_metric_train, prog_bar=True)
 

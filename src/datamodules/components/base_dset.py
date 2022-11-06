@@ -12,7 +12,7 @@ class EventData(Dataset):
         times: List[torch.Tensor],
         events: List[torch.Tensor]
     ):
-        self.__times, self.__events = self.__pad(times, events)
+        self.__times, self.__events, self.__times_targets, self.__events_targets = self.__pad(times, events)
         
     @staticmethod
     def __pad(times, events):
@@ -29,18 +29,21 @@ class EventData(Dataset):
                                                                  {0,...,C-1} -> {1,...,C}, 0 as pad value
         """
         lengths = torch.Tensor([len(time_seq) for time_seq in times]).long()
-        max_len = torch.max(lengths)
+        max_len = torch.max(lengths) - 1
         
         tensor_times, tensor_events = torch.zeros(len(times), max_len), torch.zeros(len(times), max_len)
-        
+        tensor_times_targets = torch.zeros(len(times))
+        tensor_events_targets = torch.zeros(len(times))
         for i, l in enumerate(lengths):
-            tensor_times[i,:l] = times[i]
-            tensor_events[i,:l] = events[i] + 1
-        
-        return tensor_times, tensor_events.long()
+            tensor_times[i,:l-1] = times[i][:l-1]
+            tensor_times_targets[i] = times[i][-1]
+            tensor_events[i,:l-1] = events[i][:l-1] + 1
+            tensor_events_targets[i] = events[i][-1] + 1
+
+        return tensor_times, tensor_events.long(), tensor_times_targets, tensor_events_targets.long()
     
     def __len__(self):
         return len(self.__times)
     
     def __getitem__(self, idx):
-        return self.__times[idx], self.__events[idx]
+        return self.__times[idx], self.__events[idx], self.__times_targets[idx], self.__events_targets[idx]

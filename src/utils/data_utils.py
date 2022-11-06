@@ -21,15 +21,15 @@ class Data_preprocessor():
                 data.drop(key, axis=1, inplace=True)
 
         # need these only for stream label encoding
-        if set(np.unique(data['event'])).issubset(self.le.classes_):
-            # just transform
-            data['event'] = np.squeeze(self.le.transform(data['event'].values.reshape(-1, 1)))
-        else:
-            # add new labels to the end of classes array and transform
-            self.le.classes_ = np.array(list(self.le.classes_)
-                                        + list(set(np.unique(data['event']))
-                                               - set(self.le.classes_)))
-            data['event'] = np.squeeze(self.le.transform(data['event'].values.reshape(-1, 1)))
+        #if set(np.unique(data['event'])).issubset(self.le.classes_):
+        #    # just transform
+        #    data['event'] = np.squeeze(self.le.transform(data['event'].values.reshape(-1, 1)))
+        #else:
+        #    # add new labels to the end of classes array and transform
+        #    self.le.classes_ = np.array(list(self.le.classes_)
+        #                                + list(set(np.unique(data['event']))
+        #                                       - set(self.le.classes_)))
+        #    data['event'] = np.squeeze(self.le.transform(data['event'].values.reshape(-1, 1)))
 
         try:
             data['time'] = np.squeeze(self.min_max.transform(data['time'].values.reshape(-1, 1)))

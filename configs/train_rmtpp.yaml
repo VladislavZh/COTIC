@@ -33,7 +33,7 @@ defaults:
 original_work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
-dataset_name: ATM
+dataset_name: synth
 data_dir: ${original_work_dir}/data/${dataset_name}
 unix_time: False
 
