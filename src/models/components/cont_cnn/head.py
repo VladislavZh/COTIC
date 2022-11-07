@@ -37,7 +37,7 @@ class ContConvHead(nn.Module):
         enc_output: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         event_times, event_types = batch
-        non_pad_mask = event_types.ne(0)[:,:,1:]
+        non_pad_mask = event_types.ne(0)[:,1:]
         return self.return_time_prediction(event_times, enc_output, non_pad_mask), self.event_type_prediction(event_times, enc_output, non_pad_mask)
 
 class IntensityBasedHead(nn.Module):
