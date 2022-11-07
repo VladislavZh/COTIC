@@ -282,4 +282,4 @@ class CCNNMetrics(MetricsCore):
         if gamma_reg is not None:
             return ll_loss - gamma_reg, type_loss + time_loss
         else:
-            return 0*ll_loss, 0*type_loss + time_loss
+            return ll_loss, type_loss + time_loss
