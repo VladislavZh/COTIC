@@ -4,15 +4,15 @@ net:
   _target_: src.models.components.cont_cnn.CCNN
   in_channels: 32
   kernel_size: 5
-  nb_filters: 16
+  nb_filters: 32
   nb_layers: 9
   num_types: 3
   hidden_1: 8
   hidden_2: 4
   hidden_3: 8
 head:
-  _target_: src.models.components.cont_cnn.PredictionHead
-  in_channels: 16
+  _target_: src.models.components.cont_cnn.ContConvHead
+  in_channels: 32
   num_types: 3
 metrics:
   _target_: src.metrics.cont_cnn.CCNNMetrics

@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+from .cont_cnn_layers import ContConv1d, ContConv1dSim
+from .kernels import Kernel,LinearKernel
 
 from typing import Tuple
 
@@ -10,15 +12,30 @@ class PredictionHead(nn.Module):
         num_types: int
     ) -> None:
         super().__init__()
-        self.return_time_prediction = nn.Sequential(nn.Linear(in_channels, 128),nn.ReLU(),nn.Linear(128,1))
-        self.event_type_prediction = nn.Sequential(nn.Linear(in_channels, 128),nn.ReLU(),nn.Linear(128,num_types))
-        
+        self.return_time_prediction = ContConv1d(LinearKernel(in_channels, 1), 3, in_channels, 1, 1, True)
+        self.event_type_prediction = ContConv1d(LinearKernel(in_channels, num_types), 3, in_channels, num_types, 1, True)
+
     def forward(
         self,
         enc_output: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         return self.return_time_prediction(enc_output), self.event_type_prediction(enc_output)
 
+class ContConvHead(nn.Module):
+    def __init__(self
+        self,
+        in_channels: int,
+        num_types: int
+    ) -> None:
+        super().__init__()
+        self.return_time_prediction = nn.Sequential(nn.Linear(in_channels, 128),nn.ReLU(),nn.Linear(128,1))
+        self.event_type_prediction = nn.Sequential(nn.Linear(in_channels, 128),nn.ReLU(),nn.Linear(128,num_types))
+
+    def forward(
+        self,
+        enc_output: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        return self.return_time_prediction(enc_output), self.event_type_prediction(enc_output)
 
 class IntensityBasedHead(nn.Module):
     def __init__(
@@ -30,7 +47,7 @@ class IntensityBasedHead(nn.Module):
         self.max_val = max_val
         self.sim_size = sim_size
         self.a = nn.Parameter(torch.Tensor([0]))
-        
+
     @staticmethod
     def __add_sim_times(
         times: torch.Tensor,
@@ -39,12 +56,12 @@ class IntensityBasedHead(nn.Module):
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Takes batch of times and events and adds sim_size auxiliar times
-        
+
         args:
             times  - torch.Tensor of shape (bs, max_len), that represents event arrival time since start
             featuers - torch.Tensor of shape (bs, max_len, d), that represents event features
             sim_size - int, number of points to simulate
-            
+
         returns:
             bos_full_times  - torch.Tensor of shape(bs, (sim_size + 1) * (max_len - 1) + 1) that consists of times and sim_size auxiliar times between events
             bos_full_features - torch.Tensor of shape(bs, (sim_size + 1) * (max_len - 1) + 1, d) that consists of event features and sim_size zeros between events
@@ -56,9 +73,9 @@ class IntensityBasedHead(nn.Module):
         full_times[delta_times<0,:] = 0
         full_times = full_times.flatten(1)
         bos_full_times = torch.concat([torch.zeros(times.shape[0],1).to(times.device), full_times], dim = 1)
-        
+
         return bos_full_times
-    
+
     def __simulate_and_compute_times_and_events(
         self,
         times,
@@ -67,7 +84,7 @@ class IntensityBasedHead(nn.Module):
         pl_module
     ):
         """ Log-likelihood of non-events, using Monte Carlo integration. """
-        
+
         bos_full_times = self.__add_sim_times(times, self.max_val, self.sim_size)
         all_lambda = pl_module.net.final(bos_full_times, times, enc_output, events.ne(0), self.sim_size) # shape = (bs, (num_samples + 1) * L + 1, num_types)
 
@@ -94,7 +111,7 @@ class IntensityBasedHead(nn.Module):
         predicted_event = torch.concat([predicted_event, torch.zeros(bs,1,num_types).to(times.device)], dim=1)
 
         return predicted_time+self.a[0]*0, predicted_event+self.a[0]*0
-        
+
     def __add_bos(self, event_times, event_types, lengths):
         bs, L = event_times.shape
         event_times = torch.concat([torch.zeros(bs, 1).to(event_times.device), event_times], dim = 1)
@@ -103,7 +120,7 @@ class IntensityBasedHead(nn.Module):
         event_types = torch.concat([tmp, event_types], dim = 1)
         lengths += 1
         return event_times, event_types, lengths
-    
+
     def forward(
         self,
         event_times,
