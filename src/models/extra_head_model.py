@@ -52,7 +52,7 @@ class ExtrHeadEventModule(LightningModule):
     def forward(self, batch):
         net_output = self.net(*batch)
         if self.enc_output_only_head:
-            head_output = self.head(net_output)
+            head_output = self.head(batch, net_output)
         else:
             head_output = self.head(*batch, net_output, self)
         return net_output, head_output

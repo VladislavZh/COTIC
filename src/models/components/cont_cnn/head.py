@@ -33,9 +33,12 @@ class ContConvHead(nn.Module):
 
     def forward(
         self,
-        enc_output: torch.Tensor
+        batch,
+        enc_output: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        return self.return_time_prediction(enc_output), self.event_type_prediction(enc_output)
+        event_times, event_types = batch
+        non_pad_mask = event_types.ne(0)
+        return self.return_time_prediction(event_times, enc_output, non_pad_mask), self.event_type_prediction(event_times, enc_output, non_pad_mask)
 
 class IntensityBasedHead(nn.Module):
     def __init__(
