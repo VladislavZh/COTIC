@@ -45,9 +45,11 @@ class ContConvHead(nn.Module):
         batch,
         enc_output: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
+        event_times, event_types = batch
+
         lengths = torch.sum(event_types.ne(0).type(torch.float), dim = 1).long()
         event_times, event_types, lengths = self.__add_bos(event_times, event_types, lengths)
-        event_times, event_types = batch
+
         non_pad_mask = event_types.ne(0)
         return self.return_time_prediction(event_times, enc_output, non_pad_mask), self.event_type_prediction(event_times, enc_output, non_pad_mask)
 
