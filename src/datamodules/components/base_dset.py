@@ -32,7 +32,7 @@ class EventData(Dataset):
         max_len = torch.max(lengths)
 
         tensor_times, tensor_events = torch.zeros(len(times), max_len), torch.zeros(len(times), max_len)
-        dts = torch.empty().unsqueeze(0)
+        dts = torch.empty(1)[1:]
 
         for i, l in enumerate(lengths):
             tensor_times[i,:l] = times[i]
