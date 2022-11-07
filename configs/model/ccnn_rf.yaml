@@ -6,7 +6,7 @@ net:
   kernel_size: 5
   nb_filters: 16
   nb_layers: 9
-  num_types: 8
+  num_types: 3
   hidden_1: 8
   hidden_2: 4
   hidden_3: 8
