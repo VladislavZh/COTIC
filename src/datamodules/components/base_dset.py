@@ -38,6 +38,7 @@ class EventData(Dataset):
             tensor_events[i,:l] = events[i] + 1
         dts = tensor_times[:,1:] - tensor_times[:,:-1]
         norm_const = torch.median(dts)
+        print(norm_const)
         return tensor_times/norm_const, tensor_events.long()
 
     def __len__(self):
