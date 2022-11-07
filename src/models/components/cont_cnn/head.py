@@ -12,8 +12,8 @@ class PredictionHead(nn.Module):
         num_types: int
     ) -> None:
         super().__init__()
-        self.return_time_prediction = ContConv1d(LinearKernel(in_channels, 1), 3, in_channels, 1, 1, True)
-        self.event_type_prediction = ContConv1d(LinearKernel(in_channels, num_types), 3, in_channels, num_types, 1, True)
+        self.return_time_prediction = nn.Sequential(nn.Linear(in_channels, 128),nn.ReLU(),nn.Linear(128,1))
+        self.event_type_prediction = nn.Sequential(nn.Linear(in_channels, 128),nn.ReLU(),nn.Linear(128,num_types))
 
     def forward(
         self,
@@ -22,14 +22,14 @@ class PredictionHead(nn.Module):
         return self.return_time_prediction(enc_output), self.event_type_prediction(enc_output)
 
 class ContConvHead(nn.Module):
-    def __init__(self
+    def __init__(
         self,
         in_channels: int,
         num_types: int
     ) -> None:
         super().__init__()
-        self.return_time_prediction = nn.Sequential(nn.Linear(in_channels, 128),nn.ReLU(),nn.Linear(128,1))
-        self.event_type_prediction = nn.Sequential(nn.Linear(in_channels, 128),nn.ReLU(),nn.Linear(128,num_types))
+        self.return_time_prediction = ContConv1d(LinearKernel(in_channels, 1), 3, in_channels, 1, 1, True)
+        self.event_type_prediction = ContConv1d(LinearKernel(in_channels, num_types), 3, in_channels, num_types, 1, True)
 
     def forward(
         self,
