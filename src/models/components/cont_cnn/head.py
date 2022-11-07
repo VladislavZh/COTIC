@@ -31,11 +31,22 @@ class ContConvHead(nn.Module):
         self.return_time_prediction = ContConv1d(LinearKernel(in_channels, 1), 3, in_channels, 1, 1, True)
         self.event_type_prediction = ContConv1d(LinearKernel(in_channels, num_types), 3, in_channels, num_types, 1, True)
 
+    def __add_bos(self, event_times, event_types, lengths):
+        bs, L = event_times.shape
+        event_times = torch.concat([torch.zeros(bs, 1).to(event_times.device), event_times], dim = 1)
+        max_event_type = torch.max(event_types) + 1
+        tmp = (torch.ones(bs,1).to(event_types.device) * max_event_type).long()
+        event_types = torch.concat([tmp, event_types], dim = 1)
+        lengths += 1
+        return event_times, event_types, lengths
+
     def forward(
         self,
         batch,
         enc_output: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
+        lengths = torch.sum(event_types.ne(0).type(torch.float), dim = 1).long()
+        event_times, event_types, lengths = self.__add_bos(event_times, event_types, lengths)
         event_times, event_types = batch
         non_pad_mask = event_types.ne(0)
         return self.return_time_prediction(event_times, enc_output, non_pad_mask), self.event_type_prediction(event_times, enc_output, non_pad_mask)
