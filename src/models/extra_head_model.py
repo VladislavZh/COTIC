@@ -67,7 +67,7 @@ class ExtrHeadEventModule(LightningModule):
         if stage == 'test':
             loss1, loss2 = self.test_metrics.compute_loss_and_add_values(self, batch, outputs)
 
-        print(loss2)
+        print(loss1+loss2)
 
         return loss1, loss2
 
@@ -122,5 +122,5 @@ class ExtrHeadEventModule(LightningModule):
 
     def configure_optimizers(self):
         optimizer1 = get_optimizer(self.hparams.optimizers[0]['name'], self.net.parameters(), self.hparams.optimizers[0]['params'])
-        optimizer2 = get_optimizer(self.hparams.optimizers[1]['name'], torch.nn.ModuleList([self.head, self.net]).parameters(), self.hparams.optimizers[1]['params'])
+        optimizer2 = get_optimizer(self.hparams.optimizers[1]['name'], self.head.parameters(), self.hparams.optimizers[1]['params'])
         return [optimizer1, optimizer2], []
