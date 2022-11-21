@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 import os
 import tqdm
 import torch
@@ -41,13 +41,14 @@ class Data_preprocessor():
 def load_data(
     data_dir: str,
     unix_time: bool = False,
+    dataset_size: Optional[int] = None,
     preprocess_type: str = "default"
     ) -> List[torch.Tensor]:
     times = []
     events = []
     if preprocess_type == "default":
         data_preprocessor = Data_preprocessor()
-
+    count = 0
     for f in tqdm.tqdm(sorted(
         os.listdir(data_dir),
         key=lambda x: int(re.sub(fr".csv", "", x))
@@ -63,4 +64,8 @@ def load_data(
             events.append(torch.Tensor(list(df['event'])))
             if unix_time:
                 times[-1]/=86400
+            count += 1
+            if dataset_size is not None:
+                if count == dataset_size:
+                    break
     return times, events

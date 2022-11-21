@@ -280,6 +280,6 @@ class CCNNMetrics(MetricsCore):
         time_loss = self.time_loss(outputs[1][0][:,1:], inputs[0], inputs[1])
 
         if gamma_reg is not None:
-            return ll_loss - gamma_reg, type_loss + time_loss
+            return ll_loss - gamma_reg, self.type_loss_coeff * type_loss + self.time_loss_coeff * time_loss
         else:
-            return ll_loss, type_loss + time_loss
+            return ll_loss, self.type_loss_coeff * type_loss + self.time_loss_coeff * time_loss
