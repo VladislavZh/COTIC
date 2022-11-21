@@ -21,7 +21,7 @@ class CCNNMetrics(MetricsCore):
         beta = None
     ):
         super().__init__(return_time_metric, event_type_metric)
-        self.type_loss_func = torch.nn.CrossEntropyLoss(ignore_index=-1, reduction='none')
+        self.type_loss_func = torch.nn.CrossEntropyLoss(ignore_index=-1, reduction='sum')
         self.return_time_loss_func = torch.nn.MSELoss()
         self.type_loss_coeff = type_loss_coeff
         self.time_loss_coeff = time_loss_coeff
