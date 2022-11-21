@@ -13,6 +13,8 @@ class CCNNMetrics(MetricsCore):
         self,
         return_time_metric,
         event_type_metric,
+        type_loss_coeff = 1,
+        time_loss_coeff = 1,
         sim_size = 100,
         gamma_reg = False,
         alpha = None,
@@ -21,6 +23,8 @@ class CCNNMetrics(MetricsCore):
         super().__init__(return_time_metric, event_type_metric)
         self.type_loss_func = torch.nn.CrossEntropyLoss(ignore_index=-1, reduction='none')
         self.return_time_loss_func = torch.nn.MSELoss()
+        self.type_loss_coeff = type_loss_coeff
+        self.time_loss_coeff = time_loss_coeff
         self.sim_size = sim_size
         self.gamma_reg = gamma_reg
         if self.gamma_reg:
