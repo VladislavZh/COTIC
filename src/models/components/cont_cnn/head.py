@@ -17,6 +17,7 @@ class PredictionHead(nn.Module):
 
     def forward(
         self,
+        batch,
         enc_output: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         return self.return_time_prediction(enc_output), self.event_type_prediction(enc_output)
