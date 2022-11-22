@@ -6,6 +6,8 @@ import math
 
 from typing import Tuple
 
+import time
+
 
 class ContConv1d(nn.Module):
     """
@@ -124,15 +126,28 @@ class ContConv1d(nn.Module):
         returns:
             out - torch.Tensor, shape = (bs, L, out_channels)
         """
+        t1 = time.time()
         delta_times, features_kern, dt_mask = self.__conv_matrix_constructor(times, features, non_pad_mask, self.kernel_size, self.dilation, self.include_zero_lag)
+        t2 = time.time()
+        print('Conv matrix constructor', t2-t1)
         bs, k, L = delta_times.shape
+        t1 = time.time()
         kernel_values = torch.zeros(bs,k,L,self.in_channels, self.out_channels).to(times.device)
         kernel_values[dt_mask,:,:] = self.kernel(self.__temporal_enc(delta_times[dt_mask]))#
+        t2 = time.time()
+        print('Kernel values', t2-t1)
+        t1 = time.time()
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1,3))
+        t2 = time.time()
+        print('Convolution', t2-t1)
+        t1 = time.time()
         out = out + self.skip_connection(features.transpose(1,2)).transpose(1,2)
         #out = self.dropout(self.norm(out))
         out = self.norm(out.transpose(1,2)).transpose(1,2)
+        t2 = time.time()
+        print('Skip connection + norm', t2-t1)
+        time.sleep(10)
         return out
 
 
