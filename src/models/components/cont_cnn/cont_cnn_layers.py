@@ -134,7 +134,7 @@ class ContConv1d(nn.Module):
         t11 = time.time()
         kernel_values = torch.zeros(bs,k,L,self.in_channels, self.out_channels).to(times.device)
         t2 = time.time()
-        print('dt mask', t2-t1)
+        print('create obj', t2-t11)
         t1 = time.time()
         tmp = delta_times[dt_mask]
         t2 = time.time()
