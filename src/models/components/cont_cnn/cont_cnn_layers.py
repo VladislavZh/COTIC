@@ -131,11 +131,32 @@ class ContConv1d(nn.Module):
         t2 = time.time()
         print('Conv matrix constructor', t2-t1)
         bs, k, L = delta_times.shape
-        t1 = time.time()
+        t11 = time.time()
         kernel_values = torch.zeros(bs,k,L,self.in_channels, self.out_channels).to(times.device)
-        kernel_values[dt_mask,:,:] = self.kernel(self.__temporal_enc(delta_times[dt_mask]))#
         t2 = time.time()
-        print('Kernel values', t2-t1)
+        print('dt mask', t2-t1)
+        t1 = time.time()
+        tmp = delta_times[dt_mask]
+        t2 = time.time()
+        print('dt mask', t2-t1)
+        t1 = time.time()
+        tmp = self.__temporal_enc(delta_times[dt_mask])
+        t2 = time.time()
+        print('temp enc', t2-t1)
+        t1 = time.time()
+        tmp = self.kernel(tmp)
+        t2 = time.time()
+        print('kernel', t2-t1)
+        t1 = time.time()
+        kernel_values[dt_mask,:,:] = tmp
+        t2 = time.time()
+        print('assign', t2-t1)
+
+
+
+        #kernel_values[dt_mask,:,:] = self.kernel(self.__temporal_enc(delta_times[dt_mask]))#
+        t2 = time.time()
+        print('Kernel values', t2-t11)
         t1 = time.time()
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1,3))
