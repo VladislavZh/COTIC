@@ -30,11 +30,11 @@ optimizers:
   0:
       name: adam
       params:
-        lr: 1e-2
+        lr: 1e-6
         weight_decay: 1e-8
   1:
       name: adam
       params:
-        lr: 1e-2
+        lr: 1e-3
         weight_decay: 1e-8
 enc_output_only_head: True
