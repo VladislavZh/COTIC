@@ -9,9 +9,11 @@ class ScaledSoftplus(nn.Module):
     def __init__(self, num_types):
         super().__init__()
         self.beta = nn.Parameter(torch.ones(1,1,num_types))
+        self.softplus = nn.Softplus()
 
     def forward(self, x):
-        return 1.0 / self.beta * torch.log(1 + torch.exp(self.beta * x))
+        beta = self.softplus(self.beta)
+        return 1.0 / beta * torch.log(1 + torch.exp(beta * x))
 
 class CCNN(nn.Module):
     def __init__(
