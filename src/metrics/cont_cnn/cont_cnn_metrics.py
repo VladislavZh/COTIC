@@ -4,7 +4,7 @@ import torch
 from pytorch_lightning import LightningModule
 import math
 
-from src.utils.metrics import MetricsCore
+from src.utils.metrics import MetricsCore, LogCoshLoss
 from typing import Union, Tuple
 
 
@@ -22,7 +22,7 @@ class CCNNMetrics(MetricsCore):
     ):
         super().__init__(return_time_metric, event_type_metric)
         self.type_loss_func = torch.nn.CrossEntropyLoss(ignore_index=-1, reduction='sum')
-        self.return_time_loss_func = torch.nn.MSELoss()
+        self.return_time_loss_func = LogCoshLoss()
         self.type_loss_coeff = type_loss_coeff
         self.time_loss_coeff = time_loss_coeff
         self.sim_size = sim_size
@@ -253,7 +253,7 @@ class CCNNMetrics(MetricsCore):
         true = event_time[:, 1:] - event_time[:, :-1]
         prediction = prediction[:, :-1]
 
-        return torch.mean(torch.abs(true - prediction))#self.return_time_loss_func(true[mask], prediction[mask])
+        return self.return_time_loss_func(true[mask], prediction[mask])#torch.mean(torch.abs(true - prediction))#
 
     def compute_loss(
         self,
