@@ -51,6 +51,8 @@ class ExtrHeadEventModule(LightningModule):
         self.val_metrics = metrics.copy_empty()
         self.test_metrics = metrics.copy_empty()
 
+        self.start_time = None
+
     def forward(self, batch):
         net_output = self.net(*batch)
         if self.enc_output_only_head:
@@ -79,6 +81,9 @@ class ExtrHeadEventModule(LightningModule):
 
         return loss1, loss2
 
+    def on_train_start(self):
+        self.start_time = time.time()
+
     def training_step(self, batch: Any, batch_idx: int):#, optimizer_idx):
         loss1, loss2 = self.step(batch, 'train')
 
@@ -98,6 +103,7 @@ class ExtrHeadEventModule(LightningModule):
         self.log("train/log_likelihood", ll, on_step=False, on_epoch=True, prog_bar=True)
         self.log("train/return_time_metric", return_time_metric, on_step=False, on_epoch=True, prog_bar=True)
         self.log("train/event_type_metric", event_type_metric, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("training_time", time.time() - self.start_time, on_step=False, on_epoch=True, prog_bar=True)
 
     def validation_step(self, batch: Any, batch_idx: int):
         loss1, loss2 = self.step(batch, 'val')
