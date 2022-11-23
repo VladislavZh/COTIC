@@ -4,7 +4,7 @@ gpus:
 - 1
 
 min_epochs: 1
-max_epochs: 100
+max_epochs: 200
 
 accumulate_grad_batches: 1
 
