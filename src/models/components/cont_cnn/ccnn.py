@@ -5,16 +5,6 @@ import copy
 from .cont_cnn_layers import ContConv1d, ContConv1dSim
 from .kernels import Kernel,LinearKernel
 
-class ScaledSoftplus(nn.Module):
-    def __init__(self, num_types):
-        super().__init__()
-        self.beta = nn.Parameter(torch.ones(1,1,num_types))
-        self.softplus = nn.Softplus()
-
-    def forward(self, x):
-        beta = self.softplus(self.beta)
-        return 1.0 / beta * torch.log(1 + torch.exp(beta * x))
-
 class CCNN(nn.Module):
     def __init__(
         self,
@@ -38,7 +28,7 @@ class CCNN(nn.Module):
 
         self.convs = nn.ModuleList([ContConv1d(Kernel(hidden_1, hidden_2, hidden_3, self.in_channels[i], nb_filters), kernel_size, self.in_channels[i], nb_filters, self.dilation_factors[i], include_zero_lag[i]) for i in range(nb_layers)])
 
-        self.final_list = nn.ModuleList([ContConv1dSim(Kernel(hidden_1, hidden_2, hidden_3, nb_filters, nb_filters), 1, nb_filters, nb_filters), nn.ReLU(), nn.Linear(nb_filters, num_types), ScaledSoftplus(num_types)])
+        self.final_list = nn.ModuleList([ContConv1dSim(Kernel(hidden_1, hidden_2, hidden_3, nb_filters, nb_filters), 1, nb_filters, nb_filters), nn.ReLU(), nn.Linear(nb_filters, num_types), nn.Softplus()])
 
     def __add_bos(self, event_times, event_types, lengths):
         bs, L = event_times.shape
