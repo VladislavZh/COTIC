@@ -62,22 +62,14 @@ class ExtrHeadEventModule(LightningModule):
         return net_output, head_output
 
     def step(self, batch: Any, stage: str):
-        t1 = time.time()
         outputs = self.forward(batch)
-        t2 = time.time()
-        print('Model time =',t2-t1)
 
-        t1 = time.time()
         if stage == 'train':
             loss1, loss2 = self.train_metrics.compute_loss_and_add_values(self, batch, outputs)
         if stage == 'val':
             loss1, loss2 = self.val_metrics.compute_loss_and_add_values(self, batch, outputs)
         if stage == 'test':
             loss1, loss2 = self.test_metrics.compute_loss_and_add_values(self, batch, outputs)
-        t2 = time.time()
-        print('Metrics time =',t2-t1)
-
-        print("Losses",loss1,loss2)
 
         return loss1, loss2
 
@@ -138,7 +130,9 @@ class ExtrHeadEventModule(LightningModule):
 
     def configure_optimizers(self):
         optimizer = get_optimizer(self.hparams.optimizers[0]['name'], torch.nn.ModuleList([self.net, self.head]).parameters(), self.hparams.optimizers[0]['params'])
-        return optimizer
+        milestones = [10,40]
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones, gamma=0.1, verbose=True)
+        return optimizer, scheduler
         # optimizer1 = get_optimizer(self.hparams.optimizers[0]['name'], self.net.parameters(), self.hparams.optimizers[0]['params'])
         # optimizer2 = get_optimizer(self.hparams.optimizers[1]['name'], self.head.parameters(), self.hparams.optimizers[1]['params'])
         # return [optimizer1, optimizer2], []
