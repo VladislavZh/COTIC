@@ -21,7 +21,7 @@ metrics:
   event_type_metric:
     _target_: src.utils.metrics.Accuracy
   type_loss_coeff: 1
-  time_loss_coeff: 100
+  time_loss_coeff: 10
   sim_size: 40
   gamma_reg: False
   alpha: 1.0
