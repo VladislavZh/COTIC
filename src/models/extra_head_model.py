@@ -81,6 +81,8 @@ class ExtrHeadEventModule(LightningModule):
 
         self.log("train/loss", loss1 + loss2, on_step=False, on_epoch=True, prog_bar=False)
 
+        print(loss1, loss2)
+
         return {"loss": loss1 + loss2}
 
         # if optimizer_idx == 0:
