@@ -34,7 +34,7 @@ class LinearKernel(nn.Module):
     """
     def __init__(self, in_channels, out_channels, dropout=0):
         super().__init__()
-        self.layer = nn.Linear(1, in_channels * out_channels)
+        self.layer = nn.Linear(in_channels, in_channels * out_channels)
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.dropout = nn.Dropout(dropout)
