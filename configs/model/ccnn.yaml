@@ -21,14 +21,14 @@ metrics:
   event_type_metric:
     _target_: src.utils.metrics.Accuracy
   type_loss_coeff: 1
-  time_loss_coeff: 1
+  time_loss_coeff: 10
   sim_size: 40
   gamma_reg: False
   alpha: 1.0
   beta: 0
 optimizers:
   0:
-      name: adam
+      name: nadam
       params:
         lr: 1e-2
         weight_decay: 1e-5
