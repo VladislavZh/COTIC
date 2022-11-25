@@ -21,7 +21,7 @@ metrics:
   event_type_metric:
     _target_: src.utils.metrics.Accuracy
   type_loss_coeff: 1
-  time_loss_coeff: 1
+  time_loss_coeff: 10
   sim_size: 50
   gamma_reg: False
   alpha: 1.001
@@ -30,7 +30,7 @@ optimizers:
   0:
       name: adam
       params:
-        lr: 1e-1
+        lr: 1e-2
         weight_decay: 1e-8
   1:
       name: adam
