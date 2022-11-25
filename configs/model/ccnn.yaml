@@ -23,7 +23,7 @@ metrics:
   type_loss_coeff: 1
   time_loss_coeff: 1
   sim_size: 50
-  gamma_reg: True
+  gamma_reg: False
   alpha: 1.001
   beta: 0.001
 optimizers:
