@@ -28,10 +28,10 @@ metrics:
   beta: 0
 optimizers:
   0:
-      name: lbfgs
+      name: adamw
       params:
-        lr: 1e-4
-        #weight_decay: 1e-5
+        lr: 1e-2
+        weight_decay: 1e-2
   1:
       name: adam
       params:
