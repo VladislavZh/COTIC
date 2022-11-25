@@ -35,7 +35,7 @@ class CCNN(nn.Module):
         self.convs = nn.ModuleList([ContConv1d(Kernel(hidden_1, hidden_2, hidden_3, self.in_channels[i], nb_filters), kernel_size, self.in_channels[i], nb_filters, self.dilation_factors[i], include_zero_lag[i]) for i in range(nb_layers)])
         self.convs_skip_connections = nn.ModuleList([
             nn.Conv1d(
-                in_channels=in_channels,
+                in_channels=nb_filters,
                 out_channels=nb_filters,
                 kernel_size=1)
             for i in range(nb_layers)
