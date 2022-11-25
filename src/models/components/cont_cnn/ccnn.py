@@ -26,6 +26,12 @@ class CCNN(nn.Module):
 
         self.num_types = num_types
 
+        self.skip_connection = nn.Conv1d(in_channels=in_channels,
+                                         out_channels=nb_filters,
+                                         kernel_size=1)
+
+        self.batch_norms = nn.ModuleList([nn.BatchNorm1d(nb_filters) for i in range(nb_layers)])
+
         self.convs = nn.ModuleList([ContConv1d(Kernel(hidden_1, hidden_2, hidden_3, self.in_channels[i], nb_filters), kernel_size, self.in_channels[i], nb_filters, self.dilation_factors[i], include_zero_lag[i]) for i in range(nb_layers)])
 
         self.final_list = nn.ModuleList([ContConv1dSim(Kernel(hidden_1, hidden_2, hidden_3, nb_filters, nb_filters), 1, nb_filters, nb_filters), nn.ReLU(), nn.Linear(nb_filters, num_types), nn.Softplus(100)])
@@ -59,10 +65,14 @@ class CCNN(nn.Module):
 
         enc_output = self.event_emb(event_types)
 
-        for conv in self.convs:
-            enc_output = torch.nn.functional.leaky_relu(conv(event_times, enc_output, non_pad_mask),0.1)
+        final_enc_output = self.skip_connection(enc_output.transpose(1,2))
 
-        return enc_output
+        for i, conv in enumerate(self.convs):
+            enc_output = torch.nn.functional.leaky_relu(conv(event_times, enc_output, non_pad_mask),0.1)
+            final_enc_output += self.batch_norms[i](enc_output.transpose(1,2))
+
+
+        return final_enc_output.transpose(1,2)
 
     def final(self, times, true_times, true_features, non_pad_mask, sim_size):
         out = self.final_list[0](times, true_times, true_features, non_pad_mask, sim_size)
