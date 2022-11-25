@@ -22,7 +22,7 @@ metrics:
     _target_: src.utils.metrics.Accuracy
   type_loss_coeff: 1
   time_loss_coeff: 1
-  sim_size: 100
+  sim_size: 50
   gamma_reg: False
   alpha: 1.0
   beta: 0
