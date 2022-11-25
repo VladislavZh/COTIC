@@ -25,16 +25,16 @@ metrics:
   sim_size: 50
   gamma_reg: True
   alpha: 1.01
-  beta: 0.1
+  beta: 0.01
 optimizers:
   0:
       name: adam
       params:
-        lr: 0.01
+        lr: 0.001
         weight_decay: 1e-8
       milestones:
-        - 40
-        - 75
+        - 100
+        - 200
       gamma: 0.1
   1:
       name: adam
