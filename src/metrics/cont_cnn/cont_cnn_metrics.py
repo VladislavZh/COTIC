@@ -273,14 +273,13 @@ class CCNNMetrics(MetricsCore):
         return:
             loss - torch.Tensor, loss for backpropagation
         """
-        lengths = torch.sum(inputs[1].ne(0).type(torch.float), dim = 1)
         event_ll, non_event_ll, gamma_reg = self.event_and_non_event_log_likelihood(
             pl_module,
             outputs[0],
             inputs[0],
             inputs[1]
         )
-        ll_loss = -torch.sum((event_ll - non_event_ll)/lengths)
+        ll_loss = -torch.mean((event_ll - non_event_ll))
         type_loss = self.type_loss(outputs[1][1][:,1:], inputs[1])
         time_loss = self.time_loss(outputs[1][0][:,1:], inputs[0], inputs[1])
 

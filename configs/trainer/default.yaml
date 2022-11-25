@@ -9,7 +9,7 @@ max_epochs: 100
 # accumulate_grad_batches: 5
 # detect_anomaly: True
 gradient_clip_val: 1
-gradient_clip_algorithm: value
+# gradient_clip_algorithm: value
 
 # number of validation steps to execute at the beginning of the training
 # num_sanity_val_steps: 0
