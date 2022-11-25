@@ -137,7 +137,7 @@ class ContConv1d(nn.Module):
         out = out.sum(dim=(1,3))
 
         out = out + self.skip_connection(features.transpose(1,2)).transpose(1,2)
-        out = self.norm(out.transpose(1,2)).transpose(1,2)
+        # out = self.norm(out.transpose(1,2)).transpose(1,2)
         return out
 
 
