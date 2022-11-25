@@ -38,7 +38,8 @@ class ExtrHeadEventModule(LightningModule):
         head: torch.nn.Module,
         metrics: MetricsCore,
         optimizers: dict,
-        enc_output_only_head: bool = True
+        enc_output_only_head: bool = True,
+        head_start: int = 20
     ):
         super().__init__()
 
@@ -52,6 +53,7 @@ class ExtrHeadEventModule(LightningModule):
         self.test_metrics = metrics.copy_empty()
 
         self.start_time = None
+        self.head_start = head_start
 
     def forward(self, batch):
         net_output = self.net(*batch)
@@ -83,8 +85,8 @@ class ExtrHeadEventModule(LightningModule):
 
         print(loss1, loss2)
 
-        if self.current_epoch>10:
-          return {"loss": loss1 + loss2}
+        if self.current_epoch>=self.head_start:
+            return {"loss": loss1 + loss2}
         return {"loss": loss1}
 
         # if optimizer_idx == 0:
