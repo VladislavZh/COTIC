@@ -30,7 +30,7 @@ optimizers:
   0:
       name: lbfgs
       params:
-        lr: 1e-2
+        lr: 1
         #weight_decay: 1e-5
   1:
       name: adam
