@@ -83,7 +83,9 @@ class ExtrHeadEventModule(LightningModule):
 
         print(loss1, loss2)
 
-        return {"loss": loss1 + loss2}
+        if self.current_epoch>10:
+          return {"loss": loss1 + loss2}
+        return {"loss": loss1}
 
         # if optimizer_idx == 0:
         #     return {"loss": loss1}
