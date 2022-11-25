@@ -30,10 +30,9 @@ optimizers:
   0:
       name: adam
       params:
-        lr: 0.005
+        lr: 0.01
         weight_decay: 1e-8
       milestones:
-        - 10
         - 20
         - 30
         - 40
