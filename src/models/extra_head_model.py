@@ -132,7 +132,7 @@ class ExtrHeadEventModule(LightningModule):
 
     def configure_optimizers(self):
         optimizer = get_optimizer(self.hparams.optimizers[0]['name'], torch.nn.ModuleList([self.net, self.head]).parameters(), self.hparams.optimizers[0]['params'])
-        milestones = [40,75]
+        milestones = [400,750]
         scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones, gamma=0.1, verbose=True)
         return [optimizer], [scheduler]
         # optimizer1 = get_optimizer(self.hparams.optimizers[0]['name'], self.net.parameters(), self.hparams.optimizers[0]['params'])
