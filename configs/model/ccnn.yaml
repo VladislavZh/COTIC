@@ -5,7 +5,7 @@ net:
   in_channels: 32
   kernel_size: 5
   nb_filters: 16
-  nb_layers: 9
+  nb_layers: 3
   num_types: 8
   hidden_1: 8
   hidden_2: 4
@@ -23,7 +23,7 @@ metrics:
   type_loss_coeff: 1
   time_loss_coeff: 10
   sim_size: 50
-  gamma_reg: True
+  gamma_reg: False
   alpha: 1.01
   beta: 0.01
 optimizers:
