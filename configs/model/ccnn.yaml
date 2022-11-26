@@ -28,7 +28,7 @@ metrics:
   beta: 0.01
 optimizers:
   0:
-      name: rafam
+      name: radam
       params:
         lr: 0.01
         weight_decay: 1e-8
