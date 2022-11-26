@@ -32,13 +32,8 @@ optimizers:
       params:
         lr: 0.01
         weight_decay: 1e-8
-      milestones:
-        - 10
-        - 20
-        - 30
-        - 40
-        - 50
-      gamma: 0.5
+      step: 1
+      gamma: 0.9
   1:
       name: adam
       params:

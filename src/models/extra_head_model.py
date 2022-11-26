@@ -136,7 +136,7 @@ class ExtrHeadEventModule(LightningModule):
 
     def configure_optimizers(self):
         optimizer = get_optimizer(self.hparams.optimizers[0]['name'], torch.nn.ModuleList([self.net, self.head]).parameters(), self.hparams.optimizers[0]['params'])
-        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, self.hparams.optimizers[0]['milestones'], gamma=self.hparams.optimizers[0]['gamma'], verbose=True)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, self.hparams.optimizers[0]['step'], gamma=self.hparams.optimizers[0]['gamma'], verbose=True)
         return [optimizer], [scheduler]
         # optimizer1 = get_optimizer(self.hparams.optimizers[0]['name'], self.net.parameters(), self.hparams.optimizers[0]['params'])
         # optimizer2 = get_optimizer(self.hparams.optimizers[1]['name'], self.head.parameters(), self.hparams.optimizers[1]['params'])
