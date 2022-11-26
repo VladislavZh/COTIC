@@ -7,9 +7,9 @@ net:
   nb_filters: 16
   nb_layers: 9
   num_types: 8
-  hidden_1: 8
-  hidden_2: 4
-  hidden_3: 8
+  hidden_1: 16
+  hidden_2: 32
+  hidden_3: 16
 head:
   _target_: src.models.components.cont_cnn.PredictionHead
   in_channels: 16
