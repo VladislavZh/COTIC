@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 import copy
 
 from .cont_cnn_layers import ContConv1d, ContConv1dSim
