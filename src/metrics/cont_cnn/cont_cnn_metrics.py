@@ -279,7 +279,7 @@ class CCNNMetrics(MetricsCore):
             inputs[0],
             inputs[1]
         )
-        ll_loss = -torch.sum((event_ll - non_event_ll))
+        ll_loss = -torch.mean((event_ll - non_event_ll))
         type_loss = self.type_loss(outputs[1][1][:,1:], inputs[1])
         time_loss = self.time_loss(outputs[1][0][:,1:], inputs[0], inputs[1])
 
