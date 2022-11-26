@@ -7,7 +7,7 @@ min_epochs: 1
 max_epochs: 200
 
 # accumulate_grad_batches: 5
-detect_anomaly: True
+# detect_anomaly: True
 # gradient_clip_val: 1
 # gradient_clip_algorithm: value
 
