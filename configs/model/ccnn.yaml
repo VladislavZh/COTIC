@@ -7,9 +7,9 @@ net:
   nb_filters: 16
   nb_layers: 9
   num_types: 8
-  hidden_1: 16
-  hidden_2: 32
-  hidden_3: 16
+  hidden_1: 8
+  hidden_2: 4
+  hidden_3: 8
 head:
   _target_: src.models.components.cont_cnn.PredictionHead
   in_channels: 16
@@ -28,13 +28,13 @@ metrics:
   beta: 0.01
 optimizers:
   0:
-      name: nadam
+      name: adam
       params:
-        lr: 0.005
+        lr: 0.01
         weight_decay: 1e-8
       milestones:
+        - 40
         - 75
-        - 200
       gamma: 0.1
   1:
       name: adam
