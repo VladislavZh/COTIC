@@ -2,7 +2,7 @@ _target_: src.models.extra_head_model.ExtrHeadEventModule
 
 net:
   _target_: src.models.components.baselines.wavenet_intens.WaveNetIntens
-  hyperparams:
+  hyperparams: 
     nb_layers: 9
     kernel_size: 5
     nb_filters: 16
@@ -30,7 +30,7 @@ optimizers:
   0:
       name: adam
       params:
-        lr: 5e-3
+        lr: 1e-3
         weight_decay: 1e-5
   1:
       name: adam
