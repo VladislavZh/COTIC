@@ -33,7 +33,7 @@ optimizers:
         lr: 0.01
         weight_decay: 1e-8
       step: 1
-      gamma: 0.9
+      gamma: 0.95
   1:
       name: adam
       params:
