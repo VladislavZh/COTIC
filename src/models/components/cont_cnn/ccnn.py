@@ -33,7 +33,7 @@ class CCNN(nn.Module):
 
         self.dropouts = nn.ModuleList(
             [
-                nn.Dropout(0.3) for i in range(nb_layers)
+                nn.Dropout(0.1) for i in range(nb_layers)
             ]
         )
 
