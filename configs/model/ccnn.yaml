@@ -10,6 +10,7 @@ net:
   hidden_1: 8
   hidden_2: 4
   hidden_3: 8
+  skip_connection_coeff: 0.5
 head:
   _target_: src.models.components.cont_cnn.PredictionHead
   in_channels: 16
