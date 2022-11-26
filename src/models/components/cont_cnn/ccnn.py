@@ -15,7 +15,8 @@ class CCNN(nn.Module):
         num_types: int,
         hidden_1: int,
         hidden_2: int,
-        hidden_3: int
+        hidden_3: int,
+        skip_connection_coeff: float = 0.9
     ) -> None:
         super().__init__()
         self.event_emb = nn.Embedding(num_types + 2, in_channels, padding_idx=0)
@@ -26,6 +27,7 @@ class CCNN(nn.Module):
 
         self.num_types = num_types
         self.nb_layers = nb_layers
+        self.skip_connection_coeff = skip_connection_coeff
 
         self.skip_connection = nn.Conv1d(in_channels=in_channels,
                                          out_channels=nb_filters,
@@ -82,10 +84,14 @@ class CCNN(nn.Module):
         for i, conv in enumerate(self.convs):
             enc_output = torch.nn.functional.leaky_relu(conv(event_times, enc_output, non_pad_mask),0.1)
             #enc_output = self.dropouts[i](enc_output)
-            final_enc_output = self.convs_skip_connections[i](enc_output.transpose(1,2)) + 0.9 * final_enc_output
+            final_enc_output = self.convs_skip_connections[i](enc_output.transpose(1,2)) + self.skip_connection_coeff * final_enc_output
 
+        if self.skip_connection_coeff == 0:
+            norm_const = 1
+        else:
+            norm_const = np.sum(np.array([self.skip_connection_coeff ** i for i in range(self.nb_layers)]))
 
-        return final_enc_output.transpose(1,2)/self.nb_layers#self.batch_norm(final_enc_output).transpose(1,2)
+        return final_enc_output.transpose(1,2)/norm_const#self.batch_norm(final_enc_output).transpose(1,2)
 
     def final(self, times, true_times, true_features, non_pad_mask, sim_size):
         out = self.final_list[0](times, true_times, true_features, non_pad_mask, sim_size)
