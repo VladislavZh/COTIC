@@ -25,7 +25,8 @@ class CCNN(nn.Module):
         self.dilation_factors = [2 ** i for i in range(0, nb_layers)]
 
         self.num_types = num_types
-
+        self.nb_layers = nb_layers
+        
         self.skip_connection = nn.Conv1d(in_channels=in_channels,
                                          out_channels=nb_filters,
                                          kernel_size=1)
