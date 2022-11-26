@@ -30,7 +30,7 @@ optimizers:
   0:
       name: lbfgs
       params:
-        lr: 0.001
+        lr: 1
         #weight_decay: 1e-8
       milestones:
         - 75
