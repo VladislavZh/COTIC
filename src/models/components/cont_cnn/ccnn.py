@@ -79,7 +79,7 @@ class CCNN(nn.Module):
             final_enc_output += self.convs_skip_connections[i](enc_output.transpose(1,2))
 
 
-        return self.batch_norm(final_enc_output).transpose(1,2)
+        return final_enc_output.transpose(1,2)/self.nb_layers#self.batch_norm(final_enc_output).transpose(1,2)
 
     def final(self, times, true_times, true_features, non_pad_mask, sim_size):
         out = self.final_list[0](times, true_times, true_features, non_pad_mask, sim_size)
