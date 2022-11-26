@@ -28,7 +28,7 @@ metrics:
   beta: 0.01
 optimizers:
   0:
-      name: radam
+      name: nadam
       params:
         lr: 0.01
         weight_decay: 1e-8
