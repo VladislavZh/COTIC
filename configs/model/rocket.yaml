@@ -1,0 +1,10 @@
+_target_: src.models.rocket.RocketModule
+
+num_class: 6 
+num_kernels: 100
+max_len: 353
+emb_dim: 16
+dropout: 0.1
+alpha: 0.05
+lr: 0.001
+weight_decay: 0.00001

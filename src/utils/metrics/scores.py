@@ -12,9 +12,7 @@ class R2Score:
         target = target.detach().cpu().numpy()
         return float(r2_score(target, pred))
 
-class MAE:
-    def __call__(
-        self,
+def MAE(
         pred: torch.Tensor,
         target: torch.Tensor
     ) -> float:
@@ -32,9 +30,7 @@ class RocAuc:
         target = target.detach().cpu().numpy()
         return float(roc_auc_score(target, pred, multi_class='ovr'))
 
-class Accuracy:
-    def __call__(
-        self,
+def Accuracy(
         pred: torch.Tensor,
         target: torch.Tensor
     ) -> float:
