@@ -44,11 +44,12 @@ class LinearKernel(nn.Module):
         self.layer = nn.Linear(in_channels, in_channels * out_channels)
         self.in_channels = in_channels
         self.out_channels = out_channels
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         shape = list(x.shape)[:-1]
         shape += [self.in_channels, self.out_channels]
-        x = self.layer(x)
+        x = self.dropout(self.layer(x))
         x = x.reshape(*shape)
 
         return x
