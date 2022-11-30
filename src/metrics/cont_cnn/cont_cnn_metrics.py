@@ -20,8 +20,8 @@ class CCNNMetrics(MetricsCore):
         time_loss_coeff: float = 1,
         sim_size: int = 100,
         reductions: dict = {
-            'log_likelihood': 'mean'
-            'type': 'sum'
+            'log_likelihood': 'mean',
+            'type': 'sum',
             'time': 'mean'
         }
     ):
