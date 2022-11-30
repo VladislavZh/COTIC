@@ -27,7 +27,7 @@ metrics:
   type_loss_coeff: 1
   time_loss_coeff: 10
   reductions:
-    log_likelihood: mean
+    log_likelihood: sum
     type: sum
     time: mean
   sim_size: 100
