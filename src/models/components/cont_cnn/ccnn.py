@@ -26,6 +26,7 @@ class CCNN(nn.Module):
 
         self.num_types = num_types
         self.nb_layers = nb_layers
+        self.nb_filters = nb_filters
 
         self.convs = nn.ModuleList([ContConv1d(kernel.recreate(self.in_channels[i]), kernel_size, self.in_channels[i], nb_filters, self.dilation_factors[i], include_zero_lag[i]) for i in range(nb_layers)])
 
