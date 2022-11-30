@@ -16,7 +16,7 @@ class CCNN(nn.Module):
         num_types: int,
         kernel: nn.Module,
         head: nn.Module,
-        skip_connection_coeff: float = 0.9
+        skip_connection_coeff: float = 0.5
     ) -> None:
         super().__init__()
         self.event_emb = nn.Embedding(num_types + 2, in_channels, padding_idx=0)
