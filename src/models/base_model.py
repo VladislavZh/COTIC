@@ -95,9 +95,8 @@ class BaseEventModule(LightningModule):
 
     def validation_step(self, batch: Any, batch_idx: int):
         loss, out = self.step(batch, 'val')
-        print(loss)
 
-        if isinstance(loss, Iterable):
+        if type(loss) != torch.Tensor:
             assert len(loss) == 2
 
             self.log("val/loss", loss[0] + loss[1], on_step=False, on_epoch=True, prog_bar=False)
