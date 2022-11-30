@@ -15,7 +15,8 @@ class CCNN(nn.Module):
         nb_layers: int,
         num_types: int,
         kernel: nn.Module,
-        head: nn.Module
+        head: nn.Module,
+        skip_connection_coeff: float = 0.9
     ) -> None:
         super().__init__()
         self.event_emb = nn.Embedding(num_types + 2, in_channels, padding_idx=0)
@@ -27,8 +28,26 @@ class CCNN(nn.Module):
         self.num_types = num_types
         self.nb_layers = nb_layers
         self.nb_filters = nb_filters
+        self.skip_connection_coeff = skip_connection_coeff
+
+        self.skip_connection = nn.Conv1d(in_channels=in_channels,
+                                         out_channels=nb_filters,
+                                         kernel_size=1)
+
+        self.dropouts = nn.ModuleList(
+            [
+                nn.Dropout(0.1) for i in range(nb_layers)
+            ]
+        )
 
         self.convs = nn.ModuleList([ContConv1d(kernel.recreate(self.in_channels[i]), kernel_size, self.in_channels[i], nb_filters, self.dilation_factors[i], include_zero_lag[i]) for i in range(nb_layers)])
+        self.convs_skip_connections = nn.ModuleList([
+            nn.Conv1d(
+                in_channels=nb_filters,
+                out_channels=nb_filters,
+                kernel_size=1)
+            for i in range(nb_layers)
+        ])
 
         self.final_list = nn.ModuleList([ContConv1dSim(kernel.recreate(self.nb_filters), 1, nb_filters, nb_filters), nn.LeakyReLU(0.1), nn.Linear(nb_filters, num_types), nn.Softplus(1000)])
 
@@ -63,10 +82,19 @@ class CCNN(nn.Module):
 
         enc_output = self.event_emb(event_types)
 
+        final_enc_output = self.skip_connection(enc_output.transpose(1,2))
+
         for i, conv in enumerate(self.convs):
             enc_output = torch.nn.functional.leaky_relu(conv(event_times, enc_output, non_pad_mask),0.1)
+            #enc_output = self.dropouts[i](enc_output)
+            final_enc_output = self.convs_skip_connections[i](enc_output.transpose(1,2)) + self.skip_connection_coeff * final_enc_output
 
-        return enc_output, self.head(enc_output.detach())
+        if self.skip_connection_coeff == 0:
+            norm_const = 1
+        else:
+            norm_const = np.sum(np.array([self.skip_connection_coeff ** i for i in range(self.nb_layers)]))
+
+        return final_enc_output.transpose(1,2)/norm_const, self.head(final_enc_output.detach())
 
     def final(self, times, true_times, true_features, non_pad_mask, sim_size):
         out = self.final_list[0](times, true_times, true_features, non_pad_mask, sim_size)
