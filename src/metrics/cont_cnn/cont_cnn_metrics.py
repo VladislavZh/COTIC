@@ -281,9 +281,9 @@ class CCNNMetrics(MetricsCore):
             inputs[0],
             inputs[1]
         )
-        if self.reduction['log_likelihood'] not in ['mean', 'sum']:
+        if self.reductions['log_likelihood'] not in ['mean', 'sum']:
             raise ValueError('log_likelihood reduction not in \'mean\', \'sum\'')
-        if self.reduction['log_likelihood'] == 'mean':
+        if self.reductions['log_likelihood'] == 'mean':
             ll_loss = -torch.mean(event_ll - non_event_ll)
         else:
             ll_loss = -torch.sum(event_ll - non_event_ll)
