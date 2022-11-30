@@ -31,6 +31,8 @@ class CCNN(nn.Module):
 
         self.final_list = nn.ModuleList([ContConv1dSim(LinearKernel(nb_filters, nb_filters), 1, nb_filters, nb_filters), nn.LeakyReLU(0.1), nn.Linear(nb_filters, num_types), nn.Softplus(100)])
 
+        self.head = head
+        
     def __add_bos(self, event_times, event_types, lengths):
         bs, L = event_times.shape
         event_times = torch.concat([torch.zeros(bs, 1).to(event_times.device), event_times], dim = 1)
