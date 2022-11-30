@@ -94,7 +94,9 @@ class CCNN(nn.Module):
         else:
             norm_const = np.sum(np.array([self.skip_connection_coeff ** i for i in range(self.nb_layers)]))
 
-        return final_enc_output.transpose(1,2)/norm_const, self.head(final_enc_output.detach())
+        final_enc_output = final_enc_output.transpose(1,2)
+
+        return final_enc_output/norm_const, self.head(final_enc_output.detach())
 
     def final(self, times, true_times, true_features, non_pad_mask, sim_size):
         out = self.final_list[0](times, true_times, true_features, non_pad_mask, sim_size)
