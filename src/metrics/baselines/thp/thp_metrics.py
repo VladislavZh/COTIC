@@ -124,6 +124,10 @@ class THPMetrics(MetricsCore):
         temp_hid = model.linear(data)[:, :-1, :]
         temp_hid = torch.sum(temp_hid, dim=2, keepdim=True)
 
+        print('Lambda',temp_hid[0])
+        print(model.alpha)
+        print(model.beta)
+
         all_lambda = self.softplus(temp_hid + model.alpha * temp_time, model.beta)
         all_lambda = torch.sum(all_lambda, dim=2) / num_samples
 
