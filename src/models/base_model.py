@@ -140,7 +140,7 @@ class BaseEventModule(LightningModule):
         self.log("test/event_type_metric", event_type_metric, on_step=False, on_epoch=True)
 
     def configure_optimizers(self):
-        optimizer = get_optimizer(self.hparams.optimizers[0]['name'], torch.nn.ModuleList([self.net, self.head]).parameters(), self.hparams.optimizers[0]['params'])
+        optimizer = get_optimizer(self.hparams.optimizer['name'], self.net.parameters(), self.hparams.optimizer['params'])
         schedulers = []
         if self.hparams.scheduler is not None:
             params = self.hparams.scheduler
