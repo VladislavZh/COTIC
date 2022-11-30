@@ -50,7 +50,7 @@ class BaseEventModule(LightningModule):
         self.val_metrics = metrics.copy_empty()
         self.test_metrics = metrics.copy_empty()
 
-        self.start_time = None
+        self.start_time = time.time()
 
     def forward(self, batch):
         return self.net(*batch)
@@ -66,9 +66,6 @@ class BaseEventModule(LightningModule):
             loss = self.test_metrics.compute_loss_and_add_values(self, batch, outputs)
 
         return loss, outputs
-
-    def on_train_start(self):
-        self.start_time = time.time()
 
     def training_step(self, batch: Any, batch_idx: int):
         loss, out = self.step(batch, 'train')
