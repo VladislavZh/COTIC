@@ -147,6 +147,7 @@ class THPMetrics(MetricsCore):
         for i in range(pl_module.net.num_types):
             type_mask[:, :, i] = (event_type == i + 1).bool().to(enc_output.device)
 
+        diff_time = (time[:, 1:] - time[:, :-1]) * non_pad_mask[:, 1:]
         all_hid = pl_module.net.linear(enc_output)[:,:-1,:]
         all_hid = torch.sum(all_hid * type_mask[:, 1:, :], dim=2)
         type_lambda = self.softplus(all_hid + pl_module.net.alpha * diff_time, pl_module.net.beta)
