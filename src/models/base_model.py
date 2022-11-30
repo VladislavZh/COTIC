@@ -81,6 +81,8 @@ class BaseEventModule(LightningModule):
                     return {"loss": loss[0] + loss[1]}
             return {"loss": loss[0]}
 
+        print(loss)
+
         self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
 
         return {"loss": loss, "out": out}
