@@ -15,17 +15,17 @@ class THPMetrics(MetricsCore):
         super().__init__(return_time_metric, event_type_metric)
         self.type_loss_func = torch.nn.CrossEntropyLoss(ignore_index=-1, reduction='none')
         self.scale_time_loss = scale_time_loss
-        
+
     @staticmethod
     def get_return_time_target(
         inputs: Union[Tuple, torch.Tensor]
     ) -> torch.Tensor:
         """
         Takes input batch and returns the corresponding return time targets as 1d Tensor
-        
+
         args:
             inputs - Tuple or torch.Tensor, batch received from the dataloader
-        
+
         return:
             return_time_target - torch.Tensor, 1d Tensor with return time targets
         """
@@ -33,24 +33,24 @@ class THPMetrics(MetricsCore):
         return_time = event_time[:,1:] - event_time[:,:-1]
         mask = inputs[1].ne(0)[:,1:]
         return return_time[mask]
-    
+
     @staticmethod
     def get_event_type_target(
         inputs: Union[Tuple, torch.Tensor]
     ) -> torch.Tensor:
         """
         Takes input batch and returns the corresponding event type targets as 1d Tensor
-        
+
         args:
             inputs - Tuple or torch.Tensor, batch received from the dataloader
-        
+
         return:
             event_type_target - torch.Tensor, 1d Tensor with event type targets
         """
         event_type = inputs[1][:,1:]
         mask = inputs[1].ne(0)[:,1:]
         return event_type[mask]
-    
+
     @staticmethod
     def get_return_time_predicted(
         pl_module: LightningModule,
@@ -59,19 +59,19 @@ class THPMetrics(MetricsCore):
     ) -> torch.Tensor:
         """
         Takes lighning model, input batch and model outputs, returns the corresponding predicted return times as 1d Tensor
-        
+
         args:
             pl_module - LightningModule, training lightning model
             inputs - Tuple or torch.Tensor, batch received from the dataloader
             outputs - Tuple or torch.Tensor, model output
-        
+
         return:
             return_time_predicted - torch.Tensor, 1d Tensor with return time prediction
         """
         return_time_prediction = outputs[1][1].squeeze_(-1)[:,:-1]
         mask = inputs[1].ne(0)[:,1:]
         return return_time_prediction[mask]
-    
+
     @staticmethod
     def get_event_type_predicted(
         pl_module: LightningModule,
@@ -80,26 +80,26 @@ class THPMetrics(MetricsCore):
     ) -> torch.Tensor:
         """
         Takes lighning model, input batch and model outputs, returns the corresponding predicted event types as 1d Tensor
-        
+
         args:
             pl_module - LightningModule, training lightning model
             inputs - Tuple or torch.Tensor, batch received from the dataloader
             outputs - Tuple or torch.Tensor, model output
-        
+
         return:
             event_type_predicted - torch.Tensor, 2d Tensor with event type unnormalized predictions
         """
         event_type_prediction = outputs[1][0][:,:-1,:]
         mask = inputs[1].ne(0)[:,1:]
         return event_type_prediction[mask,:]
-    
+
     @staticmethod
     def softplus(x, beta):
         # hard thresholding at 20
         temp = beta * x
         temp[temp > 20] = 20
         return 1.0 / beta * torch.log(1 + torch.exp(temp))
-    
+
     @staticmethod
     def compute_event(type_lambda, non_pad_mask):
         """ Log-likelihood of events. """
@@ -110,7 +110,7 @@ class THPMetrics(MetricsCore):
 
         result = torch.log(type_lambda)
         return result
-    
+
     def compute_integral_unbiased(self, model, data, time, non_pad_mask, type_mask):
         """ Log-likelihood of non-events, using Monte Carlo integration. """
 
@@ -129,7 +129,7 @@ class THPMetrics(MetricsCore):
 
         unbiased_integral = all_lambda * diff_time
         return unbiased_integral
-    
+
     def event_and_non_event_log_likelihood(
         self,
         pl_module: LightningModule,
@@ -160,7 +160,7 @@ class THPMetrics(MetricsCore):
         non_event_ll = torch.sum(non_event_ll, dim=-1)
 
         return event_ll, non_event_ll
-    
+
     def compute_log_likelihood_per_event(
         self,
         pl_module: LightningModule,
@@ -168,14 +168,14 @@ class THPMetrics(MetricsCore):
         outputs: Union[Tuple, torch.Tensor]
     ) -> torch.Tensor:
         """
-        Takes lighning model, input batch and model outputs, returns the corresponding log likelihood per event for each sequence in the batch as 1d Tensor of shape (bs,), 
+        Takes lighning model, input batch and model outputs, returns the corresponding log likelihood per event for each sequence in the batch as 1d Tensor of shape (bs,),
         one can use self.step_[return_time_target/event_type_target/return_time_predicted/event_type_predicted] if needed
-        
+
         args:
             pl_module - LightningModule, training lightning model
             inputs - Tuple or torch.Tensor, batch received from the dataloader
             outputs - Tuple or torch.Tensor, model output
-        
+
         return:
             log_likelihood_per_seq - torch.Tensor, 1d Tensor with log likelihood per event prediction, shape = (bs,)
         """
@@ -188,7 +188,7 @@ class THPMetrics(MetricsCore):
         lengths = torch.sum(inputs[1].ne(0).type(torch.float), dim = 1)
         results = (event_ll - non_event_ll)/lengths
         return results
-    
+
     def type_loss(self, prediction, types):
         """ Event prediction loss, cross entropy. """
 
@@ -200,7 +200,7 @@ class THPMetrics(MetricsCore):
 
         loss = torch.sum(loss)
         return loss
-    
+
     @staticmethod
     def time_loss(prediction, event_time):
         """ Time prediction loss. """
@@ -214,7 +214,7 @@ class THPMetrics(MetricsCore):
         diff = prediction - true
         se = torch.sum(diff * diff)
         return se
-    
+
     def compute_loss(
         self,
         pl_module: LightningModule,
@@ -224,12 +224,12 @@ class THPMetrics(MetricsCore):
         """
         Takes lighning model, input batch and model outputs, returns the corresponding loss for backpropagation,
         one can use self.step_[return_time_target/event_type_target/return_time_predicted/event_type_predicted/ll_per_event] if needed
-        
+
         args:
             pl_module - LightningModule, training lightning model
             inputs - Tuple or torch.Tensor, batch received from the dataloader
             outputs - Tuple or torch.Tensor, model output
-        
+
         return:
             loss - torch.Tensor, loss for backpropagation
         """
@@ -239,8 +239,8 @@ class THPMetrics(MetricsCore):
             inputs[0],
             inputs[1]
         )
-        ll_loss = -torch.sum(event_ll - non_event_ll)
+        ll_loss = -torch.mean(event_ll - non_event_ll)
         type_loss = self.type_loss(outputs[1][0], inputs[1])
         time_loss = self.time_loss(outputs[1][1], inputs[0])
-        
+
         return ll_loss + type_loss + time_loss / self.scale_time_loss

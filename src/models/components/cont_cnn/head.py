@@ -1,5 +1,8 @@
 import torch
 import torch.nn as nn
+from .kernels import Kernel
+
+from typing import Tuple
 
 class PredictionHead(nn.Module):
     def __init__(
@@ -8,11 +11,11 @@ class PredictionHead(nn.Module):
         num_types: int
     ) -> None:
         super().__init__()
-        self.return_time_prediction = nn.Sequential(nn.Linear(in_channels, 128),nn.ReLU(),nn.Linear(128,1))
-        self.event_type_prediction = nn.Sequential(nn.Linear(in_channels, 128),nn.ReLU(),nn.Linear(128,num_types))
-        
+        self.return_time_prediction = nn.Linear(in_channels, 1)# nn.Sequential(nn.Linear(in_channels, 128),nn.ReLU(),nn.Linear(128,1))
+        self.event_type_prediction = nn.Linear(in_channels, num_types)# nn.Sequential(nn.Linear(in_channels, 128),nn.ReLU(),nn.Linear(128,num_types))
+
     def forward(
         self,
         enc_output: torch.Tensor
-    ) -> torch.Tensor:
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         return self.return_time_prediction(enc_output), self.event_type_prediction(enc_output)

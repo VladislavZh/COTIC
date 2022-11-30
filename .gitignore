@@ -148,3 +148,4 @@ wandb/
 .autoenv
 .vs/
 /*.ipynb
+notebook*

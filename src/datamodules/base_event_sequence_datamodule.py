@@ -18,6 +18,7 @@ class EventDataModule(LightningDataModule):
         unix_time: bool = False,
         train_val_test_split: Tuple[float, float, float] = (0.8, 0.1, 0.1),
         batch_size: int = 64,
+        dataset_size: Optional[int] = None,
         num_workers: int = 0,
         pin_memory: bool = False,
         random_seed: int = 42,
@@ -38,9 +39,9 @@ class EventDataModule(LightningDataModule):
         if not self.data_train and not self.data_val and not self.data_test:
             if "preprocess_type" in self.hparams.keys():
                 times, events = load_data(self.hparams.data_dir, self.hparams.unix_time,
-                                          self.hparams.preprocess_type)
+                                          self.hparams.dataset_size, self.hparams.preprocess_type)
             else:
-                times, events = load_data(self.hparams.data_dir, self.hparams.unix_time)
+                times, events = load_data(self.hparams.data_dir, self.hparams.unix_time, self.hparams.dataset_size)
             dataset = EventData(times, events)
             N = len(dataset)
             lengths = [int(N * v) for v in self.hparams.train_val_test_split]
@@ -57,7 +58,7 @@ class EventDataModule(LightningDataModule):
             batch_size=self.hparams.batch_size,
             num_workers=self.hparams.num_workers,
             pin_memory=self.hparams.pin_memory,
-            shuffle=True,   # TODO Why True for time series?
+            shuffle=True,
         )
 
     def val_dataloader(self):

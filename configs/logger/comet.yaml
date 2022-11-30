@@ -2,6 +2,7 @@
 
 comet:
  _target_: pytorch_lightning.loggers.comet.CometLogger
- api_key: hqE29mh2cWlSYBaYidXDi1biJ
- project_name: event-sequence-experiments
- workspace: gaechka
+ api_key: ${oc.env:COMET_API_TOKEN}
+ project_name: amznew
+ workspace: ${oc.env:COMET_WORKSPACE_NAME}
+ experiment_name: ${name}

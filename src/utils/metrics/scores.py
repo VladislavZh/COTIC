@@ -40,4 +40,4 @@ class Accuracy:
     ) -> float:
         pred = np.argmax(pred.detach().cpu().numpy(), axis = -1)
         target = target.detach().cpu().numpy() - 1
-        return accuracy_score(target, pred)
+        return accuracy_score(target[target>-1], pred[target>-1])
