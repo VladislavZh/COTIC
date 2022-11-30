@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 import os
 import tqdm
 import torch
@@ -38,17 +38,32 @@ class Data_preprocessor():
 
         return data
 
+def load_data_parquet(
+    data_path: str,
+    time_col: str = "time",
+    event_col: str = "event",
+) -> List[torch.Tensor]:
+    """
+    Reads parquet file with data of all sequences, and separates them into times/events
+    """
+    times = []
+    events = []
+    full_data = pd.read_parquet(data_path, engine="pyarrow")
+    times = torch.Tensor(list(full_data[time_col]))
+    events = torch.Tensor(list(full_data[event_col]))
+
+    return times, events
+
 def load_data(
     data_dir: str,
     unix_time: bool = False,
-    dataset_size: Optional[int] = None,
     preprocess_type: str = "default"
     ) -> List[torch.Tensor]:
     times = []
     events = []
     if preprocess_type == "default":
         data_preprocessor = Data_preprocessor()
-    count = 0
+
     for f in tqdm.tqdm(sorted(
         os.listdir(data_dir),
         key=lambda x: int(re.sub(fr".csv", "", x))
@@ -63,9 +78,5 @@ def load_data(
             times.append(torch.Tensor(list(df['time'])))
             events.append(torch.Tensor(list(df['event'])))
             if unix_time:
-                times[-1]/=86400
-            count += 1
-            if dataset_size is not None:
-                if count == dataset_size:
-                    break
+                times[-1] /= 86400
     return times, events

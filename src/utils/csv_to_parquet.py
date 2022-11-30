@@ -28,7 +28,7 @@ total_df["sequence_id"] = seq_id
 for i in tqdm.tqdm(range(1, len(csvs)), total=len(csvs) - 1, miniters=1):
     seq_id = csvs[i].split("/")[-1]
     seq_id = seq_id.split(".")[0]
-    curr_df = pd.read_csv(csvs[0], usecols=[time_col,event_col])
+    curr_df = pd.read_csv(csvs[i], usecols=[time_col,event_col])
     curr_df["sequence_id"] = seq_id
     total_df = pd.concat([total_df, curr_df])
 
