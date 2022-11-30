@@ -30,7 +30,7 @@ metrics:
     log_likelihood: mean
     type: sum
     time: mean
-  sim_size: 50
+  sim_size: 40
 optimizer:
   name: adam
   params:
