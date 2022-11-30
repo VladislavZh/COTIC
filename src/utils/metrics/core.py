@@ -29,7 +29,7 @@ class MetricsCore(ABC):
         self.__return_time_target    = torch.Tensor([])
         self.__event_type_target     = torch.Tensor([])
         self.__return_time_predicted = torch.Tensor([])
-        self.__event_type_predicted  = torch.Tensor([[]])
+        self.__event_type_predicted  = torch.Tensor([])
         self.__ll_per_event          = torch.Tensor([])
 
     def copy_empty(
