@@ -308,7 +308,6 @@ class MetricsCore(ABC):
         """
         Returns mean log likelihood per event, return time metric value and event type metric value
         """
-        print(self.event_type_predicted)
         ll = torch.mean(self.ll_per_event)
         return_time_metric = self.return_time_metric(self.return_time_predicted, self.return_time_target)
         event_type_metric  = self.event_type_metric(torch.nn.functional.softmax(self.event_type_predicted, dim=1), self.event_type_target)
