@@ -12,6 +12,8 @@ net:
     hidden1: 8
     hidden2: 4
     hidden3: 8
+    in_channels: ${model.net.nb_filters}
+    out_channels: ${model.net.nb_filters}
   head:
     _target_: src.models.components.cont_cnn.PredictionHead
     in_channels: ${model.net.nb_filters}

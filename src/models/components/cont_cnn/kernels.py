@@ -18,8 +18,10 @@ class Kernel(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
 
-    def recreate(self):
-        return type(self)(*self.args)
+    def recreate(self, in_channels):
+        args = self.args.copy()
+        args[3] = in_channels
+        return type(self)(*args)
 
     def forward(self, x):
         shape = list(x.shape)[:-1]
