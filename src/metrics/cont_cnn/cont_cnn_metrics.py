@@ -115,8 +115,8 @@ class CCNNMetrics(MetricsCore):
             event_type_predicted - torch.Tensor, 2d Tensor with event type unnormalized predictions
         """
         event_type_prediction = outputs[1][1][:,1:-1,:]
-        print(event_type_prediction.shape)
         mask = inputs[1].ne(0)[:,1:]
+        print(event_type_prediction[mask,:].shape)
         return event_type_prediction[mask,:]
 
     @staticmethod
