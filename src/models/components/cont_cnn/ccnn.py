@@ -49,7 +49,7 @@ class CCNN(nn.Module):
             for i in range(nb_layers)
         ])
 
-        self.final_list = nn.ModuleList([ContConv1dSim(kernel.recreate(self.nb_filters), 1, nb_filters, nb_filters), nn.LeakyReLU(0.1), nn.Linear(nb_filters, num_types), nn.Softplus(1000)])
+        self.final_list = nn.ModuleList([ContConv1dSim(kernel.recreate(self.nb_filters, self.num_types), 1, nb_filters, self.num_types), nn.Softplus(100)])
 
         self.head = head
 
@@ -102,4 +102,4 @@ class CCNN(nn.Module):
         out = self.final_list[0](times, true_times, true_features, non_pad_mask, sim_size)
         for layer in self.final_list[1:]:
             out = layer(out)
-        return torch.clip(out, min=0, max=20)
+        return out
