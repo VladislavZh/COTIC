@@ -97,7 +97,7 @@ class BaseEventModule(LightningModule):
         self.log("train/event_type_metric", event_type_metric, on_step=False, on_epoch=True, prog_bar=True)
 
     def validation_step(self, batch: Any, batch_idx: int):
-        loss, out = self.step(batch, 'train')
+        loss, out = self.step(batch, 'val')
 
         if isinstance(loss, Iterable):
             assert len(loss) == 2
@@ -119,7 +119,7 @@ class BaseEventModule(LightningModule):
         self.log("training_time", time.time() - self.start_time, on_step=False, on_epoch=True, prog_bar=True)
 
     def test_step(self, batch: Any, batch_idx: int):
-        loss, out = self.step(batch, 'train')
+        loss, out = self.step(batch, 'test')
 
         if isinstance(loss, Iterable):
             assert len(loss) == 2
