@@ -30,11 +30,11 @@ metrics:
     log_likelihood: mean
     type: sum
     time: mean
-  sim_size: 40
+  sim_size: 100
 optimizer:
   name: adam
   params:
-    lr: 0.01
+    lr: 0.001
     weight_decay: 1e-8
 scheduler:
   step: null
