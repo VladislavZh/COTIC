@@ -95,6 +95,7 @@ class BaseEventModule(LightningModule):
 
     def validation_step(self, batch: Any, batch_idx: int):
         loss, out = self.step(batch, 'val')
+        print(loss)
 
         if isinstance(loss, Iterable):
             assert len(loss) == 2
