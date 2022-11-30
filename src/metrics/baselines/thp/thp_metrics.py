@@ -153,7 +153,7 @@ class THPMetrics(MetricsCore):
         type_lambda = self.softplus(all_hid + pl_module.net.alpha * diff_time, pl_module.net.beta)
 
         # event log-likelihood
-        event_ll = self.compute_event(type_lambda, non_pad_mask)
+        event_ll = self.compute_event(type_lambda, non_pad_mask[:,1:])
         event_ll = torch.sum(event_ll, dim=-1)
 
         # non-event log-likelihood, MC integration
