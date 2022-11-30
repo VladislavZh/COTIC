@@ -63,9 +63,7 @@ class CCNN(nn.Module):
         for i, conv in enumerate(self.convs):
             enc_output = torch.nn.functional.leaky_relu(conv(event_times, enc_output, non_pad_mask),0.1)
 
-        out = final_enc_output.transpose(1,2)
-
-        return final_enc_output.transpose(1,2), self.head(out.detach())
+        return enc_output, self.head(enc_output.detach())
 
     def final(self, times, true_times, true_features, non_pad_mask, sim_size):
         out = self.final_list[0](times, true_times, true_features, non_pad_mask, sim_size)
