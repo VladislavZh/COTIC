@@ -40,9 +40,8 @@ class EventData(Dataset):
             tensor_times[i,:l] = times[i]
             dts = torch.concat([dts,times[i][1:]-times[i][:-1]])
             tensor_events[i,:l] = events[i] + 1
-
         return tensor_times, tensor_events.long()
-
+        
     def __len__(self):
         return len(self.__times)
 
