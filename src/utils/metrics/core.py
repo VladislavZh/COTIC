@@ -297,7 +297,6 @@ class MetricsCore(ABC):
         self.__check_shapes()
 
         self.__append_step_values()
-        print(self.event_type_predicted.shape)
 
         loss = self.compute_loss(pl_module, inputs, outputs)
 
@@ -309,7 +308,7 @@ class MetricsCore(ABC):
         """
         Returns mean log likelihood per event, return time metric value and event type metric value
         """
-        print('In compute')
+        print(self.event_type_predicted)
         ll = torch.mean(self.ll_per_event)
         return_time_metric = self.return_time_metric(self.return_time_predicted, self.return_time_target)
         event_type_metric  = self.event_type_metric(torch.nn.functional.softmax(self.event_type_predicted, dim=1), self.event_type_target)
@@ -319,7 +318,6 @@ class MetricsCore(ABC):
         """
         Clears stored values
         """
-        print('In clear')
         self.__return_time_target    = torch.Tensor([])
         self.__event_type_target     = torch.Tensor([])
         self.__return_time_predicted = torch.Tensor([])
