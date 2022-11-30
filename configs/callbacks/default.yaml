@@ -9,12 +9,12 @@ model_checkpoint:
   filename: "epoch_{epoch:03d}"
   auto_insert_metric_name: False
 
-# early_stopping:
-#   _target_: pytorch_lightning.callbacks.EarlyStopping
-#   monitor: "val/return_time_metric" # name of the logged metric which determines when model is improving
-#   mode: "min" # "max" means higher metric value is better, can be also "min"
-#   patience: 100 # how many validation epochs of not improving until training stops
-#   min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
+early_stopping:
+  _target_: pytorch_lightning.callbacks.EarlyStopping
+  monitor: "val/log_likelihood" # name of the logged metric which determines when model is improving
+  mode: "max" # "max" means higher metric value is better, can be also "min"
+  patience: 100 # how many validation epochs of not improving until training stops
+  min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
 
 model_summary:
   _target_: pytorch_lightning.callbacks.RichModelSummary
@@ -22,11 +22,3 @@ model_summary:
 
 rich_progress_bar:
   _target_: pytorch_lightning.callbacks.RichProgressBar
-
-# rf_trainer:
-#   _target_: src.callbacks.rf_trainer.RFTraining
-
-# true_intensity_check:
-#   _target_: src.callbacks.true_intensity_check.PrintingCallback
-#   data_path: ${data_dir}
-#   work_dir: ${original_work_dir}

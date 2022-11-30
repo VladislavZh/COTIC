@@ -20,7 +20,6 @@ class ContConv1d(nn.Module):
         in_channels: int,
         out_channels: int,
         dilation: int = 1,
-        dropout=0.1,
         include_zero_lag: bool = False
     ):
         """
@@ -54,7 +53,6 @@ class ContConv1d(nn.Module):
             [math.pow(10000.0, 2.0 * (i // 2) / self.in_channels) for i in range(self.in_channels)])
 
         self.norm = nn.BatchNorm1d(out_channels)
-        self.dropout = nn.Dropout(dropout)
 
     def __temporal_enc(self, time):
         result = time.unsqueeze(-1) / self.position_vec.to(time.device)
@@ -131,7 +129,6 @@ class ContConv1d(nn.Module):
 
         kernel_values = self.kernel(self.__temporal_enc(delta_times))
         kernel_values[~dt_mask,...] = 0
-        #kernel_values[dt_mask,:,:] = self.kernel(self.__temporal_enc(delta_times[dt_mask]))#
 
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1,3))
@@ -150,8 +147,7 @@ class ContConv1dSim(nn.Module):
         kernel: nn.Module,
         kernel_size: int,
         in_channels: int,
-        out_channels: int,
-        dropout=0.1
+        out_channels: int
     ):
         """
         args:
@@ -170,7 +166,6 @@ class ContConv1dSim(nn.Module):
             [math.pow(10000.0, 2.0 * (i // 2) / self.in_channels) for i in range(self.in_channels)])
 
         self.norm = nn.LayerNorm(out_channels)
-        self.dropout = nn.Dropout(dropout)
 
     def __temporal_enc(self, time):
         result = time.unsqueeze(-1) / self.position_vec.to(time.device)
@@ -268,7 +263,5 @@ class ContConv1dSim(nn.Module):
         kernel_values[~dt_mask,...] = 0
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1,3))
-
-        # out = self.dropout(self.norm(out))
 
         return out

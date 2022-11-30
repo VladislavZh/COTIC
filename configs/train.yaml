@@ -32,6 +32,7 @@ original_work_dir: ${hydra:runtime.cwd}
 # path to folder with data
 data_dir: ${original_work_dir}/data/amz7k
 unix_time: True
+num_types: 8
 
 # pretty print config at the start of the run using Rich library
 print_config: True

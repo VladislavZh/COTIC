@@ -5,7 +5,9 @@ from typing import List, Tuple
 
 class EventData(Dataset):
     """
-    Base event sequence dataset, takes list of sequences of event times and event types, pads them and returns event_time torch Tensor and event type torch Tensor
+    Base event sequence dataset
+    Takes list of sequences of event times and event types,
+    pads them and returns event_time torch Tensor and event type torch Tensor
     """
     def __init__(
         self,
@@ -38,9 +40,8 @@ class EventData(Dataset):
             tensor_times[i,:l] = times[i]
             dts = torch.concat([dts,times[i][1:]-times[i][:-1]])
             tensor_events[i,:l] = events[i] + 1
-        norm_const = 1#torch.median(dts)
-        print(norm_const)
-        return tensor_times/norm_const, tensor_events.long()
+
+        return tensor_times, tensor_events.long()
 
     def __len__(self):
         return len(self.__times)

@@ -2,8 +2,14 @@ import torch
 import math
 
 class LogCoshLoss(torch.nn.Module):
-    def __init__(self):
+    def __init__(
+        self,
+        reduction: str = 'mean'
+    ) -> None:
         super().__init__()
+        if reduction not in ['mean', 'sum']:
+            raise ValueError('LogCoshLoss: reduction not in [\'mean\', \'sum\']')
+        self.__reduction = reduction
 
     @staticmethod
     def __log_cosh(x: torch.Tensor) -> torch.Tensor:
@@ -12,6 +18,11 @@ class LogCoshLoss(torch.nn.Module):
         return out
 
     def forward(
-        self, y_pred: torch.Tensor, y_true: torch.Tensor
+        self,
+        y_true: torch.Tensor,
+        y_pred: torch.Tensor
     ) -> torch.Tensor:
-        return torch.mean(self.__log_cosh(y_pred - y_true))
+        if self.__reduction == 'mean':
+            return torch.mean(self.__log_cosh(y_pred - y_true))
+        else:
+            return torch.sum(self.__log_cosh(y_pred - y_true))

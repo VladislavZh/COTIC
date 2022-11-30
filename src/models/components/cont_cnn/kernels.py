@@ -6,6 +6,8 @@ class Kernel(nn.Module):
     """
     def __init__(self, hidden1, hidden2, hidden3, in_channels, out_channels):
         super().__init__()
+        self.args = [hidden1, hidden2, hidden3, in_channels, out_channels]
+
         self.layer_1 = nn.Linear(in_channels, hidden1)
         self.relu_1 = nn.ReLU()
         self.layer_2 = nn.Linear(hidden1, hidden2)
@@ -15,6 +17,9 @@ class Kernel(nn.Module):
         self.layer_4 = nn.Linear(hidden3, in_channels * out_channels)
         self.in_channels = in_channels
         self.out_channels = out_channels
+
+    def recreate(self):
+        return type(self)(*self.args)
 
     def forward(self, x):
         shape = list(x.shape)[:-1]
@@ -37,7 +42,6 @@ class LinearKernel(nn.Module):
         self.layer = nn.Linear(in_channels, in_channels * out_channels)
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         shape = list(x.shape)[:-1]
