@@ -9,9 +9,9 @@ net:
   num_types: ${num_types}
   kernel:
     _target_: src.models.components.cont_cnn.Kernel
-    hidden_1: 8
-    hidden_2: 4
-    hidden_3: 8
+    hidden1: 8
+    hidden2: 4
+    hidden3: 8
   head:
     _target_: src.models.components.cont_cnn.PredictionHead
     in_channels: ${model.net.nb_filters}
