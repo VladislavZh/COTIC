@@ -161,6 +161,7 @@ class CCNNMetrics(MetricsCore):
 
         bos_full_times = self.__add_sim_times(event_time, num_samples)
         all_lambda = model.final(bos_full_times, event_time, enc_output, non_pad_mask.bool(), num_samples) # shape = (bs, (num_samples + 1) * L + 1, num_types)
+        all_lambda = torch.exp(all_lambda)
 
         bs, _, num_types = all_lambda.shape
 
@@ -196,7 +197,8 @@ class CCNNMetrics(MetricsCore):
         type_lambda = torch.sum(all_lambda[:,1:,:] * type_mask, dim=2) #shape = (bs, L)
 
         # event log-likelihood
-        event_ll = self.compute_event(type_lambda, non_pad_mask[:,1:])
+        event_ll = type_lambda * non_pad_mask[:,1:]
+        # event_ll = self.compute_event(type_lambda, non_pad_mask[:,1:])
         event_ll = torch.sum(event_ll, dim=-1)
 
         # non-event log-likelihood, MC integration
