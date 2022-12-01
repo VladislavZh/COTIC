@@ -199,7 +199,7 @@ class ContConv1dSim(nn.Module):
             dt_mask - torch.Tensor of shape = (bs, kernel_size, (sim_size+1)*(max_len-1)+1)), bool tensor that indicates delta_times true values
         """
         # parameters
-        padding = (kernel_size) * 1
+        padding = (kernel_size-1) * 1
         kernel = torch.eye(kernel_size).unsqueeze(1).to(times.device)
         in_channels = true_features.shape[2]
 
