@@ -2,7 +2,7 @@ _target_: src.datamodules.base_event_sequence_datamodule.EventDataModule
 
 data_dir: ${data_dir}
 unix_time: ${unix_time}
-batch_size: 20
+batch_size: 10
 dataset_size: null
 train_val_test_split: [0.8, 0.1, 0.1]
 num_workers: 0
