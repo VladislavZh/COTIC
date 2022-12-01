@@ -90,6 +90,7 @@ class PrintingCallback(Callback):
         non_pad_mask = torch.concat([torch.ones(event_time.shape[0],1).to(event_time.device),  events.ne(0).long()], dim = 1).bool()
 
         tracked_intensity = torch.sum(pl_module.net.final(full_times, event_time, enc_output, non_pad_mask, self.sim_size), dim=-1).detach().cpu().numpy()[0] # shape = (bs, (num_samples + 1) * L + 1, num_types)
+        tracked_intensity = torch.exp(tracked_intensity)
 
         fig = plt.figure(figsize=(16,9), dpi=300)
         if self.true_model:
