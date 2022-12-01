@@ -25,7 +25,7 @@ metrics:
   event_type_metric:
     _target_: src.utils.metrics.Accuracy
   type_loss_coeff: 1
-  time_loss_coeff: 10
+  time_loss_coeff: 1
   reductions:
     log_likelihood: mean
     type: sum
@@ -37,7 +37,7 @@ optimizer:
     lr: 0.0005
     weight_decay: 1e-8
 scheduler:
-  step: 150
+  step: 100
   milestones: null
   gamma: 0.1
 head_start: 1
