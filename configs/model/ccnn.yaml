@@ -37,7 +37,7 @@ optimizer:
     lr: 0.01
     weight_decay: 1e-8
 scheduler:
-  step: 1
+  step: 10
   milestones: null
-  gamma: 0.99
+  gamma: 0.95
 head_start: 1
