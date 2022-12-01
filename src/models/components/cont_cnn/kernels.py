@@ -18,9 +18,11 @@ class Kernel(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
 
-    def recreate(self, in_channels):
+    def recreate(self, in_channels, out_channels = None):
         args = self.args.copy()
         args[3] = in_channels
+        if out_channels is not None:
+            args[4] = out_channels
         return type(self)(*args)
 
     def forward(self, x):
