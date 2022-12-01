@@ -42,6 +42,7 @@ def load_data_parquet(
     data_path: str,
     time_col: str = "time",
     event_col: str = "event",
+    seq_col: str = "sequence_id",
 ) -> List[torch.Tensor]:
     """
     Reads parquet file with data of all sequences, and separates them into times/events
@@ -49,8 +50,11 @@ def load_data_parquet(
     times = []
     events = []
     full_data = pd.read_parquet(data_path, engine="pyarrow")
-    times = torch.Tensor(list(full_data[time_col]))
-    events = torch.Tensor(list(full_data[event_col]))
+    sequences = [x.reset_index(drop=True) for _, x in full_data.groupby([seq_col])]
+    
+    for seq in tqdm.tqdm(sequences):
+            times.append(torch.Tensor(list(seq[time_col])))
+            events.append(torch.Tensor(list(seq[event_col])))
 
     return times, events
 
