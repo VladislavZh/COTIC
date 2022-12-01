@@ -72,8 +72,8 @@ class Transformer(nn.Module):
         if self.rnn_flag:
             enc_output = self.rnn(enc_output, non_pad_mask)
 
-        time_prediction = self.time_predictor(enc_output.detach(), non_pad_mask)
+        time_prediction = self.time_predictor(enc_output, non_pad_mask)
 
-        type_prediction = self.type_predictor(enc_output.detach(), non_pad_mask)
+        type_prediction = self.type_predictor(enc_output, non_pad_mask)
 
         return enc_output, (type_prediction, time_prediction)
