@@ -86,7 +86,7 @@ class CCNN(nn.Module):
 
         for i, conv in enumerate(self.convs):
             enc_output = torch.nn.functional.leaky_relu(conv(event_times, enc_output, non_pad_mask),0.1)
-            #enc_output = self.dropouts[i](enc_output)
+            enc_output = self.dropouts[i](enc_output)
             final_enc_output = self.convs_skip_connections[i](enc_output.transpose(1,2)) + self.skip_connection_coeff * final_enc_output
 
         if self.skip_connection_coeff == 0:
