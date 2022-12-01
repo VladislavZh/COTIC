@@ -46,7 +46,7 @@ class Transformer(nn.Module):
 
         # prediction of next event type
         self.type_predictor = Predictor(d_model, num_types)
-        
+
     @staticmethod
     def get_non_pad_mask(seq):
         """ Get the non-padding positions. """
@@ -72,8 +72,21 @@ class Transformer(nn.Module):
         if self.rnn_flag:
             enc_output = self.rnn(enc_output, non_pad_mask)
 
-        time_prediction = self.time_predictor(enc_output, non_pad_mask)
+        time_prediction = self.time_predictor(enc_output.detach(), non_pad_mask)
 
-        type_prediction = self.type_predictor(enc_output, non_pad_mask)
+        type_prediction = self.type_predictor(enc_output.detach(), non_pad_mask)
 
         return enc_output, (type_prediction, time_prediction)
+
+    def final(self, times, true_times, true_features, non_pad_mask, sim_size):
+        bs, L = true_times.shape
+        times = times[:,1:].reshape(bs, L, sim_size+1)
+        times = times - true_times[:,:-1]
+        times /= (true_times[:, :-1] + 1).unsqueeze(2)
+
+        temp_hid = self.linear(true_features)[:, :-1, :]
+        all_lambda = self.softplus(temp_hid + self.alpha * times, self.beta)
+        all_lambda = all_lambda.reshape(bs, -1, self.num_types)
+        all_lambda = torch.concat([torch.zeros(1,self.num_types),all_lambda], axis=1)
+
+        return all_lambda
