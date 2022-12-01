@@ -39,5 +39,5 @@ optimizer:
 scheduler:
   step: 1
   milestones: null
-  gamma: 0.95
+  gamma: 0.99
 head_start: 1
