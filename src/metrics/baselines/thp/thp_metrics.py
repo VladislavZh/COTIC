@@ -10,7 +10,7 @@ class THPMetrics(MetricsCore):
         self,
         return_time_metric,
         event_type_metric,
-        scale_time_loss = 100
+        scale_time_loss = 1
     ):
         super().__init__(return_time_metric, event_type_metric)
         self.type_loss_func = torch.nn.CrossEntropyLoss(ignore_index=-1, reduction='none')
@@ -212,7 +212,7 @@ class THPMetrics(MetricsCore):
 
         # event time gap prediction
         diff = prediction - true
-        se = torch.sum(diff * diff)
+        se = torch.mean(diff * diff)
         return se
 
     def compute_loss(
