@@ -70,7 +70,7 @@ class BaseEventModule(LightningModule):
     def training_step(self, batch: Any, batch_idx: int):
         loss, out = self.step(batch, 'train')
 
-        if isinstance(loss, Iterable):
+        if type(loss) != torch.Tensor:
             assert len(loss) == 2
 
             self.log("train/loss", loss[0] + loss[1], on_step=False, on_epoch=True, prog_bar=False)
@@ -96,7 +96,7 @@ class BaseEventModule(LightningModule):
     def validation_step(self, batch: Any, batch_idx: int):
         loss, out = self.step(batch, 'val')
 
-        if isinstance(loss, Iterable):
+        if type(loss) != torch.Tensor:
             assert len(loss) == 2
 
             self.log("val/loss", loss[0] + loss[1], on_step=False, on_epoch=True, prog_bar=False)
@@ -118,7 +118,7 @@ class BaseEventModule(LightningModule):
     def test_step(self, batch: Any, batch_idx: int):
         loss, out = self.step(batch, 'test')
 
-        if isinstance(loss, Iterable):
+        if type(loss) != torch.Tensor:
             assert len(loss) == 2
 
             self.log("test/loss", loss[0] + loss[1], on_step=False, on_epoch=True, prog_bar=False)
