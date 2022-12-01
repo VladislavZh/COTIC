@@ -92,9 +92,9 @@ class Transformer(nn.Module):
         times /= (true_times[:, :-1] + 1).unsqueeze(2)
 
         temp_hid = self.linear(true_features)[:, :-1, :].unsqueeze(2)
-        temp_hid = torch.concat([torch.zeros(1,1,1,self.num_types, device=temp_hid.device),temp_hid], axis=1)
+        temp_hid = torch.concat([torch.zeros(bs,1,1,self.num_types, device=temp_hid.device),temp_hid], axis=1)
         all_lambda = self.softplus(temp_hid + self.alpha * times.unsqueeze(3), self.beta)
         all_lambda = all_lambda.reshape(bs, -1, self.num_types)
-        all_lambda = torch.concat([torch.zeros(1,1,self.num_types, device=all_lambda.device),all_lambda], axis=1)
+        all_lambda = torch.concat([torch.zeros(bs,1,self.num_types, device=all_lambda.device),all_lambda], axis=1)
 
         return all_lambda
