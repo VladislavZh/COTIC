@@ -76,7 +76,7 @@ class Transformer(nn.Module):
 
         type_prediction = self.type_predictor(enc_output.detach(), non_pad_mask)
 
-        return enc_output, (type_prediction, time_prediction)
+        return enc_output, (time_prediction, type_prediction)
 
     @staticmethod
     def softplus(x, beta):
