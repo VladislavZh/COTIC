@@ -13,7 +13,7 @@ class Predictor(nn.Module):
     def forward(self, data, non_pad_mask):
         out = self.linear(data)
         out = out * non_pad_mask
-        out = torch.concat([torch.zeros(out.shape[0], 1, out.shape[-1]), out],axis=1)
+        out = torch.concat([torch.zeros(out.shape[0], 1, out.shape[-1], device = out.device), out],axis=1)
         return out
 
 

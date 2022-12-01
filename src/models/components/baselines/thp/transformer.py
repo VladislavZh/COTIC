@@ -87,6 +87,6 @@ class Transformer(nn.Module):
         temp_hid = self.linear(true_features)[:, :-1, :]
         all_lambda = self.softplus(temp_hid + self.alpha * times, self.beta)
         all_lambda = all_lambda.reshape(bs, -1, self.num_types)
-        all_lambda = torch.concat([torch.zeros(1,self.num_types),all_lambda], axis=1)
+        all_lambda = torch.concat([torch.zeros(1,self.num_typesm device=all_lambda.device),all_lambda], axis=1)
 
         return all_lambda
