@@ -78,14 +78,21 @@ class Transformer(nn.Module):
 
         return enc_output, (type_prediction, time_prediction)
 
+    @staticmethod
+    def softplus(x, beta):
+        # hard thresholding at 20
+        temp = beta * x
+        temp[torch.abs(temp) > 20] = 20
+        return 1.0 / beta * torch.log(1 + torch.exp(temp))
+
     def final(self, times, true_times, true_features, non_pad_mask, sim_size):
         bs, L = true_times.shape
         times = times[:,1:].reshape(bs, L-1, sim_size+1)
         times = times - true_times[:,:-1].unsqueeze(2)
         times /= (true_times[:, :-1] + 1).unsqueeze(2)
 
-        temp_hid = self.linear(true_features)[:, :-1, :]
-        all_lambda = self.softplus(temp_hid + self.alpha * times, self.beta)
+        temp_hid = self.linear(true_features)[:, :-1, :].unsqueeze(2)
+        all_lambda = self.softplus(temp_hid + self.alpha * times.unsqueeze(3), self.beta)
         all_lambda = all_lambda.reshape(bs, -1, self.num_types)
         all_lambda = torch.concat([torch.zeros(1,self.num_types, device=all_lambda.device),all_lambda], axis=1)
 
