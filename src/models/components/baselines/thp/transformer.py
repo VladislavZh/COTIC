@@ -80,7 +80,7 @@ class Transformer(nn.Module):
 
     def final(self, times, true_times, true_features, non_pad_mask, sim_size):
         bs, L = true_times.shape
-        times = times[:,1:].reshape(bs, L, sim_size+1)
+        times = times[:,1:].reshape(bs, L-1, sim_size+1)
         times = times - true_times[:,:-1]
         times /= (true_times[:, :-1] + 1).unsqueeze(2)
 
