@@ -49,7 +49,7 @@ class CCNN(nn.Module):
             for i in range(nb_layers)
         ])
 
-        self.final_list = nn.ModuleList([ContConv1dSim(kernel.recreate(self.nb_filters, self.num_types), 1, nb_filters, self.num_types), nn.Softplus(100)])
+        self.final_list = nn.ModuleList([ContConv1dSim(kernel.recreate(self.nb_filters, self.num_types), 1, nb_filters, self.num_types)])
 
         self.head = head
 
