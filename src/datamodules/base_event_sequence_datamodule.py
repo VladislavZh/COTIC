@@ -5,7 +5,7 @@ from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset, random_split
 from .components.base_dset import EventData
 
-from src.utils.data_utils import load_data
+from src.utils.data_utils import load_data, load_data_parquet
 
 class EventDataModule(LightningDataModule):
     """
@@ -21,7 +21,9 @@ class EventDataModule(LightningDataModule):
         num_workers: int = 0,
         pin_memory: bool = False,
         random_seed: int = 42,
-        preprocess_type: str = "default"
+        preprocess_type: str = "default",
+        time_col: str = "time",
+        event_col: str = "event",
     ):
         super().__init__()
 
@@ -36,11 +38,12 @@ class EventDataModule(LightningDataModule):
 
     def setup(self, stage: Optional[str] = None):
         if not self.data_train and not self.data_val and not self.data_test:
-            if "preprocess_type" in self.hparams.keys():
-                times, events = load_data(self.hparams.data_dir, self.hparams.unix_time,
-                                          self.hparams.preprocess_type)
-            else:
-                times, events = load_data(self.hparams.data_dir, self.hparams.unix_time)
+            #if "preprocess_type" in self.hparams.keys():
+            #    times, events = load_data(self.hparams.data_dir, self.hparams.unix_time,
+            #                              self.hparams.preprocess_type)
+            #else:
+            #    times, events = load_data(self.hparams.data_dir, self.hparams.unix_time)
+            times, events = load_data_parquet(self.hparams.data_dir)
             dataset = EventData(times, events)
             N = len(dataset)
             lengths = [int(N * v) for v in self.hparams.train_val_test_split]
