@@ -44,6 +44,7 @@ class BaseEventModule(LightningModule):
         self.train_metrics = metrics
         self.val_metrics = metrics.copy_empty()
         self.test_metrics = metrics.copy_empty()
+        self.scaler = None
 
     def forward(self, batch):
         return self.net(*batch)
@@ -52,13 +53,11 @@ class BaseEventModule(LightningModule):
         outputs = self.forward(batch)
 
         if stage == 'train':
-            loss = self.train_metrics.compute_loss_and_add_values(self, batch, outputs)
+            loss = self.train_metrics.compute_loss_and_add_values(self, batch, outputs, self.trainer.datamodule.scaler)
         if stage == 'val':
-            loss = self.val_metrics.compute_loss_and_add_values(self, batch, outputs)
+            loss = self.val_metrics.compute_loss_and_add_values(self, batch, outputs, self.trainer.datamodule.scaler)
         if stage == 'test':
-            loss = self.test_metrics.compute_loss_and_add_values(self, batch, outputs)
-            
-        print(loss)
+            loss = self.test_metrics.compute_loss_and_add_values(self, batch, outputs, self.trainer.datamodule.scaler)
         
         return loss, outputs
 

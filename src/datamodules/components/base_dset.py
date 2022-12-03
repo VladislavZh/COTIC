@@ -32,15 +32,15 @@ class EventData(Dataset):
         max_len = torch.max(lengths)
 
         tensor_times, tensor_events = torch.zeros(len(times), max_len), torch.zeros(len(times), max_len)
-        dts = torch.empty(1)[1:]
+        #dts = torch.empty(1)[1:]
 
         for i, l in enumerate(lengths):
             tensor_times[i,:l] = times[i]
-            dts = torch.concat([dts,times[i][1:]-times[i][:-1]])
+            #dts = torch.concat([dts,times[i][1:]-times[i][:-1]])
             tensor_events[i,:l] = events[i] + 1
-        norm_const = torch.median(dts)
-        print(norm_const)
-        return tensor_times/norm_const, tensor_events.long()
+        #norm_const = torch.median(dts)
+        #print(norm_const)
+        return tensor_times, tensor_events.long()
 
     def __len__(self):
         return len(self.__times)

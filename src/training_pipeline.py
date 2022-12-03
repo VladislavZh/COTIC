@@ -46,6 +46,8 @@ def train(config: DictConfig) -> Optional[float]:
     # Init lightning model
     log.info(f"Instantiating model <{config.model._target_}>")
     model: LightningModule = hydra.utils.instantiate(config.model)
+    # if hasattr(datamodule, 'scaler'):
+    #     model.scaler = datamodule.scaler
 
     # Init lightning callbacks
     callbacks: List[Callback] = []

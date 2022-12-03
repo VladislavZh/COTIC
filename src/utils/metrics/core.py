@@ -4,7 +4,7 @@ import inspect
 import torch
 from pytorch_lightning import LightningModule
 
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional, Any
 
 
 class MetricsCore(ABC):
@@ -275,7 +275,8 @@ class MetricsCore(ABC):
         self,
         pl_module: LightningModule,
         inputs: Union[Tuple, torch.Tensor],
-        outputs: Union[Tuple, torch.Tensor]
+        outputs: Union[Tuple, torch.Tensor],
+        scaler: Optional[Any] = None
     ) -> torch.Tensor:
         """
         Takes model, inputs and outputs, adds step targets and predictions and computes loss
@@ -288,6 +289,17 @@ class MetricsCore(ABC):
         return:
             loss - torch.Tensor, loss for backpropagation
         """
+        # getting first because of tensor usability
+        loss = self.compute_loss(pl_module, inputs, outputs)
+        if scaler is not None:
+            inputs[0] = inputs[0].detach().cpu().numpy()
+            outputs = [outputs[0], [outputs[1][0], outputs[1][1].detach().cpu().numpy()]]
+            for i in range(inputs[0].shape[0]):
+                inputs[0][i] = scaler.inverse_transform(inputs[0][i].reshape(-1, 1)).reshape(-1)
+                outputs[1][1][i] = scaler.inverse_transform(outputs[1][1][i].reshape(-1, 1)).reshape(-1) #slice
+            inputs[0] = torch.Tensor(inputs[0]).to(outputs[0].device)
+            outputs[1][1] = torch.Tensor(outputs[1][1]).to(outputs[0].device)
+
         self.__step_return_time_target    = self.get_return_time_target(inputs)
         self.__step_event_type_target     = self.get_event_type_target(inputs)
         self.__step_return_time_predicted = self.get_return_time_predicted(pl_module, inputs, outputs)
@@ -297,8 +309,6 @@ class MetricsCore(ABC):
         self.__check_shapes()
         
         self.__append_step_values()
-        
-        loss = self.compute_loss(pl_module, inputs, outputs)
         
         return loss
 

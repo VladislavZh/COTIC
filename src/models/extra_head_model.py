@@ -48,6 +48,7 @@ class ExtrHeadEventModule(LightningModule):
         self.train_metrics = metrics
         self.val_metrics = metrics.copy_empty()
         self.test_metrics = metrics.copy_empty()
+        self.scaler = None
 
     def forward(self, batch):
         net_output = self.net(*batch)

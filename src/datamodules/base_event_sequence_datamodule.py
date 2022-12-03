@@ -31,17 +31,23 @@ class EventDataModule(LightningDataModule):
         self.data_val: Optional[Dataset] = None
         self.data_test: Optional[Dataset] = None
 
+        # if "preprocess_type" in self.hparams.keys():
+        #     self.times, self.events, self.scaler = load_data(self.hparams.data_dir, self.hparams.unix_time,
+        #                                            self.hparams.preprocess_type)
+        # else:
+        #     self.times, self.events, self.scaler = load_data(self.hparams.data_dir, self.hparams.unix_time)
+
     def prepare_data(self):
         pass
 
     def setup(self, stage: Optional[str] = None):
+        if "preprocess_type" in self.hparams.keys():
+            self.times, self.events, self.scaler = load_data(self.hparams.data_dir, self.hparams.unix_time,
+                                                   self.hparams.preprocess_type)
+        else:
+            self.times, self.events, self.scaler = load_data(self.hparams.data_dir, self.hparams.unix_time)
         if not self.data_train and not self.data_val and not self.data_test:
-            if "preprocess_type" in self.hparams.keys():
-                times, events = load_data(self.hparams.data_dir, self.hparams.unix_time,
-                                          self.hparams.preprocess_type)
-            else:
-                times, events = load_data(self.hparams.data_dir, self.hparams.unix_time)
-            dataset = EventData(times, events)
+            dataset = EventData(self.times, self.events)
             N = len(dataset)
             lengths = [int(N * v) for v in self.hparams.train_val_test_split]
             lengths[0] = N - (lengths[1] + lengths[2])
