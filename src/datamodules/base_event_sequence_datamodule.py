@@ -42,10 +42,10 @@ class EventDataModule(LightningDataModule):
 
     def setup(self, stage: Optional[str] = None):
         if "preprocess_type" in self.hparams.keys():
-            self.times, self.events, self.scaler = load_data(self.hparams.data_dir, self.hparams.unix_time,
+            self.times, self.events, self.data_process = load_data(self.hparams.data_dir, self.hparams.unix_time,
                                                    self.hparams.preprocess_type)
         else:
-            self.times, self.events, self.scaler = load_data(self.hparams.data_dir, self.hparams.unix_time)
+            self.times, self.events, self.data_process = load_data(self.hparams.data_dir, self.hparams.unix_time)
         if not self.data_train and not self.data_val and not self.data_test:
             dataset = EventData(self.times, self.events)
             N = len(dataset)

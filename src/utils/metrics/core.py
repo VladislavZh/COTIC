@@ -292,13 +292,16 @@ class MetricsCore(ABC):
         # getting first because of tensor usability
         loss = self.compute_loss(pl_module, inputs, outputs)
         if scaler is not None:
+            print("Start denorm")
+            breakpoint()
             inputs[0] = inputs[0].detach().cpu().numpy()
             outputs = [outputs[0], [outputs[1][0], outputs[1][1].detach().cpu().numpy()]]
             for i in range(inputs[0].shape[0]):
-                inputs[0][i] = scaler.inverse_transform(inputs[0][i].reshape(-1, 1)).reshape(-1)
-                outputs[1][1][i] = scaler.inverse_transform(outputs[1][1][i].reshape(-1, 1)).reshape(-1) #slice
+                inputs[0][i] = scaler.denormalization(inputs[0][i].reshape(-1, 1)).reshape(-1)
+                outputs[1][1][i] = scaler.denormalization(outputs[1][1][i].reshape(-1, 1)).reshape(-1) #slice
             inputs[0] = torch.Tensor(inputs[0]).to(outputs[0].device)
             outputs[1][1] = torch.Tensor(outputs[1][1]).to(outputs[0].device)
+            breakpoint()
 
         self.__step_return_time_target    = self.get_return_time_target(inputs)
         self.__step_event_type_target     = self.get_event_type_target(inputs)

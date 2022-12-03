@@ -5,17 +5,22 @@ import torch
 import pandas as pd
 import re
 import numpy as np
-from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler, StandardScaler
 from sklearn.exceptions import NotFittedError
 
 
+def get_scaler(name_scaler):
+    scalers = {
+        "scaler": StandardScaler,
+        "min_max_scaler": MinMaxScaler,
+    }
+    return scalers[name_scaler]()
 class Data_preprocessor():
     def __init__(self):
         self.le = LabelEncoder()
         self.le.fit([])
-        self.min_max = MinMaxScaler()
 
-    def prepare_data(self, data: pd.DataFrame) -> pd.DataFrame: #number_max, number_min
+    def prepare_data(self, data: pd.DataFrame, scale_name) -> pd.DataFrame: #number_max, number_min
         for key in data.keys():
             if key not in ['time', 'event']:
                 data.drop(key, axis=1, inplace=True)
@@ -31,18 +36,26 @@ class Data_preprocessor():
                                                - set(self.le.classes_)))
             data['event'] = np.squeeze(self.le.transform(data['event'].values.reshape(-1, 1)))
 
-        try:
-            data['time'] = np.squeeze(self.min_max.transform(data['time'].values.reshape(-1, 1)))
-        except NotFittedError:
-            #self.min_max.fit(np.array([number_max, number_min]).reshape(-1, 1))
-            data['time'] = np.squeeze(self.min_max.fit_transform(data['time'].values.reshape(-1, 1)))
+        self.scaler = get_scaler(scale_name)
+        data['time'] = self.normalization(data['time'])
 
         return data
+
+    def normalization(self, time):
+        try:
+            time = np.squeeze(self.scaler.transform(time.values.reshape(-1, 1)))
+        except NotFittedError:
+            #self.min_max.fit(np.array([number_max, number_min]).reshape(-1, 1))
+            time = np.squeeze(self.scaler.fit_transform(time.values.reshape(-1, 1)))
+        return time
+
+    def denormalization(self, output):
+        return self.scaler.inverse_transform(output)
 
 def load_data(
     data_dir: str,
     unix_time: bool = False,
-    preprocess_type: str = "default"
+    preprocess_type: str = None
     ) -> List[torch.Tensor]:
     times = []
     events = []
@@ -51,7 +64,7 @@ def load_data(
     number_max_dt = 0
     number_min_dt = 0
     list_of_time = []
-    if preprocess_type == "default":
+    if preprocess_type is not None:
         data_preprocessor = Data_preprocessor()
 
         for f in sorted(
@@ -92,10 +105,10 @@ def load_data(
         if f.endswith(f".csv") and re.sub(fr".csv", "", f).isnumeric():
             df = pd.read_csv(data_dir + '/' + f)
             df = df.sort_values(by=['time'])
-            if preprocess_type == "default":
-               df = data_preprocessor.prepare_data(df)
+            if preprocess_type is not None:
+               df = data_preprocessor.prepare_data(df, preprocess_type)
             times.append(torch.Tensor(list(df['time'])))
             events.append(torch.Tensor(list(df['event'])))
             if unix_time:
                 times[-1]/=86400
-    return times, events, data_preprocessor.min_max if preprocess_type == "default" else None
+    return times, events, data_preprocessor if preprocess_type is not None else None
