@@ -6,6 +6,8 @@ from pytorch_lightning import LightningModule
 
 from src.utils.metrics import MetricsCore
 
+import time
+
 
 def get_optimizer(name, model_params, params):
     optimizers = {
@@ -60,7 +62,6 @@ class BaseEventModule(LightningModule):
             loss = self.val_metrics.compute_loss_and_add_values(self, batch, outputs, self.trainer.datamodule.data_process)
         if stage == 'test':
             loss = self.test_metrics.compute_loss_and_add_values(self, batch, outputs, self.trainer.datamodule.data_process)
-        
         return loss, outputs
 
     def training_step(self, batch: Any, batch_idx: int):
