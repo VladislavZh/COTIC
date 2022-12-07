@@ -1,11 +1,11 @@
-from typing import List
+from typing import List, Optional
 import os
 import tqdm
 import torch
 import pandas as pd
 import re
 import numpy as np
-from sklearn.preprocessing import LabelEncoder, MinMaxScaler, StandardScaler
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.exceptions import NotFittedError
 
 class MinMaxScaler(torch.nn.Module):
@@ -78,7 +78,8 @@ class Data_preprocessor():
 def load_data(
     data_dir: str,
     unix_time: bool = False,
-    preprocess_type: str = None
+    dataset_size: Optional[int] = None,
+    preprocess_type: str = "default"
     ) -> List[torch.Tensor]:
     times = []
     events = []
@@ -118,7 +119,7 @@ def load_data(
     #number_quantile_95 = np.quantile(list_of_time, 0.95)
     #number_quantile_05 = np.quantile(list_of_time, 0.05)
     #print(number_quantile_95, number_quantile_05)
-
+    count = 0
     for f in tqdm.tqdm(sorted(
         os.listdir(data_dir),
         key=lambda x: int(re.sub(fr".csv", "", x))
@@ -134,4 +135,8 @@ def load_data(
             events.append(torch.Tensor(list(df['event'])))
             if unix_time:
                 times[-1]/=86400
+            count += 1
+            if dataset_size is not None:
+                if count == dataset_size:
+                    break
     return times, events, data_preprocessor if preprocess_type is not None else None

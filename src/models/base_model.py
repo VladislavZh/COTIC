@@ -50,6 +50,8 @@ class BaseEventModule(LightningModule):
         self.val_metrics = metrics.copy_empty()
         self.test_metrics = metrics.copy_empty()
 
+        self.start_time = time.time()
+
     def forward(self, batch):
         return self.net(*batch)
 
