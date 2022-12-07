@@ -30,7 +30,7 @@ defaults:
 original_work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
-data_dir: ${original_work_dir}/data/amz7k
+data_dir: ${original_work_dir}/data/synth
 unix_time: True
 
 # pretty print config at the start of the run using Rich library

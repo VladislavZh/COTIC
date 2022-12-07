@@ -9,3 +9,5 @@ num_workers: 0
 pin_memory: False
 random_seed: 42
 preprocess_type: "ignore"
+time_col: "time"
+event_col: "event"
