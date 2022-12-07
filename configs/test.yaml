@@ -3,8 +3,8 @@
 # specify here default evaluation configuration
 defaults:
   - _self_
-  - datamodule: mnist.yaml # choose the datamodule for evaluation
-  - model: mnist.yaml
+  - datamodule: base_datamodule.yaml # choose the datamodule for evaluation
+  - model: ccnn.yaml
   - callbacks: null
   - logger: null
   - trainer: default.yaml

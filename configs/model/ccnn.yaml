@@ -1,4 +1,4 @@
-_target_: src.models.extra_head_model.ExtrHeadEventModule
+_target_: src.models.base_model.BaseEventModule
 
 net:
   _target_: src.models.components.cont_cnn.CCNN
@@ -6,14 +6,18 @@ net:
   kernel_size: 5
   nb_filters: 16
   nb_layers: 9
-  num_types: 3
-  hidden_1: 8
-  hidden_2: 4
-  hidden_3: 8
-head:
-  _target_: src.models.components.cont_cnn.PredictionHead
-  in_channels: 16
-  num_types: 3
+  num_types: ${num_types}
+  kernel:
+    _target_: src.models.components.cont_cnn.Kernel
+    hidden1: 8
+    hidden2: 4
+    hidden3: 8
+    in_channels: ${model.net.nb_filters}
+    out_channels: ${model.net.nb_filters}
+  head:
+    _target_: src.models.components.cont_cnn.PredictionHead
+    in_channels: ${model.net.nb_filters}
+    num_types: ${num_types}
 metrics:
   _target_: src.metrics.cont_cnn.CCNNMetrics
   return_time_metric:

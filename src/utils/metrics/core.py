@@ -22,10 +22,11 @@ class MetricsCore(ABC):
             event_type_metric - metric for event types, takes y_pred, y_true as args
         """
         self.__save_init_params()
-        
+
         self.return_time_metric = return_time_metric
         self.event_type_metric = event_type_metric
-        
+        self.input_denorm = torch.zeros(100, 100)
+        self.output_denorm = torch.zeros(100, 100)
         self.__return_time_target    = torch.Tensor([])
         self.__event_type_target     = torch.Tensor([])
         self.__return_time_predicted = torch.Tensor([])
@@ -292,22 +293,17 @@ class MetricsCore(ABC):
         # getting first because of tensor usability
         loss = self.compute_loss(pl_module, inputs, outputs)
         if scaler is not None:
-            print("Start denorm")
-            breakpoint()
-            inputs[0] = inputs[0].detach().cpu().numpy()
-            outputs = [outputs[0], [outputs[1][0], outputs[1][1].detach().cpu().numpy()]]
-            for i in range(inputs[0].shape[0]):
-                inputs[0][i] = scaler.denormalization(inputs[0][i].reshape(-1, 1)).reshape(-1)
-                outputs[1][1][i] = scaler.denormalization(outputs[1][1][i].reshape(-1, 1)).reshape(-1) #slice
-            inputs[0] = torch.Tensor(inputs[0]).to(outputs[0].device)
-            outputs[1][1] = torch.Tensor(outputs[1][1]).to(outputs[0].device)
-            breakpoint()
+            self.input_denorm = inputs
+            self.output_denorm = outputs
+            self.input_denorm[0][:] = scaler.denormalization(inputs[0])
+            self.output_denorm[1][1][:] = scaler.denormalization(outputs[1][1])
 
-        self.__step_return_time_target    = self.get_return_time_target(inputs)
-        self.__step_event_type_target     = self.get_event_type_target(inputs)
-        self.__step_return_time_predicted = self.get_return_time_predicted(pl_module, inputs, outputs)
-        self.__step_event_type_predicted  = self.get_event_type_predicted(pl_module, inputs, outputs)
-        self.__step_ll_per_event          = self.compute_log_likelihood_per_event(pl_module, inputs, outputs)
+
+        self.__step_return_time_target    = self.get_return_time_target(self.input_denorm)
+        self.__step_event_type_target     = self.get_event_type_target(self.input_denorm)
+        self.__step_return_time_predicted = self.get_return_time_predicted(pl_module, self.input_denorm, self.output_denorm)
+        self.__step_event_type_predicted  = self.get_event_type_predicted(pl_module, self.input_denorm, self.output_denorm)
+        self.__step_ll_per_event          = self.compute_log_likelihood_per_event(pl_module, self.input_denorm, self.output_denorm)
         
         self.__check_shapes()
         

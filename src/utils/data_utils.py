@@ -8,7 +8,30 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler, StandardScaler
 from sklearn.exceptions import NotFittedError
 
+class MinMaxScaler(torch.nn.Module):
+    def __init__(self) -> None:
+        self.min = None
+        self.max = None
 
+    def fit(self, array: torch.Tensor) -> None:
+        self.min = torch.amin(array)
+        self.max = torch.amax(array)
+
+    def transform(self, array: torch.Tensor) -> torch.Tensor:
+        if self.max is None or self.min is None:
+            raise NotFittedError
+        scaled = array * (self.max - self.min) + self.min
+        return scaled
+
+    def fit_transform(self, array: torch.Tensor) -> torch.Tensor:
+        self.min = torch.amin(array)
+        self.max = torch.amax(array)
+        scaled = array * (self.max - self.min) + self.min
+        return scaled
+
+    def inverse_transform(self, array: torch.Tensor) -> torch.Tensor:
+        descaled = (array - self.min) / (self.max - self.min)
+        return descaled
 def get_scaler(name_scaler):
     scalers = {
         "scaler": StandardScaler,
@@ -43,10 +66,10 @@ class Data_preprocessor():
 
     def normalization(self, time):
         try:
-            time = np.squeeze(self.scaler.transform(time.values.reshape(-1, 1)))
+            time = torch.squeeze(self.scaler.transform(torch.Tensor(time.values.reshape(-1, 1))))
         except NotFittedError:
             #self.min_max.fit(np.array([number_max, number_min]).reshape(-1, 1))
-            time = np.squeeze(self.scaler.fit_transform(time.values.reshape(-1, 1)))
+            time = torch.squeeze(self.scaler.fit_transform(torch.Tensor(time.values.reshape(-1, 1))))
         return time
 
     def denormalization(self, output):

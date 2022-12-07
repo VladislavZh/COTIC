@@ -30,8 +30,9 @@ defaults:
 original_work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
-data_dir: ${original_work_dir}/data/data_retweet
+data_dir: ${original_work_dir}/data/amz7k
 unix_time: True
+num_types: 8
 
 # pretty print config at the start of the run using Rich library
 print_config: True
@@ -51,4 +52,4 @@ seed: null
 
 # default name for the experiment, determines logging folder path
 # (you can overwrite this name in experiment configs)
-name: "default"
+name: "best_reproduced"
