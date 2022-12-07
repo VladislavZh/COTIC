@@ -24,19 +24,22 @@ metrics:
     _target_: src.utils.metrics.MAE
   event_type_metric:
     _target_: src.utils.metrics.Accuracy
+  type_loss_coeff: 1
+  time_loss_coeff: 10
+  reductions:
+    log_likelihood: mean
+    type: sum
+    time: mean
   sim_size: 40
-  gamma_reg: False
-  alpha: 1.0
-  beta: 0
-optimizers:
-  0:
-      name: adam
-      params:
-        lr: 0.0
-        weight_decay: 1e-5
-  1:
-      name: adam
-      params:
-        lr: 1e-5
-        weight_decay: 1e-5
-enc_output_only_head: True
+optimizer:
+  name: adam
+  params:
+    lr: 0.01
+    weight_decay: 1e-8
+scheduler:
+  step: null
+  milestones:
+    - 40
+    - 75
+  gamma: 0.1
+head_start: 1

@@ -36,14 +36,14 @@ class EventDataModule(LightningDataModule):
         pass
 
     def setup(self, stage: Optional[str] = None):
-        if "preprocess_type" in self.hparams.keys():
-            self.times, self.events, self.data_process = load_data(self.hparams.data_dir, self.hparams.unix_time,
-                                                   self.hparams.preprocess_type)
-        else:
-            self.times, self.events, self.data_process = load_data(self.hparams.data_dir, self.hparams.unix_time)
-
         if not self.data_train and not self.data_val and not self.data_test:
-            dataset = EventData(self.times, self.events)
+            if "preprocess_type" in self.hparams.keys():
+                times, events, self.data_process = load_data(self.hparams.data_dir, self.hparams.unix_time,
+                                                       self.hparams.dataset_size, self.hparams.preprocess_type)
+            else:
+                times, events, self.data_process = load_data(self.hparams.data_dir, self.hparams.unix_time, self.hparams.dataset_size)
+
+            dataset = EventData(times, events)
             N = len(dataset)
             lengths = [int(N * v) for v in self.hparams.train_val_test_split]
             lengths[0] = N - (lengths[1] + lengths[2])
@@ -51,7 +51,7 @@ class EventDataModule(LightningDataModule):
                 dataset=dataset,
                 lengths=lengths,
                 generator=torch.Generator().manual_seed(self.hparams.random_seed),
-            )
+                )
 
     def train_dataloader(self):
         return DataLoader(

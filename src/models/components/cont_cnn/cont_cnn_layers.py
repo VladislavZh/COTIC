@@ -103,7 +103,7 @@ class ContConv1d(nn.Module):
         # updating shape
         bs, L, dim = features.shape
         pre_conv_features = pre_conv_features.reshape(bs, dim, kernel_size, L)
-        
+
         # computing delte_time and deleting masked values
         delta_times = times.unsqueeze(1) - pre_conv_times
         delta_times[~dt_mask] = 0
