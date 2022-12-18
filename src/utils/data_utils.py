@@ -43,7 +43,7 @@ class Data_preprocessor():
         self.le = LabelEncoder()
         self.le.fit([])
 
-    def prepare_data(self, data: pd.DataFrame, scale_name) -> pd.DataFrame: #number_max, number_min
+    def prepare_data(self, data: pd.DataFrame, scale_name, number_max, number_min) -> pd.DataFrame: #number_max, number_min
         for key in data.keys():
             if key not in ['time', 'event']:
                 data.drop(key, axis=1, inplace=True)
@@ -60,15 +60,15 @@ class Data_preprocessor():
             data['event'] = np.squeeze(self.le.transform(data['event'].values.reshape(-1, 1)))
 
         self.scaler = get_scaler(scale_name)
-        data['time'] = self.normalization(data['time'])
+        data['time'] = self.normalization(data['time'], number_max, number_min)
 
         return data
 
-    def normalization(self, time):
+    def normalization(self, time, number_max, number_min):
         try:
             time = torch.squeeze(self.scaler.transform(torch.Tensor(time.values.reshape(-1, 1))))
         except NotFittedError:
-            #self.min_max.fit(np.array([number_max, number_min]).reshape(-1, 1))
+            self.scaler.fit(torch.Tensor([number_max, number_min]).reshape(-1, 1))
             time = torch.squeeze(self.scaler.fit_transform(torch.Tensor(time.values.reshape(-1, 1))))
         return time
 
@@ -79,7 +79,7 @@ def load_data(
     data_dir: str,
     unix_time: bool = False,
     dataset_size: Optional[int] = None,
-    preprocess_type: str = "default"
+    preprocess_type: str = None
     ) -> List[torch.Tensor]:
     times = []
     events = []
@@ -115,10 +115,10 @@ def load_data(
                 for i in range(len(df['time'])):
                     list_of_time.append(df['time'][i])
 
-    #print(len(list_of_time))
-    #number_quantile_95 = np.quantile(list_of_time, 0.95)
-    #number_quantile_05 = np.quantile(list_of_time, 0.05)
-    #print(number_quantile_95, number_quantile_05)
+
+    number_quantile_95 = np.quantile(list_of_time, 0.95)
+    number_quantile_05 = np.quantile(list_of_time, 0.05)
+
     count = 0
     for f in tqdm.tqdm(sorted(
         os.listdir(data_dir),
@@ -130,7 +130,7 @@ def load_data(
             df = pd.read_csv(data_dir + '/' + f)
             df = df.sort_values(by=['time'])
             if preprocess_type is not None:
-               df = data_preprocessor.prepare_data(df, preprocess_type)
+               df = data_preprocessor.prepare_data(df, preprocess_type, number_max, number_min)
             times.append(torch.Tensor(list(df['time'])))
             events.append(torch.Tensor(list(df['event'])))
             if unix_time:

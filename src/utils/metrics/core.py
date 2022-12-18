@@ -297,7 +297,9 @@ class MetricsCore(ABC):
             self.output_denorm = outputs
             self.input_denorm[0][:] = scaler.denormalization(inputs[0])
             self.output_denorm[1][1][:] = scaler.denormalization(outputs[1][1])
-
+        else:
+            self.input_denorm = inputs
+            self.output_denorm = outputs
 
         self.__step_return_time_target    = self.get_return_time_target(self.input_denorm)
         self.__step_event_type_target     = self.get_event_type_target(self.input_denorm)
