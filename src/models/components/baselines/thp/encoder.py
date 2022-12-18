@@ -19,7 +19,7 @@ class Encoder(nn.Module):
         # position vector, used for temporal encoding
         self.position_vec = torch.tensor(
             [math.pow(10000.0, 2.0 * (i // 2) / d_model) for i in range(d_model)])
-
+        self.Wt = nn.Linear(1, (d_model // 2), bias=False)
         # event type embedding
         self.event_emb = nn.Embedding(num_types + 1, d_model, padding_idx=0)
 
@@ -32,10 +32,15 @@ class Encoder(nn.Module):
         Input: batch*seq_len.
         Output: batch*seq_len*d_model.
         """
-
+        # dt = time
+        # dt[:, :time.shape[1]-1] = time[:, 1:] - time[:, :-1]
+        # dt[:, -1] *= 0.
+        # phi = self.Wt(dt.unsqueeze(-1))
+        #print("phi", phi)
         result = time.unsqueeze(-1) / self.position_vec.to(time.device)
-        result[:, :, 0::2] = torch.sin(result[:, :, 0::2])
-        result[:, :, 1::2] = torch.cos(result[:, :, 1::2])
+        #result = torch.nan_to_num(result, nan=10**(-10))
+        result[:, :, 0::2] = torch.sin(result[:, :, 0::2]) # + phi)
+        result[:, :, 1::2] = torch.cos(result[:, :, 1::2]) # + phi)
         return result * non_pad_mask
     
     @staticmethod

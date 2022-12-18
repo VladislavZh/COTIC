@@ -15,6 +15,7 @@ class THPMetrics(MetricsCore):
         super().__init__(return_time_metric, event_type_metric)
         self.type_loss_func = torch.nn.CrossEntropyLoss(ignore_index=-1, reduction='none')
         self.scale_time_loss = scale_time_loss
+        self.gelu = torch.nn.GELU()
 
     @staticmethod
     def get_return_time_target(
@@ -130,12 +131,37 @@ class THPMetrics(MetricsCore):
         unbiased_integral = all_lambda * diff_time
         return unbiased_integral
 
+    def intensity_SAHP(self, model, data, time, non_pad_mask, type_mask):
+        """ Intensity via the three non-linear transformation. """
+
+        num_samples = 100
+
+        diff_time = (time[:, 1:-1] - time[:, :-2]) * non_pad_mask[:, 1:-1]
+        temp_time = diff_time.unsqueeze(2) * \
+                    torch.rand([*diff_time.size(), num_samples], device=data.device)
+        #temp_time /= (time[:, :-1] + 1).unsqueeze(2)
+
+        temp_hid1 = model.linear1(data)[:, 2:, :]
+        temp_hid1 = torch.sum(temp_hid1 * type_mask[:, 2:, :], dim=2, keepdim=True)
+        temp_hid2 = model.linear2(data)[:, 2:, :]
+        temp_hid2 = torch.sum(temp_hid2 * type_mask[:, 2:, :], dim=2, keepdim=True)
+        temp_hid3 = model.linear3(data)[:, 2:, :]
+        temp_hid3 = torch.sum(temp_hid3 * type_mask[:, 2:, :], dim=2, keepdim=True)
+
+        all_lambda = self.softplus(torch.tanh(self.gelu(temp_hid1) + (self.gelu(temp_hid2) - self.gelu(temp_hid1))*torch.exp(-self.softplus(temp_hid3, 10.)*temp_time))
+                                   , 1.)  # check tahn() such as github SAHP realisation torch.tanh(
+        all_lambda = torch.sum(all_lambda, dim=2) / num_samples
+
+        unbiased_integral = all_lambda * diff_time
+        return unbiased_integral
+
+
     def event_and_non_event_log_likelihood(
-        self,
-        pl_module: LightningModule,
-        enc_output: torch.Tensor,
-        event_time: torch.Tensor,
-        event_type: torch.Tensor
+            self,
+            pl_module: LightningModule,
+            enc_output: torch.Tensor,
+            event_time: torch.Tensor,
+            event_type: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Computes log of the intensity and the integral
@@ -147,16 +173,30 @@ class THPMetrics(MetricsCore):
         for i in range(pl_module.net.num_types):
             type_mask[:, :, i] = (event_type == i + 1).bool().to(enc_output.device)
 
-        all_hid = pl_module.net.linear(enc_output)
-        all_lambda = self.softplus(all_hid, pl_module.net.beta)
-        type_lambda = torch.sum(all_lambda * type_mask, dim=2) #shape = (bs, L)
+        #all_hid = pl_module.net.linear(enc_output)
+
+        temp_hid1 = pl_module.net.linear1(enc_output)[:, 2:, :]
+        temp_hid1 = torch.sum(temp_hid1 * type_mask[:, 2:, :], dim=2, keepdim=True)
+        temp_hid2 = pl_module.net.linear2(enc_output)[:, 2:, :]
+        temp_hid2 = torch.sum(temp_hid2 * type_mask[:, 2:, :], dim=2, keepdim=True)
+        temp_hid3 = pl_module.net.linear3(enc_output)[:, 2:, :]
+        temp_hid3 = torch.sum(temp_hid3 * type_mask[:, 2:, :], dim=2, keepdim=True)
+        num_samples = 100
+        diff_time = (event_time[:, 1:-1] - event_time[:, :-2]) * non_pad_mask[:, 1:-1]
+        temp_time = diff_time.unsqueeze(2) * \
+                    torch.rand([*diff_time.size(), num_samples], device=enc_output.device)
+
+        type_lambda = self.softplus(torch.tanh(self.gelu(temp_hid1) + (self.gelu(temp_hid2) - self.gelu(temp_hid1))*torch.exp(-self.softplus(temp_hid3, 10.)*temp_time))
+                                   , 1.)  # TODO check tahn() such as github SAHP realisation torch.tanh(
+        #type_lambda = torch.sum(type_lambda * type_mask[:, 1:-1, :], dim=2)  # shape = (bs, L)
+        type_lambda = torch.sum(type_lambda, dim=2)  # shape = (bs, L)
 
         # event log-likelihood
-        event_ll = self.compute_event(type_lambda, non_pad_mask)
+        event_ll = self.compute_event(type_lambda, non_pad_mask[:, 1:-1])
         event_ll = torch.sum(event_ll, dim=-1)
 
         # non-event log-likelihood, MC integration
-        non_event_ll = self.compute_integral_unbiased(pl_module.net, enc_output, event_time, non_pad_mask, type_mask)
+        non_event_ll = self.intensity_SAHP(pl_module.net, enc_output, event_time, non_pad_mask, type_mask)
         non_event_ll = torch.sum(non_event_ll, dim=-1)
 
         return event_ll, non_event_ll
