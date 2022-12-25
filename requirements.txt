@@ -48,7 +48,7 @@ google-auth-oauthlib==0.4.6
 grpcio==1.48.2
 h5py==2.10.0
 html5lib==1.1
-Hydra==2.5
+hydra==2.5
 hydra-core==1.2.0
 idna==2.10
 idna-ssl==1.1.0

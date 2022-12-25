@@ -45,6 +45,8 @@ class EventDataModule(LightningDataModule):
             #    times, events = load_data(self.hparams.data_dir, self.hparams.unix_time)
             times, events = load_data_parquet(self.hparams.data_dir)
             dataset = EventData(times, events)
+            print(torch.unique(dataset._EventData__events))
+            print(torch.unique(dataset._EventData__events_targets))
             N = len(dataset)
             lengths = [int(N * v) for v in self.hparams.train_val_test_split]
             lengths[0] = N - (lengths[1] + lengths[2])
@@ -60,7 +62,7 @@ class EventDataModule(LightningDataModule):
             batch_size=self.hparams.batch_size,
             num_workers=self.hparams.num_workers,
             pin_memory=self.hparams.pin_memory,
-            shuffle=True,   # TODO Why True for time series?
+            shuffle=True,
         )
 
     def val_dataloader(self):

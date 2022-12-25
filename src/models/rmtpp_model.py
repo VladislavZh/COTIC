@@ -48,10 +48,10 @@ class RMTPPModule(LightningModule):
         self.weight_decay = weight_decay
 
         self.time_criterion = self.RMTPPLoss
-        self.class_weights = np.ones(self.num_class)
-        self.event_criterion = torch.nn.CrossEntropyLoss(
-            weight=torch.FloatTensor(self.class_weights)
-        )
+        #self.class_weights = np.ones(self.num_class)
+        self.event_criterion = torch.nn.CrossEntropyLoss()
+        #    weight=torch.FloatTensor(self.class_weights)
+        #)
 
         self.time_metric = MAE
         self.event_metric = Accuracy
@@ -91,7 +91,7 @@ class RMTPPModule(LightningModule):
         loss_event = self.event_criterion(
             event_logits.view(-1, self.num_class), event_target.view(-1)
         )
-        loss = self.alpha * loss_time + loss_event
+        loss = -1 * self.alpha * loss_time - loss_event
         event_pred = event_logits
         time_pred = time_logits
 
@@ -147,7 +147,6 @@ class RMTPPModule(LightningModule):
     
         event_metric_train = self.event_metric(predicted_events, gt_events)
         time_metric_train = self.time_metric(predicted_times, gt_times)
-        print(time_metric_train)
         self.log("train/accuracy", event_metric_train, prog_bar=True)
         self.log("train/mae", time_metric_train, prog_bar=True)
 

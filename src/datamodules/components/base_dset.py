@@ -28,15 +28,28 @@ class EventData(Dataset):
             events  - torch.Tensor of shape (dset_size, max_len), where max_len = max({length}) + 1, padded events with shifted events
                                                                  {0,...,C-1} -> {1,...,C}, 0 as pad value
         """
+        # first diff of times
+        print(times[0].shape)
+        for i in range(len(times)):
+            times[i] = torch.diff(times[i])
+
+        print(times[0].shape)
+        print(events[0].shape)
+        for i in range(len(events)):
+            events[i] = events[i][1:]
+        print(events[0].shape)
+
         lengths = torch.Tensor([len(time_seq) for time_seq in times]).long()
         max_len = torch.max(lengths) - 1
         
         tensor_times, tensor_events = torch.zeros(len(times), max_len), torch.zeros(len(times), max_len)
         tensor_times_targets = torch.zeros(len(times))
         tensor_events_targets = torch.zeros(len(times))
+        
+        
         for i, l in enumerate(lengths):
-            tensor_times[i,:l-1] = times[i][:l-1]
-            tensor_times_targets[i] = times[i][-1]
+            tensor_times[i,:l-1] = times[i][:l-1] # / torch.quantile(times[i][:l], 0.95)
+            tensor_times_targets[i] = times[i][-1] # / torch.quantile(times[i][:l], 0.95)
             tensor_events[i,:l-1] = events[i][:l-1] + 1
             tensor_events_targets[i] = events[i][-1] + 1
 
