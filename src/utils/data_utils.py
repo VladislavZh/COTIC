@@ -130,7 +130,7 @@ def load_data(
             df = pd.read_csv(data_dir + '/' + f)
             df = df.sort_values(by=['time'])
             if preprocess_type is not None:
-               df = data_preprocessor.prepare_data(df, preprocess_type, number_max, number_min)
+               df = data_preprocessor.prepare_data(df, preprocess_type, number_quantile_95, number_quantile_05)
             times.append(torch.Tensor(list(df['time'])))
             events.append(torch.Tensor(list(df['event'])))
             if unix_time:
