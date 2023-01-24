@@ -29,10 +29,10 @@ information provided below.
 ## Architecture of model
 
 * Continuous time CNN
-<img src="./pictures/CNN_for_1D.png" width="500" />
+  <img src="./pictures/CNN_for_1D.png" width="500"/>
  
 * WaveNet architecture with temporal encoding and intensity interpolation
-![](./pictures/Wavenet.png)
+  ![](./pictures/Wavenet.png)
  
 * Transformer Hawkes
 
@@ -41,11 +41,11 @@ information provided below.
 
 ## Metrics and comparison table
 
-model|log likelihood|
-:---:|:---:	|
-WN()|1337.1|
-[THP](https://arxiv.org/pdf/2002.09291.pdf)|1337.1|
-CCNN|1337.1|
+model| log likelihood |
+:---:|:--------------:|
+WN()|     1337.1     |
+[THP](https://arxiv.org/pdf/2002.09291.pdf)|     1337.1     |
+CCNN|     1337.1     |
 	
 
 	
