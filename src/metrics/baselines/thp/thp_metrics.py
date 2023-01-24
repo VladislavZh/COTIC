@@ -121,8 +121,8 @@ class THPMetrics(MetricsCore):
                     torch.rand([*diff_time.size(), num_samples], device=data.device)
         temp_time /= (time[:, :-1] + 1).unsqueeze(2)
 
-        temp_hid = model.linear(data)[:, 1:, :]
-        temp_hid = torch.sum(temp_hid * type_mask[:, 1:, :], dim=2, keepdim=True)
+        temp_hid = model.linear(data)[:, :-1, :]
+        temp_hid = torch.sum(temp_hid, dim=2, keepdim=True)
 
         all_lambda = self.softplus(temp_hid + model.alpha * temp_time, model.beta)
         all_lambda = torch.sum(all_lambda, dim=2) / num_samples
@@ -147,12 +147,14 @@ class THPMetrics(MetricsCore):
         for i in range(pl_module.net.num_types):
             type_mask[:, :, i] = (event_type == i + 1).bool().to(enc_output.device)
 
-        all_hid = pl_module.net.linear(enc_output)
-        all_lambda = self.softplus(all_hid, pl_module.net.beta)
-        type_lambda = torch.sum(all_lambda * type_mask, dim=2) #shape = (bs, L)
+        diff_time = (event_time[:, 1:] - event_time[:, :-1]) * non_pad_mask[:, 1:]
+        all_hid = pl_module.net.linear(enc_output)[:, :-1, :]
+        all_lambda = self.softplus(all_hid + pl_module.net.alpha * diff_time.unsqueeze(2), pl_module.net.beta)
+        type_lambda = torch.sum(all_lambda * type_mask[:, 1:], dim=2) #shape = (bs, L)
 
         # event log-likelihood
-        event_ll = self.compute_event(type_lambda, non_pad_mask)
+
+        event_ll = self.compute_event(type_lambda, non_pad_mask[:, 1:])
         event_ll = torch.sum(event_ll, dim=-1)
 
         # non-event log-likelihood, MC integration
