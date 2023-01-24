@@ -28,6 +28,7 @@ information provided below.
 
 ## Architecture of model
 
+
 * Continuous time CNN
   <img src="./pictures/CNN_for_1D.png" width="500"/>
  
