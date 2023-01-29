@@ -21,19 +21,18 @@ class MinMaxScaler(torch.nn.Module):
     def transform(self, array: torch.Tensor) -> torch.Tensor:
         if self.max is None or self.min is None:
             raise NotFittedError
-        scaled = array * (self.max - self.min) + self.min
+        scaled = (array - self.min) / (self.max - self.min)
         return scaled
 
     def fit_transform(self, array: torch.Tensor) -> torch.Tensor:
         self.min = torch.amin(array)
         self.max = torch.amax(array)
-        scaled = array * (self.max - self.min) + self.min
+        scaled = (array - self.min) / (self.max - self.min)
         return scaled
 
     def inverse_transform(self, array: torch.Tensor) -> torch.Tensor:
-        descaled = (array - self.min) / (self.max - self.min)
+        descaled = array * (self.max - self.min) + self.min
         return descaled
-
 
 def get_scaler(name_scaler):
     scalers = {
