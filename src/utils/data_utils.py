@@ -48,8 +48,7 @@ class Data_preprocessor():
         self.le.fit([])
         self.scaler = None
 
-    def prepare_data(self, data: pd.DataFrame, scale_name, number_max,
-                     number_min) -> pd.DataFrame:  # number_max, number_min
+    def prepare_data(self, data: pd.DataFrame, scale_name) -> pd.DataFrame:  # number_max, number_min
         for key in data.keys():
             if key not in ['time', 'event']:
                 data.drop(key, axis=1, inplace=True)
@@ -122,8 +121,8 @@ def load_data(
                 for i in range(len(df['time'])):
                     list_of_time.append(df['time'][i])
 
-    number_quantile_95 = np.quantile(list_of_time, 0.95)
-    number_quantile_05 = np.quantile(list_of_time, 0.05)
+    #number_quantile_95 = np.quantile(list_of_time, 0.95)
+    #number_quantile_05 = np.quantile(list_of_time, 0.05)
 
     count = 0
     for f in tqdm.tqdm(sorted(
@@ -136,7 +135,7 @@ def load_data(
             df = pd.read_csv(data_dir + '/' + f)
             df = df.sort_values(by=['time'])
             if preprocess_type is not None:
-                df = data_preprocessor.prepare_data(df, preprocess_type, number_quantile_95, number_quantile_05)
+                df = data_preprocessor.prepare_data(df, preprocess_type)
             times.append(torch.Tensor(list(df['time'])))
             events.append(torch.Tensor(list(df['event'])))
             if unix_time:
