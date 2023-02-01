@@ -293,10 +293,12 @@ class MetricsCore(ABC):
         # getting first because of tensor usability
         loss = self.compute_loss(pl_module, inputs, outputs)
         if scaler is not None:
-            self.input_denorm = inputs
-            self.output_denorm = outputs
+            self.input_denorm = (inputs[0].clone(), inputs[1].clone())
+            self.output_denorm = (outputs[0].clone(), (outputs[1][0].clone(), outputs[1][1].clone()))
             self.input_denorm[0][:] = scaler.denormalization(inputs[0])
             self.output_denorm[1][1][:] = scaler.denormalization(outputs[1][1])
+            #self.input_denorm[0][:] = scaler.denormalization(inputs[0])
+            #self.output_denorm[1][1][:] = scaler.denormalization(outputs[1][1])
         else:
             self.input_denorm = inputs
             self.output_denorm = outputs

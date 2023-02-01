@@ -46,6 +46,7 @@ class Data_preprocessor():
     def __init__(self):
         self.le = LabelEncoder()
         self.le.fit([])
+        self.scaler = None
 
     def prepare_data(self, data: pd.DataFrame, scale_name, number_max,
                      number_min) -> pd.DataFrame:  # number_max, number_min
