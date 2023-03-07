@@ -4,154 +4,113 @@ import inspect
 import torch
 from pytorch_lightning import LightningModule
 
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional, Any
 
 
 class MetricsCore(ABC):
-    """
-    Core class for metrics computation. Stores predictions and then returns all the metrics.
-    """
-    def __init__(
-        self,
-        return_time_metric,
-        event_type_metric
-    ):
+    """Core class for metrics computation. Stores predictions and then returns all the metrics."""
+
+    def __init__(self, return_time_metric, event_type_metric) -> None:
         """
-        args:
-            return_time_metric - metric for return times, takes y_pred, y_true as args
-            event_type_metric - metric for event types, takes y_pred, y_true as args
+        Initialize metrics core.
+
+        :param return_time_metric: metric for return times, takes y_pred, y_true as args
+        :param event_type_metric: metric for event types, takes y_pred, y_true as args
         """
         self.__save_init_params()
 
         self.return_time_metric = return_time_metric
         self.event_type_metric = event_type_metric
-
-        self.__return_time_target    = torch.Tensor([])
-        self.__event_type_target     = torch.Tensor([])
+        self.input_denorm = torch.zeros(100, 100)
+        self.output_denorm = torch.zeros(100, 100)
+        self.__return_time_target = torch.Tensor([])
+        self.__event_type_target = torch.Tensor([])
         self.__return_time_predicted = torch.Tensor([])
-        self.__event_type_predicted  = torch.Tensor([])
-        self.__ll_per_event          = torch.Tensor([])
+        self.__event_type_predicted = torch.Tensor([])
+        self.__ll_per_event = torch.Tensor([])
 
-    def copy_empty(
-        self
-    ):
-        """
-        Returns the object of the same time with the same initial parameters
-        """
+    def copy_empty(self):
+        """Returns the object of the same type with the same initial parameters."""
         return type(self)(**self.__init_params)
 
-    def __save_init_params(
-        self
-    ) -> None:
-        """
-        Stores init args
-        """
+    def __save_init_params(self) -> None:
+        """Stores init args."""
         current_frame = inspect.currentframe()
         frame = current_frame.f_back.f_back
         _, _, _, local_vars = inspect.getargvalues(frame)
-        del local_vars['self']
-        del local_vars['__class__']
+        del local_vars["self"]
+        del local_vars["__class__"]
         self.__init_params = local_vars
 
     @property
     def return_time_target(self) -> torch.Tensor:
-        """
-        Return time target 1d torch Tensor
-        """
+        """Return time target 1d torch Tensor."""
         return self.__return_time_target
 
     @property
     def event_type_target(self) -> torch.Tensor:
-        """
-        Event type target 1d torch Tensor
-        """
+        """Event type target 1d torch Tensor."""
         return self.__event_type_target
 
     @property
     def return_time_predicted(self) -> torch.Tensor:
-        """
-        Return time prediction 1d torch Tensor
-        """
+        """Return time prediction 1d torch Tensor."""
         return self.__return_time_predicted
 
     @property
     def event_type_predicted(self) -> torch.Tensor:
-        """
-        Event type unnormalized predictions 2d torch Tensor
-        """
+        """Event type unnormalized predictions 2d torch Tensor."""
         return self.__event_type_predicted
 
     @property
     def ll_per_event(self) -> torch.Tensor:
-        """
-        Log likelihood per event for each sequence 1d torch Tensor
-        """
+        """Log likelihood per event for each sequence 1d torch Tensor."""
         return self.__ll_per_event
 
     @property
     def step_return_time_target(self) -> torch.Tensor:
-        """
-        Current step return time target 1d torch Tensor
-        """
+        """Current step return time target 1d torch Tensor."""
         return self.__step_return_time_target
 
     @property
     def step_event_type_target(self) -> torch.Tensor:
-        """
-        Current step event type target 1d torch Tensor
-        """
+        """Current step event type target 1d torch Tensor."""
         return self.__step_event_type_target
 
     @property
     def step_return_time_predicted(self) -> torch.Tensor:
-        """
-        Current step return time prediction 1d torch Tensor
-        """
+        """Current step return time prediction 1d torch Tensor."""
         return self.__step_return_time_predicted
 
     @property
     def step_event_type_predicted(self) -> torch.Tensor:
-        """
-        Current step event type unnormalized predictions 2d torch Tensor
-        """
+        """Current step event type unnormalized predictions 2d torch Tensor."""
         return self.__step_event_type_predicted
 
     @property
     def step_ll_per_event(self) -> torch.Tensor:
-        """
-        Current step log likelihood per event for each sequence 1d torch Tensor
-        """
+        """Current step log likelihood per event for each sequence 1d torch Tensor."""
         return self.__step_ll_per_event
 
     @staticmethod
     @abstractmethod
-    def get_return_time_target(
-        inputs: Union[Tuple, torch.Tensor]
-    ) -> torch.Tensor:
-        """
-        Takes input batch and returns the corresponding return time targets as 1d Tensor
+    def get_return_time_target(inputs: Union[Tuple, torch.Tensor]) -> torch.Tensor:
+        """Takes input batch and returns the corresponding return time targets as 1d Tensor.
 
-        args:
-            inputs - Tuple or torch.Tensor, batch received from the dataloader
+        :param inputs: batch received from the dataloader (Tuple or torch.Tensor)
 
-        return:
-            return_time_target - torch.Tensor, 1d Tensor with return time targets
+        :return: return_time_target - 1d Tensor with return time targets
         """
         return
 
     @staticmethod
     @abstractmethod
-    def get_event_type_target(
-        inputs: Union[Tuple, torch.Tensor]
-    ) -> torch.Tensor:
-        """
-        Takes input batch and returns the corresponding event type targets as 1d Tensor
+    def get_event_type_target(inputs: Union[Tuple, torch.Tensor]) -> torch.Tensor:
+        """Take input batch and returns the corresponding event type targets as 1d Tensor.
 
-        args:
-            inputs - Tuple or torch.Tensor, batch received from the dataloader
+        :param inputs: batch received from the dataloader (Tuple or torch.Tensor)
 
-        return:
-            event_type_target - torch.Tensor,  1d Tensor with event type target
+        :return: event_type_target - 1d Tensor with event type target
         """
         return
 
@@ -160,18 +119,15 @@ class MetricsCore(ABC):
     def get_return_time_predicted(
         pl_module: LightningModule,
         inputs: Union[Tuple, torch.Tensor],
-        outputs: Union[Tuple, torch.Tensor]
+        outputs: Union[Tuple, torch.Tensor],
     ) -> torch.Tensor:
-        """
-        Takes lighning model, input batch and model outputs, returns the corresponding predicted return times as 1d Tensor
+        """Take lighning model, input batch and model outputs, returns the corresponding predicted return times as 1d Tensor
 
-        args:
-            pl_module - LightningModule, training lightning model
-            inputs - Tuple or torch.Tensor, batch received from the dataloader
-            outputs - Tuple or torch.Tensor, model output
+        :param pl_module: LightningModule, training lightning model
+        :param inputs: Tuple or torch.Tensor, batch received from the dataloader
+        :param outputs: Tuple or torch.Tensor, model output
 
-        return:
-            return_time_predicted - torch.Tensor, 1d Tensor with return time prediction
+        :return: return_time_predicted - 1d Tensor with return time prediction
         """
         return
 
@@ -180,18 +136,15 @@ class MetricsCore(ABC):
     def get_event_type_predicted(
         pl_module: LightningModule,
         inputs: Union[Tuple, torch.Tensor],
-        outputs: Union[Tuple, torch.Tensor]
+        outputs: Union[Tuple, torch.Tensor],
     ) -> torch.Tensor:
-        """
-        Takes lighning model, input batch and model outputs, returns the corresponding predicted event types as 1d Tensor
+        """Take lighning model, input batch and model outputs, returns the corresponding predicted event types as 1d Tensor
 
-        args:
-            pl_module - LightningModule, training lightning model
-            inputs - Tuple or torch.Tensor, batch received from the dataloader
-            outputs - Tuple or torch.Tensor, model output
+        :param pl_module: LightningModule, training lightning model
+        :param inputs: Tuple or torch.Tensor, batch received from the dataloader
+        :param outputs: Tuple or torch.Tensor, model output
 
-        return:
-            event_type_predicted - torch.Tensor, 2d Tensor with event type unnormalized predictions
+        :return: event_type_predicted - 2d Tensor with event type unnormalized predictions
         """
         return
 
@@ -200,19 +153,15 @@ class MetricsCore(ABC):
         self,
         pl_module: LightningModule,
         inputs: Union[Tuple, torch.Tensor],
-        outputs: Union[Tuple, torch.Tensor]
+        outputs: Union[Tuple, torch.Tensor],
     ) -> torch.Tensor:
-        """
-        Takes lighning model, input batch and model outputs, returns the corresponding log likelihood per event for each sequence in the batch as 1d Tensor of shape (bs,),
-        one can use self.step_[return_time_target/event_type_target/return_time_predicted/event_type_predicted] if needed
+        """Compute log likelihood per event for each sequence in the batch as 1d Tensor of shape (bs, ).
 
-        args:
-            pl_module - LightningModule, training lightning model
-            inputs - Tuple or torch.Tensor, batch received from the dataloader
-            outputs - Tuple or torch.Tensor, model output
+        :param pl_module: LightningModule, training lightning model
+        :param inputs: Tuple or torch.Tensor, batch received from the dataloader
+        :param outputs: Tuple or torch.Tensor, model output
 
-        return:
-            log_likelihood_per_seq - torch.Tensor, 1d Tensor with log likelihood per event prediction, shape = (bs,)
+        :return: log_likelihood_per_seq - 1d Tensor with log likelihood per event prediction, shape = (bs,)
         """
         return
 
@@ -221,78 +170,109 @@ class MetricsCore(ABC):
         self,
         pl_module: LightningModule,
         inputs: Union[Tuple, torch.Tensor],
-        outputs: Union[Tuple, torch.Tensor]
+        outputs: Union[Tuple, torch.Tensor],
     ) -> torch.Tensor:
         """
-        Takes lighning model, input batch and model outputs, returns the corresponding loss for backpropagation,
-        one can use self.step_[return_time_target/event_type_target/return_time_predicted/event_type_predicted/ll_per_event] if needed
+        Compute loss for backpropagation.
 
-        args:
-            pl_module - LightningModule, training lightning model
-            inputs - Tuple or torch.Tensor, batch received from the dataloader
-            outputs - Tuple or torch.Tensor, model output
+        :param pl_module: LightningModule, training lightning model
+        :param inputs: Tuple or torch.Tensor, batch received from the dataloader
+        :param outputs: Tuple or torch.Tensor, model output
 
-        return:
-            loss - torch.Tensor, loss for backpropagation
+        :return: loss - torch.Tensor, loss for backpropagation
         """
         return
 
-    def __check_shapes(self):
+    def __check_shapes(self) -> None:
+        """Check shapes of all the predictions and targets."""
         if len(self.__step_return_time_target.shape) != 1:
-            raise ValueError(f'Wrong return time target shape. Expected 1, got {len(self.__step_return_time_target.shape)}')
+            raise ValueError(
+                f"Wrong return time target shape. Expected 1, got {len(self.__step_return_time_target.shape)}"
+            )
         if len(self.__step_event_type_target.shape) != 1:
-            raise ValueError(f'Wrong event type target shape. Expected 1, got {len(self.__step_event_type_target.shape)}')
+            raise ValueError(
+                f"Wrong event type target shape. Expected 1, got {len(self.__step_event_type_target.shape)}"
+            )
         if len(self.__step_return_time_predicted.shape) != 1:
-            raise ValueError(f'Wrong predicted return time shape. Expected 1, got {len(self.__step_return_time_predicted.shape)}')
+            raise ValueError(
+                f"Wrong predicted return time shape. Expected 1, got {len(self.__step_return_time_predicted.shape)}"
+            )
         if len(self.__step_event_type_predicted.shape) != 2:
-            raise ValueError(f'Wrong predicted event type shape. Expected 2, got {len(self.__step_event_type_predicted.shape)}')
+            raise ValueError(
+                f"Wrong predicted event type shape. Expected 2, got {len(self.__step_event_type_predicted.shape)}"
+            )
         if len(self.__step_ll_per_event.shape) != 1:
-            raise ValueError(f'Wrong log likelihood shape. Expected 1, got {len(self.__step_ll_per_event.shape)}')
+            raise ValueError(
+                f"Wrong log likelihood shape. Expected 1, got {len(self.__step_ll_per_event.shape)}"
+            )
 
     def __append_step_values(self):
-        self.__return_time_target = torch.concat([
-            self.__return_time_target,
-            self.__step_return_time_target.detach().clone().cpu()
-        ])
-        self.__event_type_target = torch.concat([
-            self.__event_type_target,
-            self.__step_event_type_target.detach().clone().cpu()
-        ])
-        self.__return_time_predicted = torch.concat([
-            self.__return_time_predicted,
-            self.__step_return_time_predicted.detach().clone().cpu()
-        ])
-        self.__event_type_predicted = torch.concat([
-            self.__event_type_predicted,
-            self.__step_event_type_predicted.detach().clone().cpu()
-        ])
-        self.__ll_per_event = torch.concat([
-            self.__ll_per_event,
-            self.__step_ll_per_event.detach().clone().cpu()
-        ])
+        """Append current step predictions and targets to the corresponding tensors."""
+        self.__return_time_target = torch.concat(
+            [
+                self.__return_time_target,
+                self.__step_return_time_target.detach().clone().cpu(),
+            ]
+        )
+        self.__event_type_target = torch.concat(
+            [
+                self.__event_type_target,
+                self.__step_event_type_target.detach().clone().cpu(),
+            ]
+        )
+        self.__return_time_predicted = torch.concat(
+            [
+                self.__return_time_predicted,
+                self.__step_return_time_predicted.detach().clone().cpu(),
+            ]
+        )
+        self.__event_type_predicted = torch.concat(
+            [
+                self.__event_type_predicted,
+                self.__step_event_type_predicted.detach().clone().cpu(),
+            ]
+        )
+        self.__ll_per_event = torch.concat(
+            [self.__ll_per_event, self.__step_ll_per_event.detach().clone().cpu()]
+        )
 
     def compute_loss_and_add_values(
         self,
         pl_module: LightningModule,
         inputs: Union[Tuple, torch.Tensor],
-        outputs: Union[Tuple, torch.Tensor]
+        outputs: Union[Tuple, torch.Tensor],
+        scaler: Optional[Any] = None,
     ) -> torch.Tensor:
-        """
-        Takes model, inputs and outputs, adds step targets and predictions and computes loss
+        """Add step targets and predictions, computes loss
 
-        args:
-            pl_module - LightningModule, training lightning model
-            inputs - Tuple or torch.Tensor, batch received from the dataloader
-            outputs - Tuple or torch.Tensor, model output
+        :param pl_module: LightningModule, training lightning model
+        :param inputs: Tuple or torch.Tensor, batch received from the dataloader
+        :param outputs: Tuple or torch.Tensor, model output
 
-        return:
-            loss - torch.Tensor, loss for backpropagation
+        :return: loss - loss for backpropagation
         """
-        self.__step_return_time_target    = self.get_return_time_target(inputs)
-        self.__step_event_type_target     = self.get_event_type_target(inputs)
-        self.__step_return_time_predicted = self.get_return_time_predicted(pl_module, inputs, outputs)
-        self.__step_event_type_predicted  = self.get_event_type_predicted(pl_module, inputs, outputs)
-        self.__step_ll_per_event          = self.compute_log_likelihood_per_event(pl_module, inputs, outputs)
+        # getting first because of tensor usability
+        loss = self.compute_loss(pl_module, inputs, outputs)
+        if scaler is not None:
+            self.input_denorm = inputs
+            self.output_denorm = outputs
+            self.input_denorm[0][:] = scaler.denormalization(inputs[0])
+            self.output_denorm[1][1][:] = scaler.denormalization(outputs[1][1])
+        else:
+            self.input_denorm = inputs
+            self.output_denorm = outputs
+
+        self.__step_return_time_target = self.get_return_time_target(self.input_denorm)
+        self.__step_event_type_target = self.get_event_type_target(self.input_denorm)
+        self.__step_return_time_predicted = self.get_return_time_predicted(
+            pl_module, self.input_denorm, self.output_denorm
+        )
+        self.__step_event_type_predicted = self.get_event_type_predicted(
+            pl_module, self.input_denorm, self.output_denorm
+        )
+        self.__step_ll_per_event = self.compute_log_likelihood_per_event(
+            pl_module, self.input_denorm, self.output_denorm
+        )
 
         self.__check_shapes()
 
@@ -302,23 +282,22 @@ class MetricsCore(ABC):
 
         return loss
 
-    def compute_metrics(
-        self
-    ) -> Tuple[float, float, float]:
-        """
-        Returns mean log likelihood per event, return time metric value and event type metric value
-        """
+    def compute_metrics(self) -> Tuple[float, float, float]:
+        """Returns mean log likelihood per event, return time metric value and event type metric value."""
         ll = torch.mean(self.ll_per_event)
-        return_time_metric = self.return_time_metric(self.return_time_predicted, self.return_time_target)
-        event_type_metric  = self.event_type_metric(torch.nn.functional.softmax(self.event_type_predicted, dim=1), self.event_type_target)
+        return_time_metric = self.return_time_metric(
+            self.return_time_predicted, self.return_time_target
+        )
+        event_type_metric = self.event_type_metric(
+            torch.nn.functional.softmax(self.event_type_predicted, dim=1),
+            self.event_type_target,
+        )
         return ll, return_time_metric, event_type_metric
 
     def clear_values(self):
-        """
-        Clears stored values
-        """
-        self.__return_time_target    = torch.Tensor([])
-        self.__event_type_target     = torch.Tensor([])
+        """Clears stored values."""
+        self.__return_time_target = torch.Tensor([])
+        self.__event_type_target = torch.Tensor([])
         self.__return_time_predicted = torch.Tensor([])
-        self.__event_type_predicted  = torch.Tensor([])
-        self.__ll_per_event          = torch.Tensor([])
+        self.__event_type_predicted = torch.Tensor([])
+        self.__ll_per_event = torch.Tensor([])

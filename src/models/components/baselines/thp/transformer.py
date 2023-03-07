@@ -29,6 +29,9 @@ class Transformer(nn.Module):
 
         # convert hidden vectors into a scalar
         self.linear = nn.Linear(d_model, num_types)
+        self.linear1 = nn.Linear(d_model, num_types)
+        self.linear2 = nn.Linear(d_model, num_types)
+        self.linear3 = nn.Linear(d_model, num_types)
 
         # parameter for the weight of time difference
         self.alpha = nn.Parameter(torch.tensor(-0.1))
