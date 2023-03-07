@@ -35,6 +35,17 @@ unix_time: False
 preprocess_type: default
 num_types: 65
 
+# Correct num_types:
+#  * ATM - 7
+#  * Age - 60
+#  * Amazon - 8
+#  * IPTV - 16
+#  * Linkedin - 82
+#  * meme - 4977
+#  * mimic - 65
+#  * retweet - 3
+#  * stackoverflow - 22
+
 # pretty print config at the start of the run using Rich library
 print_config: True
 
