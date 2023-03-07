@@ -4,8 +4,8 @@
 defaults:
   - _self_
   - datamodule: base_datamodule.yaml
-  - model: wavenet.yaml
-  - callbacks: val_loss_monitor.yaml
+  - model: ccnn_baseline.yaml
+  - callbacks: val_loss_monitor.yaml #default.yaml
   - logger: comet.yaml # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
   - trainer: default.yaml
   - log_dir: default.yaml
@@ -31,9 +31,9 @@ original_work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
 data_dir: ${original_work_dir}/data/amz7k
-unix_time: False
+unix_time: True
 preprocess_type: default
-num_types: 65
+num_types: 7
 
 # pretty print config at the start of the run using Rich library
 print_config: True
@@ -53,4 +53,4 @@ seed: null
 
 # default name for the experiment, determines logging folder path
 # (you can overwrite this name in experiment configs)
-name: "wavenet_default"
+name: "cotic_best_reproduced"

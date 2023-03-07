@@ -1,0 +1,44 @@
+_target_: src.models.base_model.BaseEventModule
+
+net:
+  _target_: src.models.components.baselines.ccnn_baseline.ccnn_baseline.BaselineCCNN
+  in_channels: 32
+  kernel_size: 5
+  nb_filters: 16
+  nb_layers: 5
+  num_types: ${num_types}
+  nb_layers_discr: 1
+  discr_conv_out_channels: 16
+  padding_discr: 2
+  kernel:
+    _target_: src.models.components.cont_cnn.Kernel
+    hidden1: 8
+    hidden2: 4
+    hidden3: 8
+    in_channels: ${model.net.nb_filters}
+    out_channels: ${model.net.nb_filters}
+  pp_output_layer:
+   _target_: src.models.components.baselines.ccnn_baseline.ccnn_output_layer.PPOutputLayer
+   embed_dim: 16
+   num_markers: ${num_types} 
+metrics:
+  _target_: src.metrics.baselines.ccnn_baseline.ccnn_baseline_metrics.CCNNBaselineMetrics
+  return_time_metric:
+    _target_: src.utils.metrics.MAE
+  event_type_metric:
+    _target_: src.utils.metrics.Accuracy
+  reductions:
+    log_likelihood: mean
+    type: sum
+    time: mean
+optimizer:
+  name: adam
+  params:
+    lr: 0.01
+    weight_decay: 1e-8
+scheduler:
+  step: null
+  milestones:
+    - 40
+    - 75
+  gamma: 0.1

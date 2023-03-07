@@ -31,8 +31,20 @@ original_work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
 data_dir: ${original_work_dir}/data/amz7k
-unix_time: True
-num_types: 8
+unix_time: False # should be True for ATM, Amazon and Retweet only 
+preprocess_type: default
+num_types: 22
+
+# Correct num_types:
+#  * ATM - 7
+#  * Age - 60
+#  * Amazon - 8
+#  * IPTV - 16
+#  * Linkedin - 82
+#  * meme - 4977
+#  * mimic - 65
+#  * retweet - 3
+#  * stackoverflow - 22
 
 # pretty print config at the start of the run using Rich library
 print_config: True
@@ -52,4 +64,4 @@ seed: null
 
 # default name for the experiment, determines logging folder path
 # (you can overwrite this name in experiment configs)
-name: "best_reproduced"
+name: "cotic_best_reproduced"
