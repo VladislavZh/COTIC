@@ -1,11 +1,12 @@
 from typing import Optional, Tuple
+import os
 
 import torch
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset, random_split
 from .components.base_dset import EventData
 
-from src.utils.data_utils import load_data
+from src.utils.data_utils import load_data_simple, load_data
 
 class EventDataModule(LightningDataModule):
     """
@@ -78,3 +79,12 @@ class EventDataModule(LightningDataModule):
             pin_memory=self.hparams.pin_memory,
             shuffle=False,
         )
+
+
+class EventDataModuleSplitted(EventDataModule):
+    def setup(self, stage: Optional[str] = None):
+        self.data_process = None
+        if not self.data_train and not self.data_val and not self.data_test:
+            self.data_train = EventData(*load_data_simple(os.path.join(self.hparams.data_dir,'train')))
+            self.data_val = EventData(*load_data_simple(os.path.join(self.hparams.data_dir,'val')))
+            self.data_test = EventData(*load_data_simple(os.path.join(self.hparams.data_dir,'test')))

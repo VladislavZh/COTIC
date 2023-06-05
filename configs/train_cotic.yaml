@@ -4,7 +4,7 @@
 defaults:
   - _self_
   - datamodule: base_datamodule.yaml
-  - model: wavenet.yaml
+  - model: ccnn.yaml
   - callbacks: default.yaml
   - logger: comet.yaml # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
   - trainer: default.yaml
@@ -32,6 +32,7 @@ original_work_dir: ${hydra:runtime.cwd}
 # path to folder with data
 data_dir: ${original_work_dir}/data/amz7k
 unix_time: True
+num_types: 8
 
 # pretty print config at the start of the run using Rich library
 print_config: True
@@ -51,4 +52,4 @@ seed: null
 
 # default name for the experiment, determines logging folder path
 # (you can overwrite this name in experiment configs)
-name: "default"
+name: "best_reproduced"

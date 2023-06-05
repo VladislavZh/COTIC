@@ -96,11 +96,11 @@ def train(config: DictConfig) -> Optional[float]:
 
     # Test the model
     if config.get("test"):
-        ckpt_path = "best"
-        if not config.get("train") or config.trainer.get("fast_dev_run"):
-            ckpt_path = None
+        # ckpt_path = "best"
+        # if not config.get("train") or config.trainer.get("fast_dev_run"):
+        #     ckpt_path = None
         log.info("Starting testing!")
-        trainer.test(model=model, datamodule=datamodule, ckpt_path=ckpt_path)
+        trainer.test(model=model, datamodule=datamodule)
 
     # Make sure everything closed properly
     log.info("Finalizing!")

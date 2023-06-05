@@ -68,4 +68,23 @@ def load_data(
             if dataset_size is not None:
                 if count == dataset_size:
                     break
+    return times, events, data_preprocessor if preprocess_type is not None else None
+
+
+def load_data_simple(
+        data_dir: str,
+) -> List[torch.Tensor]:
+    times = []
+    events = []
+    for f in tqdm.tqdm(sorted(
+            os.listdir(data_dir),
+            key=lambda x: int(re.sub(fr".csv", "", x))
+            if re.sub(fr".csv", "", x).isdigit()
+            else 0,
+    )):
+        if f.endswith(f".csv") and re.sub(fr".csv", "", f).isnumeric():
+            df = pd.read_csv(data_dir + '/' + f)
+            df = df.sort_values(by=['time'])
+            times.append(torch.Tensor(list(df['time'])))
+            events.append(torch.Tensor(list(df['event'])))
     return times, events
