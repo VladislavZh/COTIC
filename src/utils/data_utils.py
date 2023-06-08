@@ -132,7 +132,7 @@ def load_data(
             else 0,
     )):
         if f.endswith(f".csv") and re.sub(fr".csv", "", f).isnumeric():
-            df = pd.read_csv(data_dir + '/' + f)
+            df = pd.read_csv(data_dir / f)
             df = df.sort_values(by=['time'])
             if preprocess_type is not None:
                 df = data_preprocessor.prepare_data(df, preprocess_type)

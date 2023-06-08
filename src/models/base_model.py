@@ -59,11 +59,11 @@ class BaseEventModule(LightningModule):
         outputs = self.forward(batch)
 
         if stage == 'train':
-            loss = self.train_metrics.compute_loss_and_add_values(self, batch, outputs, self.trainer.datamodule.data_process)
+            loss = self.train_metrics.compute_loss_and_add_values(self, batch, outputs, self.trainer.datamodule.data_process_train)
         if stage == 'val':
-            loss = self.val_metrics.compute_loss_and_add_values(self, batch, outputs, self.trainer.datamodule.data_process)
+            loss = self.val_metrics.compute_loss_and_add_values(self, batch, outputs, self.trainer.datamodule.data_process_val)
         if stage == 'test':
-            loss = self.test_metrics.compute_loss_and_add_values(self, batch, outputs, self.trainer.datamodule.data_process)
+            loss = self.test_metrics.compute_loss_and_add_values(self, batch, outputs, self.trainer.datamodule.data_process_test)
         return loss, outputs
 
     def training_step(self, batch: Any, batch_idx: int):

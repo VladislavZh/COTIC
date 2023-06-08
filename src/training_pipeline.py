@@ -10,7 +10,12 @@ from pytorch_lightning import (
     Trainer,
     seed_everything,
 )
-from pytorch_lightning.loggers import LightningLoggerBase
+# try:
+#     from pytorch_lightning.loggers import Logger
+# except ImportError:
+#     from pytorch_lightning.loggers import LightningLoggerBase
+#     Logger = LightningLoggerBase
+#from pytorch_lightning.loggers import LightningLoggerBase
 
 from src import utils
 

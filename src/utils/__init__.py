@@ -7,7 +7,16 @@ import rich.syntax
 import rich.tree
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.utilities import rank_zero_only
+# try:
+#     from pytorch_lightning.loggers import Logger
+# except ImportError:
+#     from pytorch_lightning.loggers import LightningLoggerBase
+#     Logger = LightningLoggerBase
 
+# try:
+#     from lightning_utilities.core.apply_func import apply_to_collection
+# except ImportError:
+#     from pytorch_lightning.utilities.apply_func import apply_to_collection
 
 def get_logger(name=__name__) -> logging.Logger:
     """Initializes multi-GPU-friendly python command line logger."""
@@ -109,7 +118,7 @@ def log_hyperparameters(
     trainer: pl.Trainer,
     callbacks: List[pl.Callback],
     logger: List[pl.loggers.LightningLoggerBase],
-) -> None:
+) -> None:#pl.loggers.LightningLoggerBase Logger
     """Controls which config parts are saved by Lightning loggers.
 
     Additionaly saves:
@@ -152,7 +161,7 @@ def finish(
     trainer: pl.Trainer,
     callbacks: List[pl.Callback],
     logger: List[pl.loggers.LightningLoggerBase],
-) -> None:
+) -> None: #pl.loggers.LightningLoggerBase
     """Makes sure everything closed properly."""
 
     # without this sweeps with wandb logger might crash!
