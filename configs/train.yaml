@@ -30,8 +30,8 @@ defaults:
 original_work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
-dataset: so
-n_types: 22
+dataset: meme
+n_types: 4977
 data_dir: ${original_work_dir}/new_data/${dataset}
 unix_time: False
 
