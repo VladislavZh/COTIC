@@ -44,7 +44,7 @@ class EventData(Dataset):
         return tensor_times, tensor_events.long()
 
     def __len__(self):
-        return len(self.__times)
+        return min(len(self.__times),10000)
 
     def __getitem__(self, idx):
         return self.__times[idx], self.__events[idx]
