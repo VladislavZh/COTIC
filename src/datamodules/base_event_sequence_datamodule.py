@@ -22,7 +22,9 @@ class EventDataModule(LightningDataModule):
         unix_time: bool = False,
         train_val_test_split: Tuple[float, float, float] = (0.8, 0.1, 0.1),
         batch_size: int = 64,
-        dataset_size: Optional[int] = None,
+        dataset_size_train: Optional[int] = None,
+        dataset_size_val: Optional[int] = None,
+        dataset_size_test: Optional[int] = None,
         num_workers: int = 0,
         pin_memory: bool = False,
         random_seed: int = 42,
@@ -44,18 +46,18 @@ class EventDataModule(LightningDataModule):
             #if "preprocess_type" in self.hparams.keys():
             # Train dataset
             train_times, train_events, self.data_process_train = load_data(Path(self.hparams.data_dir) / "train", self.hparams.unix_time,
-                                      self.hparams.dataset_size, self.hparams.preprocess_type)
+                                      self.hparams.dataset_size_train, self.hparams.preprocess_type)
             self.data_train = EventData(train_times, train_events)
 
             # Val dataset
             val_times, val_events, self.data_process_val = load_data(Path(self.hparams.data_dir) / "val", self.hparams.unix_time,
-                                      self.hparams.dataset_size, self.hparams.preprocess_type)
+                                      self.hparams.dataset_size_val, self.hparams.preprocess_type)
             self.data_val = EventData(val_times, val_events)
 
             # Test dataset
             test_times, test_events, self.data_process_test = load_data(Path(self.hparams.data_dir) / "test",
                                                                         self.hparams.unix_time,
-                                                                        self.hparams.dataset_size,
+                                                                        self.hparams.dataset_size_test,
                                                                         self.hparams.preprocess_type)
             self.data_test = EventData(test_times, test_events)
 
