@@ -34,12 +34,12 @@ metrics:
 optimizer:
   name: adam
   params:
-    lr: 0.1
+    lr: 0.05
     weight_decay: 1e-8
 scheduler:
-  step: null
-  milestones:
-    - 40
-    - 75
-  gamma: 0.1
+  step: 50
+  # milestones:
+  #   - 40
+  #   - 75
+  gamma: 0.5
 head_start: 1
