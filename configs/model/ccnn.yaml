@@ -38,8 +38,8 @@ optimizer:
     weight_decay: 1e-8
 scheduler:
   step: 50
-  # milestones:
-  #   - 40
-  #   - 75
+  milestones:
+    - 40
+    - 75
   gamma: 0.5
 head_start: 1
