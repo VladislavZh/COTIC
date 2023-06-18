@@ -4,7 +4,7 @@ net:
   _target_: src.models.components.cont_cnn.CCNN
   in_channels: 32
   kernel_size: 9
-  nb_filters: 32
+  nb_filters: 16
   nb_layers: 3
   num_types: ${num_types}
   kernel:
