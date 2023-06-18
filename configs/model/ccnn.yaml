@@ -3,15 +3,15 @@ _target_: src.models.base_model.BaseEventModule
 net:
   _target_: src.models.components.cont_cnn.CCNN
   in_channels: 32
-  kernel_size: 13
+  kernel_size: 9
   nb_filters: 64
   nb_layers: 5
   num_types: ${num_types}
   kernel:
     _target_: src.models.components.cont_cnn.Kernel
-    hidden1: 16
-    hidden2: 32
-    hidden3: 16
+    hidden1: 8
+    hidden2: 8
+    hidden3: 8
     in_channels: ${model.net.nb_filters}
     out_channels: ${model.net.nb_filters}
   head:
