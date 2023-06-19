@@ -53,4 +53,4 @@ seed: null
 
 # default name for the experiment, determines logging folder path
 # (you can overwrite this name in experiment configs)
-name: ${dataset}_cotic
+name: ${dataset}_cotic_len_${datamodule.max_len}

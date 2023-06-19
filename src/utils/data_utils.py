@@ -42,6 +42,7 @@ def load_data(
     data_dir: str,
     unix_time: bool = False,
     dataset_size: Optional[int] = None,
+    max_len: Optional[int] = None,
     preprocess_type: str = "default"
     ) -> List[torch.Tensor]:
     times = []
@@ -60,8 +61,13 @@ def load_data(
             df = df.sort_values(by=['time'])
             if preprocess_type == "default":
                df = data_preprocessor.prepare_data(df)
-            times.append(torch.Tensor(list(df['time'])))
-            events.append(torch.Tensor(list(df['event'])))
+            t = torch.Tensor(list(df['time']))
+            e = torch.Tensor(list(df['event']))
+            if max_len is not None:
+                t = t[:max_len]
+                e = e[:max_len]
+            times.append(t)
+            events.append(e)
             if unix_time:
                 times[-1]/=86400
             count += 1
@@ -73,6 +79,7 @@ def load_data(
 
 def load_data_simple(
         data_dir: str,
+        max_len: Optional[int] = None
 ) -> List[torch.Tensor]:
     times = []
     events = []
@@ -85,6 +92,11 @@ def load_data_simple(
         if f.endswith(f".csv") and re.sub(fr".csv", "", f).isnumeric():
             df = pd.read_csv(data_dir + '/' + f)
             df = df.sort_values(by=['time'])
+            t = torch.Tensor(list(df['time']))
+            e = torch.Tensor(list(df['event']))
+            if max_len is not None:
+                t = t[:max_len]
+                e = e[:max_len]
             times.append(torch.Tensor(list(df['time'])))
             events.append(torch.Tensor(list(df['event'])))
     return times, events

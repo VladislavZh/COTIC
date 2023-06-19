@@ -20,6 +20,7 @@ class EventDataModule(LightningDataModule):
         train_val_test_split: Tuple[float, float, float] = (0.8, 0.1, 0.1),
         batch_size: int = 64,
         dataset_size: Optional[int] = None,
+        max_len: Optional[int] = None,
         num_workers: int = 0,
         pin_memory: bool = False,
         random_seed: int = 42,
@@ -40,9 +41,14 @@ class EventDataModule(LightningDataModule):
         if not self.data_train and not self.data_val and not self.data_test:
             if "preprocess_type" in self.hparams.keys():
                 times, events = load_data(self.hparams.data_dir, self.hparams.unix_time,
-                                          self.hparams.dataset_size, self.hparams.preprocess_type)
+                                          self.hparams.dataset_size, self.hparams.max_len,
+                                          self.hparams.preprocess_type)
             else:
-                times, events = load_data(self.hparams.data_dir, self.hparams.unix_time, self.hparams.dataset_size)
+                times, events = load_data(
+                    self.hparams.data_dir,
+                    self.hparams.unix_time, 
+                    self.hparams.dataset_size,
+                    self.hparams.max_len)
             dataset = EventData(times, events)
             N = len(dataset)
             lengths = [int(N * v) for v in self.hparams.train_val_test_split]
@@ -85,6 +91,15 @@ class EventDataModuleSplitted(EventDataModule):
     def setup(self, stage: Optional[str] = None):
         self.data_process = None
         if not self.data_train and not self.data_val and not self.data_test:
-            self.data_train = EventData(*load_data_simple(os.path.join(self.hparams.data_dir,'train')))
-            self.data_val = EventData(*load_data_simple(os.path.join(self.hparams.data_dir,'val')))
-            self.data_test = EventData(*load_data_simple(os.path.join(self.hparams.data_dir,'test')))
+            self.data_train = EventData(*load_data_simple(
+                os.path.join(self.hparams.data_dir,'train'),
+                self.hparams.max_len)
+            )
+            self.data_val = EventData(*load_data_simple(
+                os.path.join(self.hparams.data_dir,'val'),
+                self.hparams.max_len)
+            )
+            self.data_test = EventData(*load_data_simple(
+                os.path.join(self.hparams.data_dir,'test'),
+                self.hparams.max_len)
+            )
