@@ -40,9 +40,9 @@ class Data_preprocessor():
 
 def load_data(
     data_dir: str,
-    unix_time: bool = False,
-    dataset_size: Optional[int] = None,
-    max_len: Optional[int] = None,
+    unix_time: bool,
+    dataset_size: Optional[int],
+    max_len: Optional[int],
     preprocess_type: str = "default"
     ) -> List[torch.Tensor]:
     times = []
@@ -79,10 +79,11 @@ def load_data(
 
 def load_data_simple(
         data_dir: str,
-        max_len: Optional[int] = None
+        max_len: Optional[int]
 ) -> List[torch.Tensor]:
     times = []
     events = []
+    print(max_len)
     for f in tqdm.tqdm(sorted(
             os.listdir(data_dir),
             key=lambda x: int(re.sub(fr".csv", "", x))
@@ -94,6 +95,7 @@ def load_data_simple(
             df = df.sort_values(by=['time'])
             t = torch.Tensor(list(df['time']))
             e = torch.Tensor(list(df['event']))
+            print(max_len)
             if max_len is not None:
                 t = t[:max_len]
                 e = e[:max_len]
