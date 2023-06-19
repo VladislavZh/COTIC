@@ -83,7 +83,6 @@ def load_data_simple(
 ) -> List[torch.Tensor]:
     times = []
     events = []
-    print(max_len)
     for f in tqdm.tqdm(sorted(
             os.listdir(data_dir),
             key=lambda x: int(re.sub(fr".csv", "", x))
@@ -99,6 +98,6 @@ def load_data_simple(
             if max_len is not None:
                 t = t[:max_len]
                 e = e[:max_len]
-            times.append(torch.Tensor(list(df['time'])))
-            events.append(torch.Tensor(list(df['event'])))
+            times.append(t)
+            events.append(e)
     return times, events
