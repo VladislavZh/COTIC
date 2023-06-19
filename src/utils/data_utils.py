@@ -94,7 +94,6 @@ def load_data_simple(
             df = df.sort_values(by=['time'])
             t = torch.Tensor(list(df['time']))
             e = torch.Tensor(list(df['event']))
-            print(max_len)
             if max_len is not None:
                 t = t[:max_len]
                 e = e[:max_len]
