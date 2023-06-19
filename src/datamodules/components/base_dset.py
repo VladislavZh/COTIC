@@ -32,6 +32,7 @@ class EventData(Dataset):
         """
         lengths = torch.Tensor([len(time_seq) for time_seq in times]).long()
         max_len = torch.max(lengths)
+        print(f'DATAMODULE {max_len}')
 
         tensor_times, tensor_events = torch.zeros(len(times), max_len), torch.zeros(len(times), max_len)
         dts = torch.empty(1)[1:]
