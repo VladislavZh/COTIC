@@ -5,7 +5,7 @@ net:
   in_channels: 32
   kernel_size: 9
   nb_filters: 16
-  nb_layers: 3
+  nb_layers: 5
   num_types: ${num_types}
   kernel:
     _target_: src.models.components.cont_cnn.Kernel
@@ -34,7 +34,7 @@ metrics:
 optimizer:
   name: adam
   params:
-    lr: 0.001
+    lr: 0.0001
     weight_decay: 1e-8
 scheduler:
   step: null
