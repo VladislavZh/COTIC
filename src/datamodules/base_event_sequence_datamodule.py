@@ -21,6 +21,7 @@ class EventDataModule(LightningDataModule):
         batch_size: int = 64,
         dataset_size: Optional[int] = None,
         max_len: Optional[int] = None,
+        num_event_types: Optional[int] = None,
         num_workers: int = 0,
         pin_memory: bool = False,
         random_seed: int = 42,
@@ -91,15 +92,22 @@ class EventDataModuleSplitted(EventDataModule):
     def setup(self, stage: Optional[str] = None):
         self.data_process = None
         if not self.data_train and not self.data_val and not self.data_test:
-            self.data_train = EventData(*load_data_simple(
+            times, events, unique_events = load_data_simple(
                 os.path.join(self.hparams.data_dir,'train'),
-                self.hparams.max_len)
+                self.hparams.max_len,
+                self.hparams.num_event_types)
+            self.data_train = EventData(
+                times, events
             )
-            self.data_val = EventData(*load_data_simple(
+            times, events, _ = load_data_simple(
                 os.path.join(self.hparams.data_dir,'val'),
-                self.hparams.max_len)
+                self.hparams.max_len,
+                unique_events)
+            self.data_val = EventData(times, events
             )
-            self.data_test = EventData(*load_data_simple(
+            times, events, _ = load_data_simple(
                 os.path.join(self.hparams.data_dir,'test'),
-                self.hparams.max_len)
+                self.hparams.max_len,
+                unique_events)
+            self.data_test = EventData(times,events
             )

@@ -3,6 +3,6 @@
 comet:
  _target_: pytorch_lightning.loggers.comet.CometLogger
  api_key: eTfGsxdNWCvov8CuHEC0ug9ko
- project_name: len
+ project_name: event
  workspace: vladislavzh
  experiment_name: ${name}

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 import os
 import tqdm
 import torch
@@ -79,7 +79,8 @@ def load_data(
 
 def load_data_simple(
         data_dir: str,
-        max_len: Optional[int]
+        max_len: Optional[int],
+        event_types: Optional[Union[int, torch.Tensor]]
 ) -> List[torch.Tensor]:
     times = []
     events = []
@@ -99,4 +100,21 @@ def load_data_simple(
                 e = e[:max_len]
             times.append(t)
             events.append(e)
-    return times, events
+
+        unique_events = event_types
+
+        if event_types is not None:
+            if isinstance(event_types, int):
+                all_events = torch.concat(events)
+                unique_events = torch.unique(all_events)
+                num_events = torch.Tensor([torch.sum(all_events == event) for event in unique_events])
+                _, ids = torch.sort(num_events, descending=True)
+                unique_events = unique_events[ids][:event_types]
+            else:
+                unique_events = event_types
+            for i in range(len(events)):
+                mask = torch.isin(events[i], unique_events)
+                times[i] = times[i][mask]
+                events[i] = events[i][mask]
+        
+    return times, events, unique_events
