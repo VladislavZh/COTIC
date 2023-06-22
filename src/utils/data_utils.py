@@ -116,5 +116,13 @@ def load_data_simple(
                 mask = torch.isin(events[i], unique_events)
                 times[i] = times[i][mask]
                 events[i] = events[i][mask]
+            final_times = []
+            final_events = []
+            for i in range(len(events)):
+                if len(times[i]) > 1:
+                    final_times.append(times[i])
+                    final_events.append(events[i])
+
+            print(len(final_times))
         
-    return times, events, unique_events
+    return final_times, final_events, unique_events
