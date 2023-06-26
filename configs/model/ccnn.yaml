@@ -2,9 +2,9 @@ _target_: src.models.base_model.BaseEventModule
 
 net:
   _target_: src.models.components.cont_cnn.CCNN
-  in_channels: 32
-  kernel_size: 9
-  nb_filters: 16
+  in_channels: 256
+  kernel_size: 5
+  nb_filters: 2
   nb_layers: 5
   num_types: ${num_types}
   kernel:
@@ -30,11 +30,11 @@ metrics:
     log_likelihood: mean
     type: sum
     time: mean
-  sim_size: 36
+  sim_size: 46
 optimizer:
   name: adam
   params:
-    lr: 0.001
+    lr: 0.01
     weight_decay: 1e-8
 scheduler:
   step: null
