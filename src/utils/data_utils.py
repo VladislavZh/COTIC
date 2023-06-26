@@ -79,11 +79,13 @@ def load_data(
 
 def load_data_simple(
         data_dir: str,
+        dataset_size: int,
         max_len: Optional[int],
         event_types: Optional[Union[int, torch.Tensor]]
 ) -> List[torch.Tensor]:
     times = []
     events = []
+    cur = 0
     for f in tqdm.tqdm(sorted(
             os.listdir(data_dir),
             key=lambda x: int(re.sub(fr".csv", "", x))
@@ -100,6 +102,9 @@ def load_data_simple(
                 e = e[:max_len]
             times.append(t)
             events.append(e)
+            cur += 1
+            if cur == dataset_size:
+                break
 
     unique_events = event_types
 
@@ -124,5 +129,5 @@ def load_data_simple(
                 final_events.append(events[i])
 
         print(len(final_times))
-        
+
     return final_times, final_events, unique_events

@@ -47,7 +47,7 @@ class EventDataModule(LightningDataModule):
             else:
                 times, events = load_data(
                     self.hparams.data_dir,
-                    self.hparams.unix_time, 
+                    self.hparams.unix_time,
                     self.hparams.dataset_size,
                     self.hparams.max_len)
             dataset = EventData(times, events)
@@ -94,6 +94,7 @@ class EventDataModuleSplitted(EventDataModule):
         if not self.data_train and not self.data_val and not self.data_test:
             times, events, unique_events = load_data_simple(
                 os.path.join(self.hparams.data_dir,'train'),
+                self.hparams.dataset_size_train,
                 self.hparams.max_len,
                 self.hparams.num_event_types)
             self.data_train = EventData(
@@ -101,12 +102,14 @@ class EventDataModuleSplitted(EventDataModule):
             )
             times, events, _ = load_data_simple(
                 os.path.join(self.hparams.data_dir,'val'),
+                self.hparams.dataset_size_val,
                 self.hparams.max_len,
                 unique_events)
             self.data_val = EventData(times, events
             )
             times, events, _ = load_data_simple(
                 os.path.join(self.hparams.data_dir,'test'),
+                self.hparams.dataset_size_test,
                 self.hparams.max_len,
                 unique_events)
             self.data_test = EventData(times,events

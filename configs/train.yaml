@@ -30,10 +30,10 @@ defaults:
 original_work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
-dataset: LinkedIn
+dataset: so
 data_dir: ${original_work_dir}/new_data/${dataset}
 unix_time: False
-num_types: 82
+num_types: 22
 
 # pretty print config at the start of the run using Rich library
 print_config: True
@@ -53,4 +53,4 @@ seed: null
 
 # default name for the experiment, determines logging folder path
 # (you can overwrite this name in experiment configs)
-name: ${dataset}_cotic_events_${datamodule.num_event_types}
+name: ${dataset}_cotic_dataset_${datamodule.dataset_size_train}
