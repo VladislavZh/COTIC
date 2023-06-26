@@ -107,6 +107,8 @@ def load_data_simple(
                 break
 
     unique_events = event_types
+    final_times = times
+    final_events = events
 
     if event_types is not None:
         if isinstance(event_types, int):
