@@ -149,3 +149,4 @@ wandb/
 .vs/
 /*.ipynb
 notebook*
+new_data

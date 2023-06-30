@@ -9,8 +9,6 @@
 <a href="https://pytorchlightning.ai/"><img alt="Lightning" src="https://img.shields.io/badge/-Lightning-792ee5?logo=pytorchlightning&logoColor=white"></a>
 <a href="https://hydra.cc/"><img alt="Config: Hydra" src="https://img.shields.io/badge/Config-Hydra-89b8cd"></a>
 <a href="https://github.com/ashleve/lightning-hydra-template"><img alt="Template" src="https://img.shields.io/badge/-Lightning--Hydra--Template-017F2F?style=flat&logo=github&labelColor=gray"></a><br>
-[![Paper](http://img.shields.io/badge/paper-arxiv.1001.2234-B31B1B.svg)](https://www.nature.com/articles/nature14539)
-[![Conference](http://img.shields.io/badge/AnyConference-year-4b44ce.svg)](https://papers.nips.cc/paper/2020)
 
 </div>
 
@@ -37,17 +35,6 @@ information provided below.
 * Transformer Hawkes
 
 <img src="./pictures/Transformer_Hawkes.drawio.png" width="400" />
- 
-
-## Metrics and comparison table
-
-model|log likelihood|
-:---:|:---:	|
-WN()|1337.1|
-[THP](https://arxiv.org/pdf/2002.09291.pdf)|1337.1|
-CCNN|1337.1|
-	
-
 	
 	
 
@@ -58,7 +45,7 @@ CCNN|1337.1|
 * IPTV
 * Synthetic Hawkes processes
 
-The datasets are taken from [cloud drive](https://drive.google.com/drive/folders/1xSjHx7SQDEefgCuAeP21NLOabIpL13XH).
+The datasets are taken from [cloud drive](https://drive.google.com/drive/folders/1vxNhcbgHvq9CfW9-RhTZ2yTovFQ5F4XD?usp=drive_link).
 
 
 ## How to run
