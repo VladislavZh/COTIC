@@ -3,7 +3,6 @@ from collections.abc import Iterable
 
 import torch
 from pytorch_lightning import LightningModule
-
 from src.utils.metrics import MetricsCore
 
 import time
@@ -49,9 +48,9 @@ class BaseEventModule(LightningModule):
         self.train_metrics = metrics
         self.val_metrics = metrics.copy_empty()
         self.test_metrics = metrics.copy_empty()
-
         self.start_time = time.time()
-
+    
+    
     def forward(self, batch):
         return self.net(*batch)
 
@@ -69,7 +68,6 @@ class BaseEventModule(LightningModule):
 
     def training_step(self, batch: Any, batch_idx: int):
         loss, out = self.step(batch, 'train')
-
         if type(loss) != torch.Tensor:
             assert len(loss) == 2
 
@@ -83,7 +81,8 @@ class BaseEventModule(LightningModule):
 
         self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
 
-        return {"loss": loss, "out": out}
+        #return {"loss": loss, "out": out}
+        return {"loss": loss}
 
     def training_epoch_end(self, outputs: List[Any]):
         ll, return_time_metric, event_type_metric = self.train_metrics.compute_metrics()

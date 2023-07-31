@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 from .causal_conv_1d import DilatedCausalConv1d
+from pytorch_memlab import profile, LineProfiler, MemReporter
 
 import math
 
@@ -18,7 +19,7 @@ class WaveNet(nn.Module):
             [math.pow(10000.0, 2.0 * (i // 2) / in_channels) for i in range(in_channels)])
         
         self.event_emb = nn.Embedding(num_types + 1, in_channels, padding_idx=0)
-        
+
         self.dilation_factors = [2 ** i for i in range(0, hyperparams['nb_layers'])]
         self.in_channels = [in_channels] + [hyperparams['nb_filters'] for _ in range(hyperparams['nb_layers'])]
         self.num_types = num_types
@@ -65,5 +66,6 @@ class WaveNet(nn.Module):
             x = dilated_causal_conv(x)
         time_pred = self.leaky_relu(self.output_layer_time(x)).transpose(1,2) * non_pad_mask
         type_pred = self.leaky_relu(self.output_layer_type(x)).transpose(1,2) * non_pad_mask
-        
+       
+
         return time_pred, type_pred
