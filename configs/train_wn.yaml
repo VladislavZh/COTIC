@@ -30,8 +30,10 @@ defaults:
 original_work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
-data_dir: ${original_work_dir}/data/amz7k
-unix_time: True
+dataset: meme
+n_types: 4977
+data_dir: ${original_work_dir}/new_data/${dataset}
+unix_time: False
 
 # pretty print config at the start of the run using Rich library
 print_config: True
@@ -51,4 +53,4 @@ seed: null
 
 # default name for the experiment, determines logging folder path
 # (you can overwrite this name in experiment configs)
-name: "default"
+name: ${dataset}_wn

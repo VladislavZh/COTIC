@@ -1,11 +1,12 @@
 from typing import Optional, Tuple
+import os
 
 import torch
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset, random_split
 from .components.base_dset import EventData
 
-from src.utils.data_utils import load_data
+from src.utils.data_utils import load_data_simple, load_data
 
 class EventDataModule(LightningDataModule):
     """
@@ -19,6 +20,11 @@ class EventDataModule(LightningDataModule):
         train_val_test_split: Tuple[float, float, float] = (0.8, 0.1, 0.1),
         batch_size: int = 64,
         dataset_size: Optional[int] = None,
+        dataset_size_train: Optional[int] = None,
+        dataset_size_val: Optional[int] = None,
+        dataset_size_test: Optional[int] = None,
+        max_len: Optional[int] = None,
+        num_event_types: Optional[int] = None,
         num_workers: int = 0,
         pin_memory: bool = False,
         random_seed: int = 42,
@@ -39,9 +45,14 @@ class EventDataModule(LightningDataModule):
         if not self.data_train and not self.data_val and not self.data_test:
             if "preprocess_type" in self.hparams.keys():
                 times, events = load_data(self.hparams.data_dir, self.hparams.unix_time,
-                                          self.hparams.dataset_size, self.hparams.preprocess_type)
+                                          self.hparams.dataset_size, self.hparams.max_len,
+                                          self.hparams.preprocess_type)
             else:
-                times, events = load_data(self.hparams.data_dir, self.hparams.unix_time, self.hparams.dataset_size)
+                times, events = load_data(
+                    self.hparams.data_dir,
+                    self.hparams.unix_time,
+                    self.hparams.dataset_size,
+                    self.hparams.max_len)
             dataset = EventData(times, events)
             N = len(dataset)
             lengths = [int(N * v) for v in self.hparams.train_val_test_split]
@@ -78,3 +89,31 @@ class EventDataModule(LightningDataModule):
             pin_memory=self.hparams.pin_memory,
             shuffle=False,
         )
+
+
+class EventDataModuleSplitted(EventDataModule):
+    def setup(self, stage: Optional[str] = None):
+        self.data_process = None
+        if not self.data_train and not self.data_val and not self.data_test:
+            times, events, unique_events = load_data_simple(
+                os.path.join(self.hparams.data_dir,'train'),
+                self.hparams.dataset_size_train,
+                self.hparams.max_len,
+                self.hparams.num_event_types)
+            self.data_train = EventData(
+                times, events
+            )
+            times, events, _ = load_data_simple(
+                os.path.join(self.hparams.data_dir,'val'),
+                self.hparams.dataset_size_val,
+                self.hparams.max_len,
+                unique_events)
+            self.data_val = EventData(times, events
+            )
+            times, events, _ = load_data_simple(
+                os.path.join(self.hparams.data_dir,'test'),
+                self.hparams.dataset_size_test,
+                self.hparams.max_len,
+                unique_events)
+            self.data_test = EventData(times,events
+            )

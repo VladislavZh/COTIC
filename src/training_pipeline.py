@@ -11,6 +11,7 @@ from pytorch_lightning import (
     seed_everything,
 )
 from pytorch_lightning.loggers import LightningLoggerBase
+from pytorch_lightning.callbacks import DeviceStatsMonitor
 
 from src import utils
 
@@ -66,7 +67,7 @@ def train(config: DictConfig) -> Optional[float]:
     # Init lightning trainer
     log.info(f"Instantiating trainer <{config.trainer._target_}>")
     trainer: Trainer = hydra.utils.instantiate(
-        config.trainer, callbacks=callbacks, logger=logger, _convert_="partial"
+        config.trainer, callbacks=callbacks, logger=logger,
     )
 
     # Send some parameters from config to all lightning loggers
@@ -96,11 +97,11 @@ def train(config: DictConfig) -> Optional[float]:
 
     # Test the model
     if config.get("test"):
-        ckpt_path = "best"
-        if not config.get("train") or config.trainer.get("fast_dev_run"):
-            ckpt_path = None
+        # ckpt_path = "best"
+        # if not config.get("train") or config.trainer.get("fast_dev_run"):
+        #     ckpt_path = None
         log.info("Starting testing!")
-        trainer.test(model=model, datamodule=datamodule, ckpt_path=ckpt_path)
+        trainer.test(model=model, datamodule=datamodule)
 
     # Make sure everything closed properly
     log.info("Finalizing!")

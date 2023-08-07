@@ -91,6 +91,7 @@ class WNMetrics(MetricsCore):
         """
         event_type_prediction = outputs[1][:,:-1,:]
         mask = inputs[1].ne(0)[:,1:]
+
         return event_type_prediction[mask,:]
 
     def compute_log_likelihood_per_event(
