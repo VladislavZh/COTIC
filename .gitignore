@@ -150,4 +150,3 @@ wandb/
 /*.ipynb
 notebook*
 new_data/*
-new_data
