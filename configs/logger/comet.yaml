@@ -2,7 +2,7 @@
 
 comet:
  _target_: pytorch_lightning.loggers.comet.CometLogger
- api_key: eTfGsxdNWCvov8CuHEC0ug9ko
- project_name: so-n-events
- workspace: vladislavzh
+ api_key: ???
+ project_name: ???
+ workspace: ???
  experiment_name: ${name}
