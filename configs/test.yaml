@@ -4,7 +4,7 @@
 defaults:
   - _self_
   - datamodule: base_datamodule.yaml # choose the datamodule for evaluation
-  - model: ccnn.yaml
+  - model: cotic.yaml
   - callbacks: null
   - logger: null
   - trainer: default.yaml

@@ -1,9 +1,11 @@
 import torch.nn as nn
 
+
 class Kernel(nn.Module):
     """
     Simple MLP Kernel, takes x of shape (*, in_channels), returns kernel values of shape (*, in_channels, out_channels)
     """
+
     def __init__(self, hidden1, hidden2, hidden3, in_channels, out_channels):
         super().__init__()
         self.args = [hidden1, hidden2, hidden3, in_channels, out_channels]
@@ -39,6 +41,7 @@ class LinearKernel(nn.Module):
     """
     One layer Kernel, takes x of shape (*, in_channels), returns kernel values of shape (*, in_channels, out_channels)
     """
+
     def __init__(self, in_channels, out_channels, dropout=0):
         super().__init__()
         self.layer = nn.Linear(in_channels, in_channels * out_channels)

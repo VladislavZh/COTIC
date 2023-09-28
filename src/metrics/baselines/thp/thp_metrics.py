@@ -5,21 +5,17 @@ import math
 from src.utils.metrics import MetricsCore
 from typing import Union, Tuple
 
+
 class THPMetrics(MetricsCore):
-    def __init__(
-        self,
-        return_time_metric,
-        event_type_metric,
-        scale_time_loss = 100
-    ):
+    def __init__(self, return_time_metric, event_type_metric, scale_time_loss=100):
         super().__init__(return_time_metric, event_type_metric)
-        self.type_loss_func = torch.nn.CrossEntropyLoss(ignore_index=-1, reduction='none')
+        self.type_loss_func = torch.nn.CrossEntropyLoss(
+            ignore_index=-1, reduction="none"
+        )
         self.scale_time_loss = scale_time_loss
 
     @staticmethod
-    def get_return_time_target(
-        inputs: Union[Tuple, torch.Tensor]
-    ) -> torch.Tensor:
+    def get_return_time_target(inputs: Union[Tuple, torch.Tensor]) -> torch.Tensor:
         """
         Takes input batch and returns the corresponding return time targets as 1d Tensor
 
@@ -30,14 +26,12 @@ class THPMetrics(MetricsCore):
             return_time_target - torch.Tensor, 1d Tensor with return time targets
         """
         event_time = inputs[0]
-        return_time = event_time[:,1:] - event_time[:,:-1]
-        mask = inputs[1].ne(0)[:,1:]
+        return_time = event_time[:, 1:] - event_time[:, :-1]
+        mask = inputs[1].ne(0)[:, 1:]
         return return_time[mask]
 
     @staticmethod
-    def get_event_type_target(
-        inputs: Union[Tuple, torch.Tensor]
-    ) -> torch.Tensor:
+    def get_event_type_target(inputs: Union[Tuple, torch.Tensor]) -> torch.Tensor:
         """
         Takes input batch and returns the corresponding event type targets as 1d Tensor
 
@@ -47,15 +41,15 @@ class THPMetrics(MetricsCore):
         return:
             event_type_target - torch.Tensor, 1d Tensor with event type targets
         """
-        event_type = inputs[1][:,1:]
-        mask = inputs[1].ne(0)[:,1:]
+        event_type = inputs[1][:, 1:]
+        mask = inputs[1].ne(0)[:, 1:]
         return event_type[mask]
 
     @staticmethod
     def get_return_time_predicted(
         pl_module: LightningModule,
         inputs: Union[Tuple, torch.Tensor],
-        outputs: Union[Tuple, torch.Tensor]
+        outputs: Union[Tuple, torch.Tensor],
     ) -> torch.Tensor:
         """
         Takes lighning model, input batch and model outputs, returns the corresponding predicted return times as 1d Tensor
@@ -68,15 +62,15 @@ class THPMetrics(MetricsCore):
         return:
             return_time_predicted - torch.Tensor, 1d Tensor with return time prediction
         """
-        return_time_prediction = outputs[1][1].squeeze_(-1)[:,:-1]
-        mask = inputs[1].ne(0)[:,1:]
+        return_time_prediction = outputs[1][1].squeeze_(-1)[:, :-1]
+        mask = inputs[1].ne(0)[:, 1:]
         return return_time_prediction[mask]
 
     @staticmethod
     def get_event_type_predicted(
         pl_module: LightningModule,
         inputs: Union[Tuple, torch.Tensor],
-        outputs: Union[Tuple, torch.Tensor]
+        outputs: Union[Tuple, torch.Tensor],
     ) -> torch.Tensor:
         """
         Takes lighning model, input batch and model outputs, returns the corresponding predicted event types as 1d Tensor
@@ -89,9 +83,9 @@ class THPMetrics(MetricsCore):
         return:
             event_type_predicted - torch.Tensor, 2d Tensor with event type unnormalized predictions
         """
-        event_type_prediction = outputs[1][0][:,:-1,:]
-        mask = inputs[1].ne(0)[:,1:]
-        return event_type_prediction[mask,:]
+        event_type_prediction = outputs[1][0][:, :-1, :]
+        mask = inputs[1].ne(0)[:, 1:]
+        return event_type_prediction[mask, :]
 
     @staticmethod
     def softplus(x, beta):
@@ -102,7 +96,7 @@ class THPMetrics(MetricsCore):
 
     @staticmethod
     def compute_event(type_lambda, non_pad_mask):
-        """ Log-likelihood of events. """
+        """Log-likelihood of events."""
 
         # add 1e-9 in case some events have 0 likelihood
         type_lambda += math.pow(10, -9)
@@ -112,13 +106,14 @@ class THPMetrics(MetricsCore):
         return result
 
     def compute_integral_unbiased(self, model, data, time, non_pad_mask, type_mask):
-        """ Log-likelihood of non-events, using Monte Carlo integration. """
+        """Log-likelihood of non-events, using Monte Carlo integration."""
 
         num_samples = 100
 
         diff_time = (time[:, 1:] - time[:, :-1]) * non_pad_mask[:, 1:]
-        temp_time = diff_time.unsqueeze(2) * \
-                    torch.rand([*diff_time.size(), num_samples], device=data.device)
+        temp_time = diff_time.unsqueeze(2) * torch.rand(
+            [*diff_time.size(), num_samples], device=data.device
+        )
         temp_time /= (time[:, :-1] + 1).unsqueeze(2)
 
         temp_hid = model.linear(data)[:, 1:, :]
@@ -135,7 +130,7 @@ class THPMetrics(MetricsCore):
         pl_module: LightningModule,
         enc_output: torch.Tensor,
         event_time: torch.Tensor,
-        event_type: torch.Tensor
+        event_type: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Computes log of the intensity and the integral
@@ -143,20 +138,24 @@ class THPMetrics(MetricsCore):
 
         non_pad_mask = event_type.ne(0).type(torch.float)
 
-        type_mask = torch.zeros([*event_type.size(), pl_module.net.num_types], device=enc_output.device)
+        type_mask = torch.zeros(
+            [*event_type.size(), pl_module.net.num_types], device=enc_output.device
+        )
         for i in range(pl_module.net.num_types):
             type_mask[:, :, i] = (event_type == i + 1).bool().to(enc_output.device)
 
         all_hid = pl_module.net.linear(enc_output)
         all_lambda = self.softplus(all_hid, pl_module.net.beta)
-        type_lambda = torch.sum(all_lambda * type_mask, dim=2) #shape = (bs, L)
+        type_lambda = torch.sum(all_lambda * type_mask, dim=2)  # shape = (bs, L)
 
         # event log-likelihood
         event_ll = self.compute_event(type_lambda, non_pad_mask)
         event_ll = torch.sum(event_ll, dim=-1)
 
         # non-event log-likelihood, MC integration
-        non_event_ll = self.compute_integral_unbiased(pl_module.net, enc_output, event_time, non_pad_mask, type_mask)
+        non_event_ll = self.compute_integral_unbiased(
+            pl_module.net, enc_output, event_time, non_pad_mask, type_mask
+        )
         non_event_ll = torch.sum(non_event_ll, dim=-1)
 
         return event_ll, non_event_ll
@@ -165,7 +164,7 @@ class THPMetrics(MetricsCore):
         self,
         pl_module: LightningModule,
         inputs: Union[Tuple, torch.Tensor],
-        outputs: Union[Tuple, torch.Tensor]
+        outputs: Union[Tuple, torch.Tensor],
     ) -> torch.Tensor:
         """
         Takes lighning model, input batch and model outputs, returns the corresponding log likelihood per event for each sequence in the batch as 1d Tensor of shape (bs,),
@@ -180,17 +179,14 @@ class THPMetrics(MetricsCore):
             log_likelihood_per_seq - torch.Tensor, 1d Tensor with log likelihood per event prediction, shape = (bs,)
         """
         event_ll, non_event_ll = self.event_and_non_event_log_likelihood(
-            pl_module,
-            outputs[0],
-            inputs[0],
-            inputs[1]
+            pl_module, outputs[0], inputs[0], inputs[1]
         )
-        lengths = torch.sum(inputs[1].ne(0).type(torch.float), dim = 1)
-        results = (event_ll - non_event_ll)/lengths
+        lengths = torch.sum(inputs[1].ne(0).type(torch.float), dim=1)
+        results = (event_ll - non_event_ll) / lengths
         return results
 
     def type_loss(self, prediction, types):
-        """ Event prediction loss, cross entropy. """
+        """Event prediction loss, cross entropy."""
 
         # convert [1,2,3] based types to [0,1,2]; also convert padding events to -1
         truth = types[:, 1:] - 1
@@ -203,7 +199,7 @@ class THPMetrics(MetricsCore):
 
     @staticmethod
     def time_loss(prediction, event_time):
-        """ Time prediction loss. """
+        """Time prediction loss."""
 
         prediction.squeeze_(-1)
 
@@ -219,7 +215,7 @@ class THPMetrics(MetricsCore):
         self,
         pl_module: LightningModule,
         inputs: Union[Tuple, torch.Tensor],
-        outputs: Union[Tuple, torch.Tensor]
+        outputs: Union[Tuple, torch.Tensor],
     ) -> torch.Tensor:
         """
         Takes lighning model, input batch and model outputs, returns the corresponding loss for backpropagation,
@@ -234,10 +230,7 @@ class THPMetrics(MetricsCore):
             loss - torch.Tensor, loss for backpropagation
         """
         event_ll, non_event_ll = self.event_and_non_event_log_likelihood(
-            pl_module,
-            outputs[0],
-            inputs[0],
-            inputs[1]
+            pl_module, outputs[0], inputs[0], inputs[1]
         )
         ll_loss = -torch.mean(event_ll - non_event_ll)
         type_loss = self.type_loss(outputs[1][0], inputs[1])

@@ -67,7 +67,9 @@ def train(config: DictConfig) -> Optional[float]:
     # Init lightning trainer
     log.info(f"Instantiating trainer <{config.trainer._target_}>")
     trainer: Trainer = hydra.utils.instantiate(
-        config.trainer, callbacks=callbacks, logger=logger,
+        config.trainer,
+        callbacks=callbacks,
+        logger=logger,
     )
 
     # Send some parameters from config to all lightning loggers

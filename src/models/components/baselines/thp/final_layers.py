@@ -1,8 +1,9 @@
 import torch.nn as nn
 import torch
 
+
 class Predictor(nn.Module):
-    """ Prediction of next event type. """
+    """Prediction of next event type."""
 
     def __init__(self, dim, num_types):
         super().__init__()
@@ -32,11 +33,20 @@ class RNN_layers(nn.Module):
         pre_lengths = data.shape[1]
         lengths = non_pad_mask.squeeze(2).long().sum(1).cpu()
         pack_enc_output = nn.utils.rnn.pack_padded_sequence(
-            data, lengths, batch_first=True, enforce_sorted=False)
+            data, lengths, batch_first=True, enforce_sorted=False
+        )
         temp = self.rnn(pack_enc_output)[0]
         out = nn.utils.rnn.pad_packed_sequence(temp, batch_first=True)[0]
 
         out = self.projection(out)
-        if out.shape[1]!=pre_lengths:
-          out = torch.concat([out, torch.zeros(out.shape[0], pre_lengths - out.shape[1], out.shape[2]).to(out.device)], dim=1)
+        if out.shape[1] != pre_lengths:
+            out = torch.concat(
+                [
+                    out,
+                    torch.zeros(
+                        out.shape[0], pre_lengths - out.shape[1], out.shape[2]
+                    ).to(out.device),
+                ],
+                dim=1,
+            )
         return out

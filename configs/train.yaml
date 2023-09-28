@@ -4,7 +4,7 @@
 defaults:
   - _self_
   - datamodule: base_datamodule.yaml
-  - model: ccnn.yaml
+  - model: cotic.yaml
   - callbacks: default.yaml
   - logger: comet.yaml # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
   - trainer: default.yaml
@@ -53,4 +53,4 @@ seed: null
 
 # default name for the experiment, determines logging folder path
 # (you can overwrite this name in experiment configs)
-name: ${dataset}_cotic_dataset_${datamodule.dataset_size_train}
+name: default

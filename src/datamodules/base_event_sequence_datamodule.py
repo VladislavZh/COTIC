@@ -8,6 +8,7 @@ from .components.base_dset import EventData
 
 from src.utils.data_utils import load_data_simple, load_data
 
+
 class EventDataModule(LightningDataModule):
     """
     General event sequence datamodule
@@ -28,7 +29,7 @@ class EventDataModule(LightningDataModule):
         num_workers: int = 0,
         pin_memory: bool = False,
         random_seed: int = 42,
-        preprocess_type: str = "default"
+        preprocess_type: str = "default",
     ):
         super().__init__()
 
@@ -44,15 +45,20 @@ class EventDataModule(LightningDataModule):
     def setup(self, stage: Optional[str] = None):
         if not self.data_train and not self.data_val and not self.data_test:
             if "preprocess_type" in self.hparams.keys():
-                times, events = load_data(self.hparams.data_dir, self.hparams.unix_time,
-                                          self.hparams.dataset_size, self.hparams.max_len,
-                                          self.hparams.preprocess_type)
+                times, events = load_data(
+                    self.hparams.data_dir,
+                    self.hparams.unix_time,
+                    self.hparams.dataset_size,
+                    self.hparams.max_len,
+                    self.hparams.preprocess_type,
+                )
             else:
                 times, events = load_data(
                     self.hparams.data_dir,
                     self.hparams.unix_time,
                     self.hparams.dataset_size,
-                    self.hparams.max_len)
+                    self.hparams.max_len,
+                )
             dataset = EventData(times, events)
             N = len(dataset)
             lengths = [int(N * v) for v in self.hparams.train_val_test_split]
@@ -96,24 +102,23 @@ class EventDataModuleSplitted(EventDataModule):
         self.data_process = None
         if not self.data_train and not self.data_val and not self.data_test:
             times, events, unique_events = load_data_simple(
-                os.path.join(self.hparams.data_dir,'train'),
+                os.path.join(self.hparams.data_dir, "train"),
                 self.hparams.dataset_size_train,
                 self.hparams.max_len,
-                self.hparams.num_event_types)
-            self.data_train = EventData(
-                times, events
+                self.hparams.num_event_types,
             )
+            self.data_train = EventData(times, events)
             times, events, _ = load_data_simple(
-                os.path.join(self.hparams.data_dir,'val'),
+                os.path.join(self.hparams.data_dir, "val"),
                 self.hparams.dataset_size_val,
                 self.hparams.max_len,
-                unique_events)
-            self.data_val = EventData(times, events
+                unique_events,
             )
+            self.data_val = EventData(times, events)
             times, events, _ = load_data_simple(
-                os.path.join(self.hparams.data_dir,'test'),
+                os.path.join(self.hparams.data_dir, "test"),
                 self.hparams.dataset_size_test,
                 self.hparams.max_len,
-                unique_events)
-            self.data_test = EventData(times,events
+                unique_events,
             )
+            self.data_test = EventData(times, events)

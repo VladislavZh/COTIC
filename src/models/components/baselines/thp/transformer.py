@@ -6,12 +6,21 @@ from .final_layers import RNN_layers, Predictor
 
 
 class Transformer(nn.Module):
-    """ A sequence to sequence model with attention mechanism. """
+    """A sequence to sequence model with attention mechanism."""
 
     def __init__(
-            self,
-            num_types, d_model=256, d_rnn=128, d_inner=1024,
-            n_layers=4, n_head=4, d_k=64, d_v=64, dropout=0.1, rnn=True):
+        self,
+        num_types,
+        d_model=256,
+        d_rnn=128,
+        d_inner=1024,
+        n_layers=4,
+        n_head=4,
+        d_k=64,
+        d_v=64,
+        dropout=0.1,
+        rnn=True,
+    ):
         super().__init__()
 
         self.encoder = Encoder(
@@ -46,10 +55,10 @@ class Transformer(nn.Module):
 
         # prediction of next event type
         self.type_predictor = Predictor(d_model, num_types)
-        
+
     @staticmethod
     def get_non_pad_mask(seq):
-        """ Get the non-padding positions. """
+        """Get the non-padding positions."""
 
         assert seq.dim() == 2
         return seq.ne(0).type(torch.float).unsqueeze(-1)

@@ -3,7 +3,7 @@ import torch.nn.functional as F
 
 
 class PositionwiseFeedForward(nn.Module):
-    """ Two-layer position-wise feed-forward neural network. """
+    """Two-layer position-wise feed-forward neural network."""
 
     def __init__(self, d_in, d_hid, dropout=0.1, normalize_before=True):
         super().__init__()

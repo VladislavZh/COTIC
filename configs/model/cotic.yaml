@@ -1,25 +1,25 @@
 _target_: src.models.base_model.BaseEventModule
 
 net:
-  _target_: src.models.components.cont_cnn.CCNN
+  _target_: src.models.components.cotic.COTIC
   in_channels: 32
   kernel_size: 9
   nb_filters: 16
   nb_layers: 5
   num_types: ${num_types}
   kernel:
-    _target_: src.models.components.cont_cnn.Kernel
+    _target_: src.models.components.cotic.Kernel
     hidden1: 8
     hidden2: 4
     hidden3: 8
     in_channels: ${model.net.nb_filters}
     out_channels: ${model.net.nb_filters}
   head:
-    _target_: src.models.components.cont_cnn.PredictionHead
+    _target_: src.models.components.cotic.PredictionHead
     in_channels: ${model.net.nb_filters}
     num_types: ${num_types}
 metrics:
-  _target_: src.metrics.cont_cnn.CCNNMetrics
+  _target_: src.metrics.cotic.CCNNMetrics
   return_time_metric:
     _target_: src.utils.metrics.MAE
   event_type_metric:
@@ -34,12 +34,12 @@ metrics:
 optimizer:
   name: adam
   params:
-    lr: 0.01
+    lr: 0.001
     weight_decay: 1e-8
-scheduler:
-  step: null
-  milestones:
-    - 40
-    - 75
-  gamma: 0.1
+scheduler: null
+#  step: 40
+#  milestones: null
+##    - 40
+##    - 75
+#  gamma: 0.1
 head_start: 1
