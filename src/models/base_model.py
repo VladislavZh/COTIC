@@ -10,6 +10,7 @@ import time
 class BaseEventModule(LightningModule):
     """
     Base event sequence lightning module
+    Conducts training
     """
 
     def __init__(
