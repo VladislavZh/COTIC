@@ -81,41 +81,6 @@ class MetricsCore(ABC):
         """
         return self.__ll_per_event
 
-    @property
-    def step_return_time_target(self) -> torch.Tensor:
-        """
-        Current step return time target 1d torch Tensor
-        """
-        return self.__step_return_time_target
-
-    @property
-    def step_event_type_target(self) -> torch.Tensor:
-        """
-        Current step event type target 1d torch Tensor
-        """
-        return self.__step_event_type_target
-
-    @property
-    def step_return_time_predicted(self) -> torch.Tensor:
-        """
-        Current step return time prediction 1d torch Tensor
-        """
-        return self.__step_return_time_predicted
-
-    @property
-    def step_event_type_predicted(self) -> torch.Tensor:
-        """
-        Current step event type unnormalized predictions 2d torch Tensor
-        """
-        return self.__step_event_type_predicted
-
-    @property
-    def step_ll_per_event(self) -> torch.Tensor:
-        """
-        Current step log likelihood per event for each sequence 1d torch Tensor
-        """
-        return self.__step_ll_per_event
-
     @staticmethod
     @abstractmethod
     def get_return_time_target(inputs: Union[Tuple, torch.Tensor]) -> torch.Tensor:
@@ -252,29 +217,29 @@ class MetricsCore(ABC):
         self.__return_time_target = torch.concat(
             [
                 self.__return_time_target,
-                self.__step_return_time_target.detach().clone().cpu(),
+                self.__step_return_time_target.detach().cpu(),
             ]
         )
         self.__event_type_target = torch.concat(
             [
                 self.__event_type_target,
-                self.__step_event_type_target.detach().clone().cpu(),
+                self.__step_event_type_target.detach().cpu(),
             ]
         )
         self.__return_time_predicted = torch.concat(
             [
                 self.__return_time_predicted,
-                self.__step_return_time_predicted.detach().clone().cpu(),
+                self.__step_return_time_predicted.detach().cpu(),
             ]
         )
         self.__event_type_predicted = torch.concat(
             [
                 self.__event_type_predicted,
-                self.__step_event_type_predicted.detach().clone().cpu(),
+                self.__step_event_type_predicted.detach().cpu(),
             ]
         )
         self.__ll_per_event = torch.concat(
-            [self.__ll_per_event, self.__step_ll_per_event.detach().clone().cpu()]
+            [self.__ll_per_event, self.__step_ll_per_event.detach().cpu()]
         )
 
     def compute_loss_and_add_values(

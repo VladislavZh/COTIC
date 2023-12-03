@@ -73,7 +73,7 @@ class ContConv1d(nn.Module):
         kernel_size: int,
         dilation: int,
         include_zero_lag: bool,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Returns delta_times t_i - t_j, where t_j are true events and the number of delta_times per row is kernel_size
 
@@ -154,6 +154,7 @@ class ContConv1d(nn.Module):
         returns:
             out - torch.Tensor, shape = (bs, L, out_channels)
         """
+
         delta_times, features_kern, dt_mask = self.__conv_matrix_constructor(
             times,
             features,
@@ -162,7 +163,6 @@ class ContConv1d(nn.Module):
             self.dilation,
             self.include_zero_lag,
         )
-        bs, k, L = delta_times.shape
 
         kernel_values = self.kernel(self.__temporal_enc(delta_times))
         kernel_values[~dt_mask, ...] = 0
@@ -170,7 +170,7 @@ class ContConv1d(nn.Module):
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1, 3))
 
-        out = out + self.skip_connection(features.transpose(1, 2)).transpose(1, 2)
+        out += self.skip_connection(features.transpose(1, 2)).transpose(1, 2)
         out = self.norm(out.transpose(1, 2)).transpose(1, 2)
         return out
 

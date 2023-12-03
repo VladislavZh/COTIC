@@ -127,7 +127,7 @@ class CCNNMetrics(MetricsCore):
     @staticmethod
     def __add_sim_times(
         times: torch.Tensor, sim_size: int
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> torch.Tensor:
         """
         Takes batch of times and events and adds sim_size auxiliar times
 
@@ -138,26 +138,17 @@ class CCNNMetrics(MetricsCore):
 
         returns:
             bos_full_times  - torch.Tensor of shape(bs, (sim_size + 1) * (max_len - 1) + 1) that consists of times and sim_size auxiliar times between events
-            bos_full_features - torch.Tensor of shape(bs, (sim_size + 1) * (max_len - 1) + 1, d) that consists of event features and sim_size zeros between events
         """
         delta_times = times[:, 1:] - times[:, :-1]
-        sim_delta_times = (
-            (
-                torch.rand(list(delta_times.shape) + [sim_size]).to(times.device)
-                * delta_times.unsqueeze(2)
-            )
-            .sort(dim=2)
-            .values
-        )
-        full_times = torch.concat(
-            [sim_delta_times.to(times.device), delta_times.unsqueeze(2)], dim=2
-        )
-        full_times = full_times + times[:, :-1].unsqueeze(2)
-        full_times[delta_times < 0, :] = 0
-        full_times = full_times.flatten(1)
-        bos_full_times = torch.concat(
-            [torch.zeros(times.shape[0], 1).to(times.device), full_times], dim=1
-        )
+        sim_delta_times = torch.rand(list(delta_times.shape) + [sim_size], device=times.device) * delta_times.unsqueeze(
+            2)
+        sim_delta_times, _ = sim_delta_times.sort(dim=2)
+        full_times = torch.cat([sim_delta_times, delta_times.unsqueeze(2)], dim=2)
+        full_times += times[:, :-1].unsqueeze(2)
+        full_times[delta_times < 0] = 0
+
+        zeros_tensor = torch.zeros_like(times[:, :1])  # Create zeros tensor with same device and dtype as times
+        bos_full_times = torch.cat([zeros_tensor, full_times.flatten(1)], dim=1)
 
         return bos_full_times
 
@@ -174,9 +165,8 @@ class CCNNMetrics(MetricsCore):
         bs, _, num_types = all_lambda.shape
 
         between_lambda = (
-            all_lambda.transpose(1, 2)[:, :, 1:]
-            .reshape(bs, num_types, event_time.shape[1] - 1, num_samples + 1)[..., :-1]
-            .transpose(1, 2)
+            all_lambda[:, 1:, :]
+            .reshape(bs, event_time.shape[1] - 1, num_samples + 1, num_types)[:, :, :-1, :]
         )
 
         diff_time = (event_time[:, 1:] - event_time[:, :-1]) * non_pad_mask[:, 1:]
@@ -195,7 +185,6 @@ class CCNNMetrics(MetricsCore):
         """
         Computes log of the intensity and the integral
         """
-
         non_pad_mask = event_type.ne(0).type(torch.float)
 
         type_mask = torch.zeros(

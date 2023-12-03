@@ -1,10 +1,7 @@
 import torch
 import torch.nn as nn
-import numpy as np
-import copy
 
 from .cotic_layers import ContConv1d, ContConv1dSim
-from .kernels import Kernel, LinearKernel
 
 
 class COTIC(nn.Module):
@@ -56,16 +53,15 @@ class COTIC(nn.Module):
 
         self.head = head
 
-    def __add_bos(self, event_times, event_types, lengths):
-        bs, L = event_times.shape
-        event_times = torch.concat(
-            [torch.zeros(bs, 1).to(event_times.device), event_times], dim=1
-        )
+    @staticmethod
+    def __add_bos(event_times, event_types):
+        bos_event_times = torch.cat([torch.zeros(event_times.shape[0], 1, device=event_times.device), event_times],
+                                    dim=1)
         max_event_type = torch.max(event_types) + 1
-        tmp = (torch.ones(bs, 1).to(event_types.device) * max_event_type).long()
-        event_types = torch.concat([tmp, event_types], dim=1)
-        lengths += 1
-        return event_times, event_types, lengths
+        bos_event_types = torch.cat(
+            [torch.full((event_types.shape[0], 1), max_event_type, dtype=torch.long, device=event_types.device),
+             event_types], dim=1)
+        return bos_event_times, bos_event_types
 
     def forward(
         self, event_times: torch.Tensor, event_types: torch.Tensor
@@ -78,16 +74,13 @@ class COTIC(nn.Module):
             event_types - torch.Tensor, shape = (bs, L) event types
             lengths - torch.Tensor, shape = (bs,) sequence lengths
         """
-        lengths = torch.sum(event_types.ne(0).type(torch.float), dim=1).long()
-        event_times, event_types, lengths = self.__add_bos(
-            event_times, event_types, lengths
-        )
+        event_times, event_types = self.__add_bos(event_times, event_types)
 
         non_pad_mask = event_types.ne(0)
 
         enc_output = self.event_emb(event_types)
 
-        for i, conv in enumerate(self.convs):
+        for conv in self.convs:
             enc_output = torch.nn.functional.leaky_relu(
                 conv(event_times, enc_output, non_pad_mask), 0.1
             )
@@ -95,9 +88,7 @@ class COTIC(nn.Module):
         return enc_output, self.head(enc_output.detach())
 
     def final(self, times, true_times, true_features, non_pad_mask, sim_size):
-        out = self.final_list[0](
-            times, true_times, true_features, non_pad_mask, sim_size
-        )
+        out = self.final_list[0](times, true_times, true_features, non_pad_mask, sim_size)
         for layer in self.final_list[1:]:
             out = layer(out)
         return out

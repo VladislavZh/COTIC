@@ -1,30 +1,10 @@
 from typing import Any, List, Optional
-from collections.abc import Iterable
 
 import torch
 from pytorch_lightning import LightningModule
 from src.utils.metrics import MetricsCore
 
 import time
-
-
-def get_optimizer(name, model_params, params):
-    optimizers = {
-        "adadelta": torch.optim.Adadelta,
-        "adagrad": torch.optim.Adagrad,
-        "adam": torch.optim.Adam,
-        "adamw": torch.optim.AdamW,
-        "sparseadam": torch.optim.SparseAdam,
-        "adamax": torch.optim.Adamax,
-        "asgd": torch.optim.ASGD,
-        "lbfgs": torch.optim.LBFGS,
-        "nadam": torch.optim.NAdam,
-        "radam": torch.optim.RAdam,
-        "rmsprop": torch.optim.RMSprop,
-        "rprop": torch.optim.Rprop,
-        "sgd": torch.optim.SGD,
-    }
-    return optimizers[name](params=model_params, **params)
 
 
 class BaseEventModule(LightningModule):
@@ -36,8 +16,8 @@ class BaseEventModule(LightningModule):
         self,
         net: torch.nn.Module,
         metrics: MetricsCore,
-        optimizer: dict,
-        scheduler: Optional[dict] = None,
+        optimizer: torch.optim.Optimizer,
+        scheduler: torch.optim.lr_scheduler,
         head_start: Optional[int] = None,
     ):
         super().__init__()
@@ -189,25 +169,16 @@ class BaseEventModule(LightningModule):
         )
 
     def configure_optimizers(self):
-        optimizer = get_optimizer(
-            self.hparams.optimizer["name"],
-            self.net.parameters(),
-            self.hparams.optimizer["params"],
-        )
-        schedulers = []
+        optimizer = self.hparams.optimizer(params=self.trainer.model.parameters())
         if self.hparams.scheduler is not None:
-            params = self.hparams.scheduler
-            assert params.step is None or params.milestones is None
-            if params.step is not None:
-                schedulers = [
-                    torch.optim.lr_scheduler.StepLR(
-                        optimizer, params.step, gamma=params.gamma
-                    )
-                ]
-            elif params.milestones is not None:
-                schedulers = [
-                    torch.optim.lr_scheduler.MultiStepLR(
-                        optimizer, params.milestones, gamma=params.gamma
-                    )
-                ]
-        return [optimizer], schedulers
+            scheduler = self.hparams.scheduler(optimizer=optimizer)
+            return {
+                "optimizer": optimizer,
+                "lr_scheduler": {
+                    "scheduler": scheduler,
+                    "monitor": "val/loss",
+                    "interval": "epoch",
+                    "frequency": 1,
+                },
+            }
+        return {"optimizer": optimizer}
