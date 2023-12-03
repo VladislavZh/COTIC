@@ -3,6 +3,8 @@ from typing import Any, List, Optional
 import torch
 from pytorch_lightning import LightningModule
 from src.utils.metrics import MetricsCore
+from src.utils.head import HeadCore
+from src.utils.dataclasses import DownstreamPredictions
 
 import time
 
@@ -10,22 +12,22 @@ import time
 class BaseEventModule(LightningModule):
     """
     Base event sequence lightning module
-    Conducts training
     """
 
     def __init__(
         self,
         net: torch.nn.Module,
         metrics: MetricsCore,
+        head: HeadCore,
         optimizer: torch.optim.Optimizer,
-        scheduler: torch.optim.lr_scheduler,
-        head_start: Optional[int] = None,
+        scheduler: torch.optim.lr_scheduler, 
     ):
         super().__init__()
 
         self.save_hyperparameters(logger=False)
 
         self.net = net
+        self.head = head
         self.train_metrics = metrics
         self.val_metrics = metrics.copy_empty()
         self.test_metrics = metrics.copy_empty()
@@ -35,39 +37,48 @@ class BaseEventModule(LightningModule):
         return self.net(*batch)
 
     def step(self, batch: Any, stage: str):
-        outputs = self.forward(batch)
+        embeddings = self.forward(batch)
+        downstream_predictions = self.head(embeddings, batch)
 
         if stage == "train":
-            loss = self.train_metrics.compute_loss_and_add_values(self, batch, outputs)
+            loss = self.train_metrics.compute_loss(self, batch, outputs)
         if stage == "val":
-            loss = self.val_metrics.compute_loss_and_add_values(self, batch, outputs)
+            loss = self.val_metrics.compute_loss(self, batch, outputs)
         if stage == "test":
-            loss = self.test_metrics.compute_loss_and_add_values(self, batch, outputs)
+            loss = self.test_metrics.compute_loss(self, batch, outputs)
 
-        return loss, outputs
+        return loss, downstream_predictions
+        
+	def log_downstream(
+        downstream_predictions: DownstreamPredictions,
+        stage: str,
+        on_epoch: bool
+    ) -> None:
+    	for key in downstream_predictions.metrics_names:
+        	self.log(
+        		f"{stage}/{key}",
+                getattr(downstream_predictions, key),
+                on_step=True if stage=="train" else False,
+                on_epoch=False if stage=="train" else True,
+                prog_bar=True
+        	)
 
     def training_step(self, batch: Any, batch_idx: int):
-        loss, out = self.step(batch, "train")
-        if type(loss) != torch.Tensor:
-            assert len(loss) == 2
-
+        loss, downstream_predictions = self.step(batch, "train")
+        self.log_downstream(downstream_prediction, "train", False)
+        
+        if self.head.additive_loss_component:
             self.log(
                 "train/loss",
-                loss[0] + loss[1],
-                on_step=False,
-                on_epoch=True,
+                loss + downsteam_predictions.loss,
+                on_step=True,
+                on_epoch=False,
                 prog_bar=False,
             )
-            print(loss[0], loss[1])
+			return {"loss": loss + downstream_predictions.loss}
 
-            if self.hparams.head_start is not None:
-                if self.current_epoch >= self.hparams.head_start:
-                    return {"loss": loss[0] + loss[1]}
-            return {"loss": loss[0]}
+        self.log("train/loss", loss, on_step=True, on_epoch=False, prog_bar=False)
 
-        self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
-
-        # return {"loss": loss, "out": out}
         return {"loss": loss}
 
     def training_epoch_end(self, outputs: List[Any]):
