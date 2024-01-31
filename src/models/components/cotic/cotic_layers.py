@@ -1,140 +1,128 @@
+from abc import ABC
+
 import torch
 import torch.nn as nn
-import numpy as np
 import torch.nn.functional as F
-import math
 
 from typing import Tuple
 
-import time
 
-
-class ContConv1d(nn.Module):
+class ContinuousConvolutionBase(nn.Module, ABC):
     """
-    Continuous convolution layer for true events
+    Base class for continuous convolutional layers, providing core functionalities
+    for different types of continuous convolutions without implementing a forward pass.
+
+    This class serves as a foundation for specific continuous convolution implementations.
+    It handles the initial setup and common operations but requires subclasses to define
+    their own forward pass logic.
+
+    Attributes:
+    - kernel_network (nn.Module): A neural network module that serves as the convolution kernel.
+      It takes input of shape (*,1) and outputs a tensor of shape (*, input_channels, output_channels).
+    - kernel_size (int): The size of the convolutional kernel.
+    - input_channels (int): The number of input channels.
+    - output_channels (int): The number of output channels.
+    - dilation (int): The dilation factor of the convolutional layer.
+
+    Methods:
+    - construct_conv_matrix: Constructs and returns matrices necessary for the convolution operation.
     """
 
     def __init__(
-        self,
-        kernel: nn.Module,
-        kernel_size: int,
-        in_channels: int,
-        out_channels: int,
-        dilation: int = 1,
-        include_zero_lag: bool = False,
+            self,
+            kernel_network: nn.Module,
+            kernel_size: int,
+            input_channels: int,
+            output_channels: int,
+            dilation: int = 1
     ):
         """
-        args:
-            kernel - torch.nn.Module, Kernel neural net that takes (*,1) as input and returns (*, in_channles, out_channels) as output
-            kernel_size - int, convolution layer kernel size
-            in_channels - int, features input size
-            out_channles - int, output size
-            dilation - int, convolutional layer dilation (default = 1)
-            include_zero_lag - bool, indicates if the model should use current time step features for prediction
-            skip_connection - bool, indicates if the model should add skip connection in the end, in_channels == out_channels
+        Initialize the ContinuousConvolutionBase layer.
+
+        Args:
+        - kernel_network (nn.Module): Kernel neural network that takes (*,1) as input and
+                                      returns (*, input_channels, output_channels) as output.
+        - kernel_size (int): Convolution layer kernel size.
+        - input_channels (int): Input feature size.
+        - output_channels (int): Output feature size.
+        - dilation (int, optional): Convolutional layer dilation (default=1).
         """
         super().__init__()
         assert dilation >= 1
-        assert in_channels >= 1
-        assert out_channels >= 1
+        assert input_channels >= 1
+        assert output_channels >= 1
 
-        self.kernel = kernel
+        self.kernel_network = kernel_network
         self.kernel_size = kernel_size
         self.dilation = dilation
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.include_zero_lag = include_zero_lag
+        self.input_channels = input_channels
+        self.output_channels = output_channels
         self.skip_connection = nn.Conv1d(
-            in_channels=in_channels, out_channels=out_channels, kernel_size=1
+            in_channels=input_channels, out_channels=output_channels, kernel_size=1
         )
 
         self.leaky_relu = nn.LeakyReLU(0.1)
 
-        self.position_vec = torch.tensor(
-            [
-                math.pow(10000.0, 2.0 * (i // 2) / self.in_channels)
-                for i in range(self.in_channels)
-            ]
-        )
+        self.layer_norm = nn.LayerNorm(output_channels)
+        self.data_preparation_kernel = nn.Parameter(torch.eye(kernel_size).unsqueeze(1), requires_grad=False)
+        self.data_preparation_padding = (self.kernel_size - 1) * self.dilation
+        self.data_preparation_offset = 0
 
-        self.norm = nn.BatchNorm1d(out_channels)
-
-    def __temporal_enc(self, time):
-        result = time.unsqueeze(-1) / self.position_vec.to(time.device)
-        result[..., 0::2] = torch.sin(result[..., 0::2])
-        result[..., 1::2] = torch.cos(result[..., 1::2])
-        return result
-
-    @staticmethod
-    def __conv_matrix_constructor(
-        times: torch.Tensor,
-        features: torch.Tensor,
-        non_pad_mask: torch.Tensor,
-        kernel_size: int,
-        dilation: int,
-        include_zero_lag: bool,
+    def construct_conv_matrix(
+            self,
+            times: torch.Tensor,
+            features: torch.Tensor,
+            non_pad_mask: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
-        Returns delta_times t_i - t_j, where t_j are true events and the number of delta_times per row is kernel_size
+        Returns delta_times t_i - t_j, where t_j are true events, and the number of delta_times per row is kernel_size.
 
-        args:
-            times - torch.Tensor of shape = (bs, max_len), Tensor of all times
-            features - torch.Tensor of shape = (bs,max_len, in_channels), input tensor
-            non_pad_mask - torch.Tensor of shape = (bs, max_len),  indicates non_pad timestamps
-            kernel_size - int, covolution kernel size
-            dilation - int, convolution dilation
-            include_zero_lag: bool, indicates if we should use zero-lag timestamp
+        Args:
+        - times (torch.Tensor): Tensor of shape=(batch_size, max_len), containing timestamps.
+        - features (torch.Tensor): Tensor of shape=(batch_size, max_len, input_channels), input tensor.
+        - non_pad_mask (torch.Tensor): Tensor of shape=(batch_size, max_len), indicating non-pad timestamps.
 
-        returns:
-            delta_times - torch.Tensor of shape = (bs, kernel_size, max_len) with delta times value between current time and kernel_size true times before it
-            pre_conv_features - torch.Tensor of shape = (bs, kernel_size, max_len, in_channels) with corresponding input features of timestamps in delta_times
-            dt_mask - torch.Tensor of shape = (bs, kernel_size, max_len), bool tensor that indicates delta_times true values
+        Returns:
+        - Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: Tuple containing delta_times, pre_conv_features, and dt_mask.
         """
-        # parameters
-        padding = (
-            (kernel_size - 1) * dilation if include_zero_lag else kernel_size * dilation
-        )
-        kernel = torch.eye(kernel_size).unsqueeze(1).to(times.device)
-        in_channels = features.shape[2]
+        # Compute the number of input channels
+        input_channels = features.shape[2]
 
-        # convolutions
+        # Convolution operations
         pre_conv_times = F.conv1d(
-            times.unsqueeze(1), kernel, padding=padding, dilation=dilation
+            times.unsqueeze(1),
+            self.data_preparation_kernel,
+            padding=self.data_preparation_padding,
+            dilation=self.dilation
         )
         pre_conv_features = F.conv1d(
             features.transpose(1, 2),
-            kernel.repeat(in_channels, 1, 1),
-            padding=padding,
-            dilation=dilation,
-            groups=in_channels,
+            self.data_preparation_kernel.repeat(input_channels, 1, 1),
+            padding=self.data_preparation_padding,
+            dilation=self.dilation,
+            groups=input_channels,
         )
         dt_mask = (
             F.conv1d(
                 non_pad_mask.float().unsqueeze(1),
-                kernel.float(),
-                padding=padding,
-                dilation=dilation,
+                self.data_preparation_kernel.float(),
+                padding=self.data_preparation_padding,
+                dilation=self.dilation,
             )
-            .long()
             .bool()
         )
 
-        # deleting extra values
-        pre_conv_times = pre_conv_times[
-            :, :, : -(padding + dilation * (1 - int(include_zero_lag)))
-        ]
-        pre_conv_features = pre_conv_features[
-            :, :, : -(padding + dilation * (1 - int(include_zero_lag)))
-        ]
-        dt_mask = dt_mask[
-            :, :, : -(padding + dilation * (1 - int(include_zero_lag)))
-        ] * non_pad_mask.unsqueeze(1)
+        # Remove extra values introduced by convolution padding
+        pre_conv_times = pre_conv_times[:, :, :-(self.data_preparation_padding + self.data_preparation_offset)]
+        pre_conv_features = pre_conv_features[:, :, :-(self.data_preparation_padding + self.data_preparation_offset)]
+        dt_mask = dt_mask[:, :,
+                  :-(self.data_preparation_padding + self.data_preparation_offset)] * non_pad_mask.unsqueeze(1)
 
-        # updating shape
-        bs, L, dim = features.shape
-        pre_conv_features = pre_conv_features.reshape(bs, dim, kernel_size, L)
+        # Reshape pre_conv_features
+        batch_size, seq_len, input_dim = features.shape
+        pre_conv_features = pre_conv_features.reshape(batch_size, input_dim, self.kernel_size, seq_len)
 
-        # computing delte_time and deleting masked values
+        # Compute delta_times and mask out values according to the mask
         delta_times = times.unsqueeze(1) - pre_conv_times
         delta_times[~dt_mask] = 0
         pre_conv_features = torch.permute(pre_conv_features, (0, 2, 3, 1))
@@ -142,185 +130,241 @@ class ContConv1d(nn.Module):
 
         return delta_times, pre_conv_features, dt_mask
 
-    def forward(self, times, features, non_pad_mask):
+
+class ContinuousConv1D(ContinuousConvolutionBase):
+    def forward(
+            self,
+            times: torch.Tensor,
+            features: torch.Tensor,
+            non_pad_mask: torch.Tensor
+    ) -> torch.Tensor:
         """
-        Neural net layer forward pass
+        Conducts a continuous convolution operation on the input data.
 
-        args:
-            times - torch.Tensor, shape = (bs, L), event times
-            features - torch.Tensor, shape = (bs, L, in_channels), event features
-            non_pad_mask - torch.Tensor, shape = (bs,L), mask that indicates non pad values
+        This method applies the continuous convolution to the input features based on the given
+        event times and a non-padding mask. It leverages a kernel network to compute the convolution
+        kernel values and combines them with the input features to produce the output tensor.
 
-        returns:
-            out - torch.Tensor, shape = (bs, L, out_channels)
+        Args:
+            times (torch.Tensor): A tensor of shape (batch_size, seq_len) containing the event times.
+                                  Each entry in this tensor represents a timestamp for the corresponding
+                                  event in the sequence.
+            features (torch.Tensor): A tensor of shape (batch_size, seq_len, input_channels) containing
+                                     the features associated with each event. These features are the
+                                     inputs to the convolution operation.
+            non_pad_mask (torch.Tensor): A boolean tensor of shape (batch_size, seq_len) indicating
+                                         the non-padding elements in the sequence. This mask helps
+                                         in differentiating actual data from padded data in operations.
+
+        Returns:
+            torch.Tensor: The output of the continuous convolution operation. It is a tensor of shape
+                          (batch_size, seq_len, output_channels) where each element in the sequence
+                          has been convolved with the kernel function, considering the continuous nature
+                          of the data.
         """
 
-        delta_times, features_kern, dt_mask = self.__conv_matrix_constructor(
+        delta_times, features_kern, dt_mask = self.construct_conv_matrix(
             times,
             features,
-            non_pad_mask,
-            self.kernel_size,
-            self.dilation,
-            self.include_zero_lag,
+            non_pad_mask
         )
+        delta_times /= self.dilation
 
-        kernel_values = self.kernel(self.__temporal_enc(delta_times))
+        delta_times = delta_times.unsqueeze(-1)
+
+        kernel_values = self.kernel_network(delta_times)
         kernel_values[~dt_mask, ...] = 0
 
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1, 3))
 
         out += self.skip_connection(features.transpose(1, 2)).transpose(1, 2)
-        out = self.norm(out.transpose(1, 2)).transpose(1, 2)
+        out = self.layer_norm(out)
         return out
 
 
-class ContConv1dSim(nn.Module):
+class ContinuousConv1DSimOld(ContinuousConvolutionBase):
     """
-    Continuous convolution layer
+    Continuous convolution layer with simulated times
     """
 
     def __init__(
-        self, kernel: nn.Module, kernel_size: int, in_channels: int, out_channels: int
+            self,
+            kernel_network: nn.Module,
+            kernel_size: int,
+            input_channels: int,
+            output_channels: int
     ):
         """
-        args:
-            kernel - torch.nn.Module, Kernel neural net that takes (*,1) as input and returns (*, in_channles, out_channels) as output
-            kernel_size - int, convolution layer kernel size
-            in_channels - int, features input size
-            out_channles - int, output size
+        Initialize the ContinuousConv1DSim layer.
+
+        Args:
+        - kernel_network (nn.Module): Kernel neural network that takes (*,1) as input and
+                                      returns (*, input_channels, output_channels) as output.
+        - kernel_size (int): Convolution layer kernel size.
+        - input_channels (int): Input feature size.
+        - output_channels (int): Output feature size.
         """
-        super().__init__()
-        self.kernel = kernel
-        self.kernel_size = kernel_size
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-
-        self.position_vec = torch.tensor(
-            [
-                math.pow(10000.0, 2.0 * (i // 2) / self.in_channels)
-                for i in range(self.in_channels)
-            ]
+        super().__init__(
+            kernel_network=kernel_network,
+            kernel_size=kernel_size + 1,
+            input_channels=input_channels,
+            output_channels=output_channels,
+            dilation=1
         )
 
-        self.norm = nn.LayerNorm(out_channels)
-
-    def __temporal_enc(self, time):
-        result = time.unsqueeze(-1) / self.position_vec.to(time.device)
-        result[..., 0::2] = torch.sin(result[..., 0::2])
-        result[..., 1::2] = torch.cos(result[..., 1::2])
-        return result
-
-    @staticmethod
-    def __conv_matrix_constructor(
-        times: torch.Tensor,
-        true_times: torch.Tensor,
-        true_features: torch.Tensor,
-        non_pad_mask: torch.Tensor,
-        kernel_size: int,
-        sim_size: int,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+            self,
+            times: torch.Tensor,
+            features: torch.Tensor,
+            non_pad_mask: torch.Tensor,
+            uniform_sample: torch.Tensor
+    ) -> torch.Tensor:
         """
-        Returns delta_times t_i - t_j, where t_j are true events and the number of delta_times per row is kernel_size
+        Forward pass of the neural network layer.
 
-        args:
-            times - torch.Tensor of shape = (bs, (sim_size+1)*(max_len-1)+1), Tensor of all times
-            true_times - torch.Tensor of shape = (bs, max_len), Tensor of true times
-            true_features - torch.Tensor of shape = (bs, max_len, in_channels), input tensor
-            non_pad_mask - torch.Tensor of shape = (bs, max_len),  indicates non_pad timestamps
-            kernel_size - int, covolution kernel size
-            sim_size - int, simulated times size
+        Args:
+        - times (torch.Tensor): Tensor of shape=(batch_size, seq_len), containing event times.
+        - features (torch.Tensor): Tensor of shape=(batch_size, seq_len, input_channels), containing event features.
+        - non_pad_mask (torch.Tensor): Tensor of shape=(batch_size, seq_len), mask indicating non-pad values.
+        - uniform_sample (torch.Tensor): Tensor of shape=(sim_size), auxiliary tensor for output between times computation
 
-        returns:
-            delta_times - torch.Tensor of shape = (bs, kernel_size, (sim_size+1)*(max_len-1)+1)) with delta times value between current time and kernel_size true times before it
-            pre_conv_features - torch.Tensor of shape = (bs, kernel_size, (sim_size+1)*(max_len-1)+1), in_channels) with corresponding input features of timestamps in delta_times
-            dt_mask - torch.Tensor of shape = (bs, kernel_size, (sim_size+1)*(max_len-1)+1)), bool tensor that indicates delta_times true values
+        Returns:
+        - torch.Tensor: Output tensor of shape=(batch_size, (sim_size+1)*(seq_len-1)+1, output_channels).
         """
-        # parameters
-        padding = (kernel_size) * 1
-        kernel = torch.eye(kernel_size).unsqueeze(1).to(times.device)
-        in_channels = true_features.shape[2]
 
-        # true values convolutions
-        pre_conv_times = F.conv1d(
-            true_times.unsqueeze(1), kernel, padding=padding, dilation=1
+        assert torch.all(uniform_sample == uniform_sample.sort().values)
+
+        delta_times, features_kern, dt_mask = self.construct_conv_matrix(
+            times,
+            features,
+            non_pad_mask
         )
-        pre_conv_features = F.conv1d(
-            true_features.transpose(1, 2),
-            kernel.repeat(in_channels, 1, 1),
-            padding=padding,
-            dilation=1,
-            groups=true_features.shape[2],
-        )
-        dt_mask = (
-            F.conv1d(
-                non_pad_mask.float().unsqueeze(1),
-                kernel.float(),
-                padding=padding,
-                dilation=1,
-            )
-            .long()
-            .bool()
+        uniform_delta_t_scale = delta_times[:, -2, 1:]  # equivalent to the times[1:] - times[:-1]
+        delta_times = delta_times.unsqueeze(-1)
+
+        kernel_values_real = self.kernel_network(delta_times)  # shape = (bs, kernel_size + 1, seq_length, in_channels, out_channels)
+        kernel_values_uniform = (
+                self.kernel_network.compute_addition(
+                    uniform_sample.unsqueeze(-1)
+                )[None, None, :, :, :] *
+                uniform_delta_t_scale[:, :, None, None, None]
         )
 
-        # deleting extra values
-        if padding > 0:
-            pre_conv_times = pre_conv_times[:, :, : -(padding + 1)]
-            pre_conv_features = pre_conv_features[:, :, : -(padding + 1)]
-            dt_mask = dt_mask[:, :, : -(padding + 1)] * non_pad_mask.unsqueeze(1)
-        else:
-            dt_mask = dt_mask * non_pad_mask.unsqueeze(1)
+        sim_size = len(uniform_sample)
 
-        # reshaping features output
-        bs, L, dim = true_features.shape
-        pre_conv_features = pre_conv_features.reshape(bs, dim, kernel_size, L)
+        kernel_values_sim = kernel_values_real[:, 1:, :-1, ...].unsqueeze(3).repeat(1, 1, 1, sim_size, 1, 1) + \
+            kernel_values_uniform.unsqueeze(1)  # shape = (bs, kernel_size, seq_len - 1, sim_size, in_channels, out_channels)
+        kernel_values_real = kernel_values_real[:, :-1, ...]  # shape = (bs, kernel_size, seq_len, in_channels, out_channels)
 
-        # adding sim_times
-        pre_conv_times = pre_conv_times.unsqueeze(-1).repeat(1, 1, 1, sim_size + 1)
-        pre_conv_times = pre_conv_times.flatten(2)
-        if sim_size > 0:
-            pre_conv_times = pre_conv_times[..., :-sim_size]
+        kernel_values_real[~dt_mask[:, :-1, :], ...] = 0
+        kernel_values_sim[~dt_mask[:, 1:, :-1], ...] = 0
 
-        pre_conv_features = pre_conv_features.unsqueeze(-1).repeat(
-            1, 1, 1, 1, sim_size + 1
-        )
-        pre_conv_features = pre_conv_features.flatten(3)
-        if sim_size > 0:
-            pre_conv_features = pre_conv_features[..., :-sim_size]
+        bs, kernel_size, _, in_channels, out_channels = kernel_values_real.shape
 
-        dt_mask = dt_mask.unsqueeze(-1).repeat(1, 1, 1, sim_size + 1)
-        dt_mask = dt_mask.flatten(2)
-        dt_mask = dt_mask[..., sim_size:]
+        kernel_values = torch.cat([torch.cat([kernel_values_real[:, :, :-1, None, ...], kernel_values_sim],
+                                             dim=3).reshape(bs, kernel_size, -1, in_channels, out_channels),
+                                   kernel_values_real[:, :, -1:, ...]], dim=2)
 
-        delta_times = times.unsqueeze(1) - pre_conv_times
-        delta_times[~dt_mask] = 0
-
-        pre_conv_features = torch.permute(pre_conv_features, (0, 2, 3, 1))
-        pre_conv_features[~dt_mask, :] = 0
-        return delta_times, pre_conv_features, dt_mask
-
-    def forward(self, times, true_times, true_features, non_pad_mask, sim_size):
-        """
-        Neural net layer forward pass
-
-        args:
-            times - torch.Tensor of shape = (bs, (sim_size+1)*(max_len-1)+1), Tensor of all times
-            true_times - torch.Tensor of shape = (bs, max_len), Tensor of true times
-            true_features - torch.Tensor of shape = (bs, max_len, in_channels), input tensor
-            non_pad_mask - torch.Tensor of shape = (bs, max_len),  indicates non_pad timestamps\
-            sim_size - int, simulated times size
-
-        returns:
-            out - torch.Tensor, shape = (bs, L, out_channels)
-        """
-        delta_times, features_kern, dt_mask = self.__conv_matrix_constructor(
-            times, true_times, true_features, non_pad_mask, self.kernel_size, sim_size
-        )
-
-        bs, k, L = delta_times.shape
-        kernel_values = self.kernel(self.__temporal_enc(delta_times))
-        kernel_values[~dt_mask, ...] = 0
+        features_kern = torch.repeat_interleave(features_kern[:, :-1, :, :], sim_size + 1, dim=2)[:, :, sim_size:, :]
         out = features_kern.unsqueeze(-1) * kernel_values
         out = out.sum(dim=(1, 3))
+
+        return out
+    
+
+
+class ContinuousConv1DSim(ContinuousConvolutionBase):
+    """
+    Continuous convolution layer with simulated times
+    """
+
+    def __init__(
+            self,
+            kernel_size: int,
+            input_channels: int,
+            output_channels: int
+    ):
+        """
+        Initialize the ContinuousConv1DSim layer.
+
+        Args:
+        - kernel_size (int): Convolution layer kernel size.
+        - input_channels (int): Input feature size.
+        - output_channels (int): Output feature size.
+        """
+        kernel_network = nn.Linear(input_channels, output_channels, bias=False)
+
+        super().__init__(
+            kernel_network=kernel_network,
+            kernel_size=kernel_size + 1,
+            input_channels=input_channels,
+            output_channels=output_channels,
+            dilation=1
+        )
+        self.bias = nn.Parameter(torch.full(size=(input_channels, output_channels), fill_value=1 / output_channels))
+
+    def forward(
+            self,
+            times: torch.Tensor,
+            features: torch.Tensor,
+            non_pad_mask: torch.Tensor,
+            uniform_sample: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Forward pass of the neural network layer.
+
+        Args:
+        - times (torch.Tensor): Tensor of shape=(batch_size, seq_len), containing event times.
+        - features (torch.Tensor): Tensor of shape=(batch_size, seq_len, input_channels), containing event features.
+        - non_pad_mask (torch.Tensor): Tensor of shape=(batch_size, seq_len), mask indicating non-pad values.
+        - uniform_sample (torch.Tensor): Tensor of shape=(sim_size), auxiliary tensor for output between times computation
+
+        Returns:
+        - torch.Tensor: Output tensor of shape=(batch_size, (sim_size+1)*(seq_len-1)+1, output_channels).
+        """
+
+        assert torch.all(uniform_sample == uniform_sample.sort().values)
+
+        modified_features = self.kernel_network(features)
+        features_bias = features @ self.bias  # shape = (bs, seq_len, out_channels)
+
+        all_features = torch.concat([modified_features, features_bias], dim=-1)
+
+        delta_times, features_kern, dt_mask = self.construct_conv_matrix(
+            times,
+            all_features,
+            non_pad_mask
+        )
+        features_kern_linear = features_kern[..., :self.output_channels]
+        features_kern_bias = features_kern[..., self.output_channels:]
+
+        sim_mask_multiplies = torch.sum(dt_mask[:, 1:, :-1], dim=1)
+
+        uniform_delta_t_scale = delta_times[:, -2, 1:]  # equivalent to the times[1:] - times[:-1]
+
+        real_values = torch.sum(
+            delta_times[:, :-1, ...].unsqueeze(-1) * features_kern_linear[:, :-1, ...] +
+            features_kern_bias[:, :-1, ...],
+            dim=1
+        )  # shape = (bs, seq_len, out_channels)
+        sim_values = torch.sum(
+            delta_times[:, 1:, :-1].unsqueeze(-1) * features_kern_linear[:, 1:, :-1, ...] +
+            features_kern_bias[:, 1:, :-1],
+            dim=1
+        )  # shape = (bs, seq_len - 1, out_channels)
+        sim_values = (
+                sim_values[:, :, None, :] +
+                sim_mask_multiplies[:, :, None, None] * uniform_delta_t_scale[:, :, None, None] *
+                uniform_sample[None, None, :, None] * modified_features[:, :-1, None, :]
+        )
+
+        values_before_sim = real_values[:, :-1, :].unsqueeze(2)
+        values_after_sim = real_values[:, -1:, :]
+
+        bs, _, out_channels = values_after_sim.shape
+
+        out = torch.cat([values_before_sim, sim_values], dim=2).reshape(bs, -1, out_channels)
+        out = torch.cat([out, values_after_sim], dim=1)
 
         return out
