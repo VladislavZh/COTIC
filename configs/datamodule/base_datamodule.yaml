@@ -1,7 +1,6 @@
-_target_: src.datamodules.base_event_sequence_datamodule.EventDataModuleSplitted
+_target_: src.datamodules.base_event_sequence_datamodule.EventDataModule
 
 data_dir: ${data_dir}
-unix_time: ${unix_time}
 batch_size: 20
 max_len: null
 num_event_types: null
