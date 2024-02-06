@@ -65,9 +65,9 @@ def load_data(
     for f in tqdm.tqdm(
         sorted(
             os.listdir(data_dir),
-            key=lambda x: int(re.sub(rf".csv", "", x))
-            if re.sub(rf".csv", "", x).isdigit()
-            else 0,
+            key=lambda x: (
+                int(re.sub(rf".csv", "", x)) if re.sub(rf".csv", "", x).isdigit() else 0
+            ),
         )
     ):
         if f.endswith(f".csv") and re.sub(rf".csv", "", f).isnumeric():
@@ -93,6 +93,7 @@ def load_data(
 
 def load_data_simple(
     data_dir: str,
+    stage: str,
     dataset_size: int,
     data_type: str,
     max_len: Optional[int],
@@ -102,12 +103,15 @@ def load_data_simple(
     events = []
     cur = 0
     if data_type == ".csv":
+        data_dir = os.path.join(data_dir, stage)
         for f in tqdm.tqdm(
             sorted(
                 os.listdir(data_dir),
-                key=lambda x: int(re.sub(rf".csv", "", x))
-                if re.sub(rf".csv", "", x).isdigit()
-                else 0,
+                key=lambda x: (
+                    int(re.sub(rf".csv", "", x))
+                    if re.sub(rf".csv", "", x).isdigit()
+                    else 0
+                ),
             )
         ):
             if f.endswith(f".csv") and re.sub(rf".csv", "", f).isnumeric():
@@ -125,11 +129,10 @@ def load_data_simple(
                     break
     elif data_type == ".pkl":
         # in pkl files dev stands for val
-        data_dir = data_dir.replace("val", "dev")
-        pkl_file = open(data_dir + ".pkl", "rb")
-        stage = data_dir.split("/")[-1]
-        pkl = pickle.load(pkl_file)
-        pkl_file.close()
+        stage = stage.replace("val", "dev")
+        pkl_file_path = os.path.join(data_dir, stage + ".pkl")
+        with open(pkl_file_path, "rb") as pkl_file:
+            pkl = pickle.load(pkl_file)
 
         for seq in tqdm.tqdm(pkl[stage]):
             df = pd.DataFrame.from_records(seq)
