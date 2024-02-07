@@ -1,12 +1,14 @@
-from typing import List, Optional, Union
 import os
-import tqdm
-import torch
-import pandas as pd
+import pickle
 import re
+from typing import List, Optional, Union
+
 import numpy as np
-from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+import pandas as pd
+import torch
+import tqdm
 from sklearn.exceptions import NotFittedError
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 
 
 class Data_preprocessor:
@@ -63,9 +65,9 @@ def load_data(
     for f in tqdm.tqdm(
         sorted(
             os.listdir(data_dir),
-            key=lambda x: int(re.sub(rf".csv", "", x))
-            if re.sub(rf".csv", "", x).isdigit()
-            else 0,
+            key=lambda x: (
+                int(re.sub(rf".csv", "", x)) if re.sub(rf".csv", "", x).isdigit() else 0
+            ),
         )
     ):
         if f.endswith(f".csv") and re.sub(rf".csv", "", f).isnumeric():
@@ -91,26 +93,53 @@ def load_data(
 
 def load_data_simple(
     data_dir: str,
+    stage: str,
     dataset_size: int,
+    data_type: str,
     max_len: Optional[int],
     event_types: Optional[Union[int, torch.Tensor]],
 ) -> List[torch.Tensor]:
     times = []
     events = []
     cur = 0
-    for f in tqdm.tqdm(
-        sorted(
-            os.listdir(data_dir),
-            key=lambda x: int(re.sub(rf".csv", "", x))
-            if re.sub(rf".csv", "", x).isdigit()
-            else 0,
-        )
-    ):
-        if f.endswith(f".csv") and re.sub(rf".csv", "", f).isnumeric():
-            df = pd.read_csv(data_dir + "/" + f)
-            df = df.sort_values(by=["time"])
-            t = torch.Tensor(list(df["time"]))
-            e = torch.Tensor(list(df["event"]))
+    if data_type == ".csv":
+        data_dir = os.path.join(data_dir, stage)
+        for f in tqdm.tqdm(
+            sorted(
+                os.listdir(data_dir),
+                key=lambda x: (
+                    int(re.sub(rf".csv", "", x))
+                    if re.sub(rf".csv", "", x).isdigit()
+                    else 0
+                ),
+            )
+        ):
+            if f.endswith(f".csv") and re.sub(rf".csv", "", f).isnumeric():
+                df = pd.read_csv(data_dir + "/" + f)
+                df = df.sort_values(by=["time"])
+                t = torch.Tensor(list(df["time"]))
+                e = torch.Tensor(list(df["event"]))
+                if max_len is not None:
+                    t = t[:max_len]
+                    e = e[:max_len]
+                times.append(t)
+                events.append(e)
+                cur += 1
+                if cur == dataset_size:
+                    break
+    elif data_type == ".pkl":
+        # in pkl files dev stands for val
+        stage = stage.replace("val", "dev")
+        pkl_file_path = os.path.join(data_dir, stage + ".pkl")
+        with open(pkl_file_path, "rb") as pkl_file:
+            pkl = pickle.load(pkl_file)
+
+        for seq in tqdm.tqdm(pkl[stage]):
+            df = pd.DataFrame.from_records(seq)
+            # columns are "time_since_start", "time_since_last_event", "type_event"
+            df = df.sort_values(by=["time_since_start"])
+            t = torch.Tensor(list(df["time_since_start"]))
+            e = torch.Tensor(list(df["type_event"]))
             if max_len is not None:
                 t = t[:max_len]
                 e = e[:max_len]
@@ -119,6 +148,8 @@ def load_data_simple(
             cur += 1
             if cur == dataset_size:
                 break
+    else:
+        raise SystemExit(f"Error: data type {data_type} is not supported")
 
     unique_events = event_types
     final_times = times

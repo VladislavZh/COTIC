@@ -1,12 +1,13 @@
-from typing import Optional, Tuple
 import os
+from typing import Optional, Tuple
 
 import torch
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset, random_split
-from .components.base_dset import EventData
 
-from src.utils.data_utils import load_data_simple, load_data
+from src.utils.data_utils import load_data, load_data_simple
+
+from .components.base_dset import EventData
 
 
 class EventDataModule(LightningDataModule):
@@ -17,6 +18,7 @@ class EventDataModule(LightningDataModule):
     def __init__(
         self,
         data_dir: str = "data/",
+        data_type: str = ".csv",
         unix_time: bool = False,
         train_val_test_split: Tuple[float, float, float] = (0.8, 0.1, 0.1),
         batch_size: int = 64,
@@ -59,6 +61,7 @@ class EventDataModule(LightningDataModule):
                     self.hparams.dataset_size,
                     self.hparams.max_len,
                 )
+
             dataset = EventData(times, events)
             N = len(dataset)
             lengths = [int(N * v) for v in self.hparams.train_val_test_split]
@@ -102,22 +105,28 @@ class EventDataModuleSplitted(EventDataModule):
         self.data_process = None
         if not self.data_train and not self.data_val and not self.data_test:
             times, events, unique_events = load_data_simple(
-                os.path.join(self.hparams.data_dir, "train"),
+                self.hparams.data_dir,
+                "train",
                 self.hparams.dataset_size_train,
+                self.hparams.data_type,
                 self.hparams.max_len,
                 self.hparams.num_event_types,
             )
             self.data_train = EventData(times, events)
             times, events, _ = load_data_simple(
-                os.path.join(self.hparams.data_dir, "val"),
+                self.hparams.data_dir,
+                "val",
                 self.hparams.dataset_size_val,
+                self.hparams.data_type,
                 self.hparams.max_len,
                 unique_events,
             )
             self.data_val = EventData(times, events)
             times, events, _ = load_data_simple(
-                os.path.join(self.hparams.data_dir, "test"),
+                self.hparams.data_dir,
+                "test",
                 self.hparams.dataset_size_test,
+                self.hparams.data_type,
                 self.hparams.max_len,
                 unique_events,
             )

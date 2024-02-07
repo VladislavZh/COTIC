@@ -19,7 +19,7 @@ net:
     in_channels: ${model.net.nb_filters}
     num_types: ${num_types}
 metrics:
-  _target_: src.metrics.cotic.CCNNMetrics
+  _target_: src.metrics.cont_cnn.CCNNMetrics #src.metrics.cotic.CCNNMetrics
   return_time_metric:
     _target_: src.utils.metrics.MAE
   event_type_metric:
