@@ -18,7 +18,7 @@ defaults:
 
 original_work_dir: ${hydra:runtime.cwd}
 
-data_dir: ${original_work_dir}/data/
+data_dir: ${original_work_dir}/data_utils/
 unix_time: False
 num_types:
 

@@ -29,7 +29,7 @@ defaults:
 # https://hydra.cc/docs/next/tutorials/basic/running_your_app/working_directory
 original_work_dir: ${hydra:runtime.cwd}
 
-# path to folder with data
+# path to folder with data_utils
 dataset: meme
 n_types: 4977
 data_dir: ${original_work_dir}/new_data/${dataset}

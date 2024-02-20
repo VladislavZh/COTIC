@@ -2,7 +2,7 @@ import unittest
 import os
 import pandas as pd
 import torch
-from src.utils.data_utils import load_time_series_data
+from src.utils.data_utils.loader import load_time_series_data
 
 
 class TestLoadTimeSeriesData(unittest.TestCase):
@@ -25,13 +25,13 @@ class TestLoadTimeSeriesData(unittest.TestCase):
         open(os.path.join(self.test_dir, "dump.csv"), 'w').close()
 
     def test_load_time_series_data(self):
-        """Test loading time series data."""
-        # Test loading data without specifying dataset size
+        """Test loading time series data_utils."""
+        # Test loading data_utils without specifying dataset size
         time_series, events_series = load_time_series_data(self.test_dir)
         self.assertEqual(len(time_series), 2)  # Asserts that two files were loaded
-        self.assertIsInstance(time_series[0], torch.Tensor)  # Asserts that the data is a Torch tensor
+        self.assertIsInstance(time_series[0], torch.Tensor)  # Asserts that the data_utils is a Torch tensor
 
-        # Test loading data with a specified dataset size of 1
+        # Test loading data_utils with a specified dataset size of 1
         time_series_limited, events_series_limited = load_time_series_data(self.test_dir, dataset_size=1)
         self.assertEqual(len(time_series_limited), 1)  # Asserts that only one file was loaded
 

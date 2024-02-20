@@ -1,7 +1,7 @@
 from typing import Any
 import torch
 from pytorch_lightning import LightningModule
-from src.utils.head.head_core import JoinedHead
+from src.models.components.cotic.head import JoinedHead
 from src.utils.structures import DownstreamPredictions, Predictions
 import time
 
@@ -42,7 +42,7 @@ class BaseEventModule(LightningModule):
         Perform forward pass through the neural network.
 
         Args:
-        - batch: Input data batch.
+        - batch: Input data_utils batch.
 
         Returns:
         - Output from the neural network.
@@ -54,7 +54,7 @@ class BaseEventModule(LightningModule):
         Perform a training/validation/testing step.
 
         Args:
-        - batch: Input data batch.
+        - batch: Input data_utils batch.
         - stage (str): Stage of operation (train/val/test).
 
         Returns:
@@ -65,7 +65,7 @@ class BaseEventModule(LightningModule):
 
         return (
             intensity_prediction.loss + downstream_predictions.loss
-            if self.downstream_head.additive_loss_component
+            if self.joined_head.additive_loss
             else intensity_prediction.loss,
             intensity_prediction,
             downstream_predictions
@@ -97,7 +97,7 @@ class BaseEventModule(LightningModule):
         Evaluation step for training, validation, or test.
 
         Args:
-        - batch: Input data batch.
+        - batch: Input data_utils batch.
         - stage: Stage of operation (train/val/test).
 
         Returns:
@@ -116,7 +116,7 @@ class BaseEventModule(LightningModule):
         Training step.
 
         Args:
-        - batch: Input data batch.
+        - batch: Input data_utils batch.
         - batch_idx: Index of the current batch.
 
         Returns:
@@ -130,7 +130,7 @@ class BaseEventModule(LightningModule):
         Validation step.
 
         Args:
-        - batch: Input data batch.
+        - batch: Input data_utils batch.
         - batch_idx: Index of the current batch.
         """
         self.run_evaluation(batch, "val")
@@ -140,7 +140,7 @@ class BaseEventModule(LightningModule):
         Test step.
 
         Args:
-        - batch: Input data batch.
+        - batch: Input data_utils batch.
         - batch_idx: Index of the current batch.
         """
         self.run_evaluation(batch, "test")

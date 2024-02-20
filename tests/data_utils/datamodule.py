@@ -35,10 +35,10 @@ class TestEventDataModule(unittest.TestCase):
         )
 
     def test_dataloader_sizes(self):
-        # Setup the data module
+        # Setup the data_utils module
         self.event_data_module.setup()
 
-        # Get the data loaders
+        # Get the data_utils loaders
         train_loader = self.event_data_module.train_dataloader()
         val_loader = self.event_data_module.val_dataloader()
         test_loader = self.event_data_module.test_dataloader()

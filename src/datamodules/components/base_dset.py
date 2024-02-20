@@ -1,5 +1,9 @@
+from typing import Type, Union
+
 import torch
 from torch.utils.data import Dataset
+
+from src.utils.data_utils.normalizers import Normalizer
 
 
 class EventDataset(Dataset):
@@ -22,6 +26,33 @@ class EventDataset(Dataset):
         """
         self.num_event_types = num_event_types
         self.__event_times, self.__event_types = self.__add_bos(*self.__pad(event_times, event_types))
+
+    def normalize_data(self, normalizer: Union[Type[Normalizer], Normalizer]) -> Normalizer:
+        """
+        Normalizes the inter-event times of the dataset using the provided Normalizer.
+
+        This method applies a normalization transformation to the inter-event times of the dataset.
+        If a Normalizer class type is provided, it initializes an instance using the non-padded
+        inter-event times data. The normalization is then applied to all event times in the dataset.
+
+        Args:
+        - normalizer (Union[Type[Normalizer], Normalizer]): The Normalizer class or an instance of a Normalizer.
+                                                            If a class type is provided, it must be a subclass
+                                                            of Normalizer and will be instantiated using the
+                                                            data from this dataset.
+
+        Returns:
+        - Normalizer: The normalizer instance used to normalize the dataset's inter-event times.
+                      If a Normalizer instance was provided, it is returned directly.
+                      If a Normalizer class type was provided, the newly instantiated Normalizer is returned.
+        """
+        if isinstance(normalizer, type) and issubclass(normalizer, Normalizer):
+            delta_times = self.__event_times[:, 1:] - self.__event_times[:, :-1]
+            non_pad_mask = self.__event_types.ne(0)[:, 1:]
+
+            normalizer = normalizer.from_data(delta_times[non_pad_mask])
+        self.__event_times = normalizer.normalize(self.__event_times)
+        return normalizer
 
     @staticmethod
     def __pad(event_times: list[torch.Tensor], event_types: list[torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor]:

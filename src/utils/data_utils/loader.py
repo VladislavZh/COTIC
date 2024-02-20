@@ -11,7 +11,7 @@ def load_time_series_data(
         dataset_size: Optional[int] = None
 ) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
     """
-    Load time series data from CSV files in a directory.
+    Load time series data_utils from CSV files in a directory.
 
     Args:
     - data_directory (str): Path to the directory containing CSV files.
@@ -20,7 +20,7 @@ def load_time_series_data(
 
     Returns:
     - Tuple[List[torch.Tensor], List[torch.Tensor]]: A tuple containing two lists:
-      1. List of Torch tensors representing time series data.
+      1. List of Torch tensors representing time series data_utils.
       2. List of Torch tensors representing corresponding events.
     """
 
@@ -36,7 +36,7 @@ def load_time_series_data(
         key=lambda x: int(re.sub(r"\D", "", x)) if re.sub(r"\D", "", x).isdigit() else 0
     )
 
-    # Read data from CSV files
+    # Read data_utils from CSV files
     for count, file_name in tqdm(enumerate(csv_files), desc="Loading Data"):
         if dataset_size is not None and count == dataset_size:
             break

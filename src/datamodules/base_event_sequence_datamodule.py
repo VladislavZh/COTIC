@@ -1,3 +1,4 @@
+import importlib
 from typing import Optional
 import os
 
@@ -5,12 +6,13 @@ from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 from .components.base_dset import EventDataset
 
-from src.utils.data_utils import load_time_series_data
+from src.utils.data_utils.loader import load_time_series_data
+from ..utils.data_utils.normalizers import Normalizer
 
 
 class EventDataModule(LightningDataModule):
     """
-    General event sequence data module.
+    General event sequence data_utils module.
     This LightningDataModule handles loading and preparing event sequence datasets
     for training, validation, and testing in PyTorch Lightning workflows.
     """
@@ -18,7 +20,8 @@ class EventDataModule(LightningDataModule):
     def __init__(
             self,
             num_event_types: int,
-            data_dir: str = "data/",
+            data_dir: str = "data_utils/",
+            normalizer: Optional[str] = None,
             batch_size_train: int = 20,
             batch_size_val_test: int = 1,
             dataset_size_train: Optional[int] = None,
@@ -33,15 +36,22 @@ class EventDataModule(LightningDataModule):
         Args:
             num_event_types (int): Number of unique event types.
             data_dir (str): Path to the directory containing the dataset.
-            batch_size_train (int): Batch size for training data loading.
-            batch_size_val_test (int): Batch size for validation and test data loading.
+            normalizer (str | None): Data normalizer name with from_data classmethod and
+                                     normalize, denormalize methods.
+            batch_size_train (int): Batch size for training data_utils loading.
+            batch_size_val_test (int): Batch size for validation and test data_utils loading.
             dataset_size_train (Optional[int]): Size of the training dataset.
             dataset_size_val (Optional[int]): Size of the validation dataset.
             dataset_size_test (Optional[int]): Size of the test dataset.
-            num_workers (int): Number of workers for data loading.
+            num_workers (int): Number of workers for data_utils loading.
             pin_memory (bool): Flag to enable memory pinning.
         """
         super().__init__()
+
+        self.save_hyperparameters()
+
+        self.normalizer_name = normalizer
+        self.normalizer = normalizer
 
         self.num_event_types = num_event_types
         self.data_dir = data_dir
@@ -59,17 +69,27 @@ class EventDataModule(LightningDataModule):
 
     def load_event_data(self, data_path: str, dataset_size: Optional[int]) -> EventDataset:
         """
-        Loads event data from a specified path and creates an EventData instance.
+        Loads event data_utils from a specified path and creates an EventData instance.
 
         Args:
             data_path (str): Path to the dataset.
             dataset_size (Optional[int]): Size of the dataset.
 
         Returns:
-            EventData: An instance of EventData with loaded data.
+            EventData: An instance of EventData with loaded data_utils.
         """
         times, events = load_time_series_data(data_path, dataset_size)
-        return EventDataset(times, events, self.num_event_types)
+        dataset = EventDataset(times, events, self.num_event_types)
+
+        if self.normalizer is not None:
+            if isinstance(self.normalizer, str):
+                module = importlib.import_module(self.normalizer.rsplit('.', 1)[0])
+                normalizer_class = getattr(module, self.normalizer.rsplit('.')[-1])
+                self.normalizer = dataset.normalize_data(normalizer_class)
+            else:
+                dataset.normalize_data(self.normalizer)
+
+        return dataset
 
     def setup(self, stage: Optional[str] = None):
         """
@@ -96,7 +116,7 @@ class EventDataModule(LightningDataModule):
         Args:
             dataset: Dataset to create DataLoader for.
             batch_size (int): Batch size for the DataLoader.
-            shuffle (bool): Whether to shuffle the data.
+            shuffle (bool): Whether to shuffle the data_utils.
 
         Returns:
             DataLoader: DataLoader instance for the dataset.
@@ -120,3 +140,18 @@ class EventDataModule(LightningDataModule):
     def test_dataloader(self) -> DataLoader:
         """Returns a DataLoader for the test dataset."""
         return self.create_dataloader(self.data_test, self.batch_size_val_test)
+
+    def state_dict(self):
+        """Return a dictionary of stateful elements to include in the checkpoint."""
+        if isinstance(self.normalizer, Normalizer):
+            state = {
+                'normalizer': self.normalizer.state_dict()
+            }
+            return state
+
+    def load_state_dict(self, state_dict):
+        """Load the state from the checkpoint into the DataModule."""
+        if self.normalizer_name is not None:
+            module = importlib.import_module(self.normalizer_name.rsplit('.', 1)[0])
+            normalizer_class = getattr(module, self.normalizer_name.rsplit('.')[-1])
+            self.normalizer = normalizer_class.from_state_dict(state_dict['normalizer'])

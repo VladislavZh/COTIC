@@ -29,8 +29,8 @@ defaults:
 # https://hydra.cc/docs/next/tutorials/basic/running_your_app/working_directory
 original_work_dir: ${hydra:runtime.cwd}
 
-# path to folder with data
-data_dir: ${original_work_dir}/data/data_mimic_coh
+# path to folder with data_utils
+data_dir: ${original_work_dir}/data_utils/data_mimic_coh
 unix_time: False
 
 # pretty print config at the start of the run using Rich library

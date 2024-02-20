@@ -139,7 +139,7 @@ class ContinuousConv1D(ContinuousConvolutionBase):
             non_pad_mask: torch.Tensor
     ) -> torch.Tensor:
         """
-        Conducts a continuous convolution operation on the input data.
+        Conducts a continuous convolution operation on the input data_utils.
 
         This method applies the continuous convolution to the input features based on the given
         event times and a non-padding mask. It leverages a kernel network to compute the convolution
@@ -154,13 +154,13 @@ class ContinuousConv1D(ContinuousConvolutionBase):
                                      inputs to the convolution operation.
             non_pad_mask (torch.Tensor): A boolean tensor of shape (batch_size, seq_len) indicating
                                          the non-padding elements in the sequence. This mask helps
-                                         in differentiating actual data from padded data in operations.
+                                         in differentiating actual data_utils from padded data_utils in operations.
 
         Returns:
             torch.Tensor: The output of the continuous convolution operation. It is a tensor of shape
                           (batch_size, seq_len, output_channels) where each element in the sequence
                           has been convolved with the kernel function, considering the continuous nature
-                          of the data.
+                          of the data_utils.
         """
 
         delta_times, features_kern, dt_mask = self.construct_conv_matrix(
@@ -181,97 +181,6 @@ class ContinuousConv1D(ContinuousConvolutionBase):
         out += self.skip_connection(features.transpose(1, 2)).transpose(1, 2)
         out = self.layer_norm(out)
         return out
-
-
-class ContinuousConv1DSimOld(ContinuousConvolutionBase):
-    """
-    Continuous convolution layer with simulated times
-    """
-
-    def __init__(
-            self,
-            kernel_network: nn.Module,
-            kernel_size: int,
-            input_channels: int,
-            output_channels: int
-    ):
-        """
-        Initialize the ContinuousConv1DSim layer.
-
-        Args:
-        - kernel_network (nn.Module): Kernel neural network that takes (*,1) as input and
-                                      returns (*, input_channels, output_channels) as output.
-        - kernel_size (int): Convolution layer kernel size.
-        - input_channels (int): Input feature size.
-        - output_channels (int): Output feature size.
-        """
-        super().__init__(
-            kernel_network=kernel_network,
-            kernel_size=kernel_size + 1,
-            input_channels=input_channels,
-            output_channels=output_channels,
-            dilation=1
-        )
-
-    def forward(
-            self,
-            times: torch.Tensor,
-            features: torch.Tensor,
-            non_pad_mask: torch.Tensor,
-            uniform_sample: torch.Tensor
-    ) -> torch.Tensor:
-        """
-        Forward pass of the neural network layer.
-
-        Args:
-        - times (torch.Tensor): Tensor of shape=(batch_size, seq_len), containing event times.
-        - features (torch.Tensor): Tensor of shape=(batch_size, seq_len, input_channels), containing event features.
-        - non_pad_mask (torch.Tensor): Tensor of shape=(batch_size, seq_len), mask indicating non-pad values.
-        - uniform_sample (torch.Tensor): Tensor of shape=(sim_size), auxiliary tensor for output between times computation
-
-        Returns:
-        - torch.Tensor: Output tensor of shape=(batch_size, (sim_size+1)*(seq_len-1)+1, output_channels).
-        """
-
-        assert torch.all(uniform_sample == uniform_sample.sort().values)
-
-        delta_times, features_kern, dt_mask = self.construct_conv_matrix(
-            times,
-            features,
-            non_pad_mask
-        )
-        uniform_delta_t_scale = delta_times[:, -2, 1:]  # equivalent to the times[1:] - times[:-1]
-        delta_times = delta_times.unsqueeze(-1)
-
-        kernel_values_real = self.kernel_network(delta_times)  # shape = (bs, kernel_size + 1, seq_length, in_channels, out_channels)
-        kernel_values_uniform = (
-                self.kernel_network.compute_addition(
-                    uniform_sample.unsqueeze(-1)
-                )[None, None, :, :, :] *
-                uniform_delta_t_scale[:, :, None, None, None]
-        )
-
-        sim_size = len(uniform_sample)
-
-        kernel_values_sim = kernel_values_real[:, 1:, :-1, ...].unsqueeze(3).repeat(1, 1, 1, sim_size, 1, 1) + \
-            kernel_values_uniform.unsqueeze(1)  # shape = (bs, kernel_size, seq_len - 1, sim_size, in_channels, out_channels)
-        kernel_values_real = kernel_values_real[:, :-1, ...]  # shape = (bs, kernel_size, seq_len, in_channels, out_channels)
-
-        kernel_values_real[~dt_mask[:, :-1, :], ...] = 0
-        kernel_values_sim[~dt_mask[:, 1:, :-1], ...] = 0
-
-        bs, kernel_size, _, in_channels, out_channels = kernel_values_real.shape
-
-        kernel_values = torch.cat([torch.cat([kernel_values_real[:, :, :-1, None, ...], kernel_values_sim],
-                                             dim=3).reshape(bs, kernel_size, -1, in_channels, out_channels),
-                                   kernel_values_real[:, :, -1:, ...]], dim=2)
-
-        features_kern = torch.repeat_interleave(features_kern[:, :-1, :, :], sim_size + 1, dim=2)[:, :, sim_size:, :]
-        out = features_kern.unsqueeze(-1) * kernel_values
-        out = out.sum(dim=(1, 3))
-
-        return out
-    
 
 
 class ContinuousConv1DSim(ContinuousConvolutionBase):
@@ -339,8 +248,6 @@ class ContinuousConv1DSim(ContinuousConvolutionBase):
         features_kern_linear = features_kern[..., :self.output_channels]
         features_kern_bias = features_kern[..., self.output_channels:]
 
-        sim_mask_multiplies = torch.sum(dt_mask[:, 1:, :-1], dim=1)
-
         uniform_delta_t_scale = delta_times[:, -2, 1:]  # equivalent to the times[1:] - times[:-1]
 
         real_values = torch.sum(
@@ -355,8 +262,11 @@ class ContinuousConv1DSim(ContinuousConvolutionBase):
         )  # shape = (bs, seq_len - 1, out_channels)
         sim_values = (
                 sim_values[:, :, None, :] +
-                sim_mask_multiplies[:, :, None, None] * uniform_delta_t_scale[:, :, None, None] *
-                uniform_sample[None, None, :, None] * modified_features[:, :-1, None, :]
+                torch.sum(
+                    uniform_delta_t_scale[:, None, :, None, None] *
+                    uniform_sample[None, None, None, :, None] * features_kern_linear[:, 1:, :-1, None, :],
+                    dim=1
+                )
         )
 
         values_before_sim = real_values[:, :-1, :].unsqueeze(2)
