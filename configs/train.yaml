@@ -29,11 +29,10 @@ defaults:
 # https://hydra.cc/docs/next/tutorials/basic/running_your_app/working_directory
 original_work_dir: ${hydra:runtime.cwd}
 
-# path to folder with data_utils
-dataset: Age
+# path to folder with data
+dataset: meme
 data_dir: ${original_work_dir}/new_data/${dataset}
-unix_time: False
-num_types: 60
+num_types: 4977
 
 # pretty print config at the start of the run using Rich library
 print_config: True

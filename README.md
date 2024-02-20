@@ -58,7 +58,7 @@ git clone git@github.com:VladislavZh/CCNN.git
 cd CCNN
 
 # [OPTIONAL] create conda environment
-conda create -n myenv python=3.8
+conda create -n myenv python=3.9
 conda activate myenv
 
 # install pytorch according to instructions
