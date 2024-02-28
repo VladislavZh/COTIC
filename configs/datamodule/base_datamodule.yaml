@@ -1,15 +1,9 @@
 _target_: src.datamodules.base_event_sequence_datamodule.EventDataModule
 
+num_event_types: ${num_types}
 data_dir: ${data_dir}
-batch_size: 20
-max_len: null
-num_event_types: null
-dataset_size_train: null
-dataset_size_val: null
-dataset_size_test: null
-# dataset_size: null
-# train_val_test_split: [0.8, 0.1, 0.1]
-num_workers: 0
-pin_memory: False
-random_seed: 42
-# preprocess_type: 'min_max_scaler'
+normalizer: "src.utils.data_utils.normalizers.ExponentialNormalizerP99"
+batch_size_train: 100
+batch_size_val_test: 100
+num_workers: 4
+pin_memory: True

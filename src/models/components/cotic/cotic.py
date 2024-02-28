@@ -66,7 +66,7 @@ class COTIC(nn.Module):
         - kernel_network (nn.Module): Convolutional kernel module.
         """
         super().__init__()
-        self.event_emb = nn.Embedding(num_types + 2, in_channels, padding_idx=0)
+        self.event_emb = nn.Embedding(num_types + 1, in_channels, padding_idx=0)
 
         self.in_channels = [in_channels] + [nb_filters] * nb_layers
         self.dilation_factors = [2**i for i in range(0, nb_layers)]

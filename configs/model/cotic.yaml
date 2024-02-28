@@ -1,45 +1,53 @@
 _target_: src.models.base_model.BaseEventModule
 
 net:
-  _target_: src.models.components.cotic.COTIC
+  _target_: src.models.components.cotic.cotic.COTIC
   in_channels: 32
-  kernel_size: 9
-  nb_filters: 16
-  nb_layers: 5
+  kernel_size: 3
+  nb_filters: 32
+  nb_layers: 9
   num_types: ${num_types}
-  kernel:
-    _target_: src.models.components.cotic.Kernel
-    hidden1: 8
-    hidden2: 4
-    hidden3: 8
-    in_channels: ${model.net.nb_filters}
+  kernel_network:
+    _target_: src.models.components.cotic.kernels.LinearKernel
+    in_channels: ${model.net.in_channels}
     out_channels: ${model.net.nb_filters}
-  head:
-    _target_: src.models.components.cotic.PredictionHead
-    in_channels: ${model.net.nb_filters}
-    num_types: ${num_types}
-metrics:
-  _target_: src.metrics.cotic.CCNNMetrics
-  return_time_metric:
-    _target_: src.utils.metrics.MAE
-  event_type_metric:
-    _target_: src.utils.metrics.Accuracy
-  type_loss_coeff: 1
-  time_loss_coeff: 10
-  reductions:
-    log_likelihood: mean
-    type: sum
-    time: mean
-  sim_size: 36
+    dropout: 0.1
+intensity_head:
+  _target_: src.models.components.cotic.head.intensity_head.IntensityHead
+  kernel_size: 3
+  nb_filters: ${model.net.nb_filters}
+  mlp_layers:
+    - 32
+    - 16
+    - 8
+  num_types: ${num_types}
+downstream_head:
+  _target_: src.models.components.cotic.head.downstream_head.DownstreamHead
+  nb_filters: ${model.net.nb_filters}
+  mlp_layers:
+    - 32
+    - 16
+    - 8
+  num_types: ${num_types}
+uniform_sample_size: 40
 optimizer:
-  name: adam
-  params:
-    lr: 0.001
-    weight_decay: 1e-8
-scheduler: null
-#  step: 40
-#  milestones: null
-##    - 40
-##    - 75
-#  gamma: 0.1
-head_start: 1
+  _target_: adan_pytorch.Adan
+  _partial_: true
+  lr: 1e-3
+  betas:
+    - 0.02
+    - 0.08
+    - 0.01
+  weight_decay: 0.02
+scheduler: true
+#  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+#  _partial_: true
+#  factor: 0.5
+#  patience: 10
+#  min_lr: 1e-6
+warmup_steps: 500
+scheduler_monitoring_params:
+  monitor: val/loss
+  mode: min
+  verbose: true
+  interval: epoch

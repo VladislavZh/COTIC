@@ -3,6 +3,6 @@
 comet:
  _target_: pytorch_lightning.loggers.comet.CometLogger
  api_key: ${oc.env:COMET_API_TOKEN}
- project_name: "cotic_pkl" 
- workspace: cotic
+ project_name: "new-cotic"
+ workspace: ${oc.env:COMET_WORKSPACE}
  experiment_name: ${name}

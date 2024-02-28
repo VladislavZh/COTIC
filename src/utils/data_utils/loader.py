@@ -46,6 +46,7 @@ def load_time_series_data(
         df = df.sort_values(by=["time"])
 
         time_values = torch.Tensor(df["time"].values)
+        time_values -= time_values[0].clone()
         event_values = torch.Tensor(df["event"].values)
 
         time_series.append(time_values)

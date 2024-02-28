@@ -25,7 +25,7 @@ class EventDataset(Dataset):
         - num_event_types (int): Number of unique event types.
         """
         self.num_event_types = num_event_types
-        self.__event_times, self.__event_types = self.__add_bos(*self.__pad(event_times, event_types))
+        self.__event_times, self.__event_types = self.__pad(event_times, event_types)
 
     def normalize_data(self, normalizer: Union[Type[Normalizer], Normalizer]) -> Normalizer:
         """
@@ -85,21 +85,6 @@ class EventDataset(Dataset):
             tensor_event_types[i, :seq_len] = event_seq + 1
 
         return tensor_event_times, tensor_event_types.long()
-
-    def __add_bos(self, event_times: torch.Tensor, event_types: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """
-        Add beginning of sequence (BOS) tokens to event times and event types.
-
-        Args:
-        - event_times (torch.Tensor): Tensor of event times.
-        - event_types (torch.Tensor): Tensor of event types.
-
-        Returns:
-        - Tuple[torch.Tensor, torch.Tensor]: Tuple containing event times and event types with BOS tokens added.
-        """
-        bos_event_times = torch.cat([torch.zeros(event_times.shape[0], 1), event_times], dim=1)
-        bos_event_types = torch.cat([torch.full((event_types.shape[0], 1), self.num_event_types + 1, dtype=torch.long), event_types], dim=1)
-        return bos_event_times, bos_event_types
 
     def __len__(self) -> int:
         """Returns the length of the dataset."""

@@ -30,9 +30,9 @@ defaults:
 original_work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
-dataset: meme
-data_dir: ${original_work_dir}/new_data/${dataset}
-num_types: 4977
+dataset: so
+data_dir: ${original_work_dir}/data/${dataset}
+num_types: 22
 
 # pretty print config at the start of the run using Rich library
 print_config: True
