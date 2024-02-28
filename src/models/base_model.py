@@ -1,6 +1,9 @@
-from typing import Any
+from typing import Any, Union, Optional, Callable
 import torch
 from pytorch_lightning import LightningModule
+from pytorch_lightning.core.optimizer import LightningOptimizer
+from torch.optim import Optimizer
+
 from src.models.components.cotic.head.downstream_head import DownstreamHead
 from src.models.components.cotic.head.intensity_head import IntensityHead
 
@@ -17,6 +20,7 @@ class BaseEventModule(LightningModule):
             downstream_head: DownstreamHead,
             uniform_sample_size: int,
             optimizer: torch.optim.Optimizer,
+            init_lr: float,
             scheduler: torch.optim.lr_scheduler,
             warmup_steps: int,
             scheduler_monitoring_params: dict
@@ -166,6 +170,26 @@ class BaseEventModule(LightningModule):
         """
         self.run_evaluation(batch, "test")
 
+    def optimizer_step(
+        self,
+        epoch: int,
+        batch_idx: int,
+        optimizer: Union[Optimizer, LightningOptimizer],
+        optimizer_idx: int = 0,
+        optimizer_closure: Optional[Callable[[], Any]] = None,
+        on_tpu: bool = False,
+        using_native_amp: bool = False,
+        using_lbfgs: bool = False,
+    ) -> None:
+        # manually warm up lr without a scheduler
+        if self.trainer.global_step < self.hparams.warmup_steps:
+            lr_scale = min(1.0, float(self.trainer.global_step + 1) / self.hparams.warmup_steps)
+            for pg in optimizer.param_groups:
+                pg["lr"] = lr_scale * self.hparams.init_lr
+
+        # update params
+        optimizer.step(closure=optimizer_closure)
+
     def configure_optimizers(self):
         """
         Configure optimizers for training.
@@ -175,16 +199,10 @@ class BaseEventModule(LightningModule):
         """
         optimizer = self.hparams.optimizer(params=self.parameters())
         if self.hparams.scheduler is not None:
-            # scheduler = self.hparams.scheduler(optimizer=optimizer)
-            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=10, min_lr=1e-6)
+            scheduler = self.hparams.scheduler(optimizer=optimizer)
+            # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=10, min_lr=1e-6)
             scheduler_config = dict(self.hparams.scheduler_monitoring_params)
             scheduler_config["scheduler"] = scheduler
-            # warmup = torch.optim.lr_scheduler.LinearLR(
-            #     optimizer,
-            #     start_factor=0.0001,
-            #     end_factor=1.0,
-            #     total_iters=self.hparams.warmup_steps,
-            # )
 
             return [optimizer], [scheduler_config]
         return {"optimizer": optimizer}

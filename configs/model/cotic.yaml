@@ -33,18 +33,19 @@ uniform_sample_size: 40
 optimizer:
   _target_: adan_pytorch.Adan
   _partial_: true
-  lr: 1e-3
+  lr: 1e-4
   betas:
     - 0.02
     - 0.08
     - 0.01
   weight_decay: 0.02
-scheduler: true
-#  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
-#  _partial_: true
-#  factor: 0.5
-#  patience: 10
-#  min_lr: 1e-6
+init_lr: ${model.optimizer.lr}
+scheduler:
+  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  _partial_: true
+  factor: 0.5
+  patience: 10
+  min_lr: 1e-6
 warmup_steps: 500
 scheduler_monitoring_params:
   monitor: val/loss
