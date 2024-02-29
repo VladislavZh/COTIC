@@ -62,7 +62,6 @@ class IntensityHead(nn.Module):
             self,
             times: torch.Tensor,
             embeddings: torch.Tensor,
-            non_pad_mask: torch.Tensor,
             uniform_sample: torch.Tensor
     ) -> torch.Tensor:
         """
@@ -89,7 +88,6 @@ class IntensityHead(nn.Module):
             self.convolution(
                 times,
                 embeddings,
-                non_pad_mask,
                 uniform_sample
             )
         )
@@ -136,14 +134,79 @@ class IntensityHead(nn.Module):
         lambdas = self.compute_lambdas(
             times,
             embeddings,
-            non_pad_mask,
             uniform_sample
         )
 
         events_index = (events - 1)
         events_index[events_index == -1] = 0
 
-        events_lambdas = lambdas[:,::(len(uniform_sample) + 1)].gather(2, events_index.unsqueeze(-1)).squeeze()
+        events_lambdas = lambdas[:, ::(len(uniform_sample) + 1)].gather(2, events_index.unsqueeze(-1)).squeeze()
+
+        mask = torch.ones(lambdas.shape[1]).bool().to(times.device)
+        mask[::(len(uniform_sample) + 1)] = False
+        non_event_lambdas = lambdas[:, mask, :]
+        integral = non_event_lambdas.reshape(times.shape[0], -1, len(uniform_sample), self.num_types).sum((-2, -1)) * (times[:, 1:] - times[:, :-1]) / len(
+            uniform_sample)
+
+        loss = torch.sum(-torch.log(events_lambdas + 1e-8) * non_pad_mask) + torch.sum(integral * non_pad_mask[:, 1:])
+        loss /= torch.sum(non_pad_mask)
+
+        return Predictions(loss=loss)
+
+
+class IntensityHeadLinear(nn.Module):
+    def __init__(
+        self,
+        kernel_size: int,
+        nb_filters: int,
+        num_types: int
+    ) -> None:
+        super().__init__()
+        self.convolution = ContinuousConv1DSim(
+            kernel_size, nb_filters, nb_filters
+        )
+        self.activation = nn.LeakyReLU(0.1)
+        self.layer = nn.Linear(nb_filters, num_types)
+
+        self.softplus = nn.Softplus(100)
+        self.num_types = num_types
+
+    def compute_lambdas(
+            self,
+            times: torch.Tensor,
+            embeddings: torch.Tensor,
+            uniform_sample: torch.Tensor
+    ) -> torch.Tensor:
+        continuous_sample_embeddings = self.activation(
+            self.convolution(
+                times,
+                embeddings,
+                uniform_sample
+            )
+        )
+
+        continuous_sample_embeddings = self.layer(continuous_sample_embeddings)
+
+        return self.softplus(continuous_sample_embeddings)
+
+    def forward(
+            self,
+            times: torch.Tensor,
+            events: torch.Tensor,
+            embeddings: torch.Tensor,
+            non_pad_mask: torch.Tensor,
+            uniform_sample: torch.Tensor
+    ) -> Predictions:
+        lambdas = self.compute_lambdas(
+            times,
+            embeddings,
+            uniform_sample
+        )
+
+        events_index = (events - 1)
+        events_index[events_index == -1] = 0
+
+        events_lambdas = lambdas[:, ::(len(uniform_sample) + 1)].gather(2, events_index.unsqueeze(-1)).squeeze()
 
         mask = torch.ones(lambdas.shape[1]).bool().to(times.device)
         mask[::(len(uniform_sample) + 1)] = False

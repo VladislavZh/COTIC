@@ -100,13 +100,11 @@ class COTIC(nn.Module):
         - torch.Tensor: Shape = (batch_size, sequence_length, nb_filters),
           encoder output for the input event sequence.
         """
-        non_pad_mask = event_types.ne(0)
-
         enc_output = self.event_emb(event_types)
 
         for conv in self.continuous_convolutions:
             enc_output = torch.nn.functional.leaky_relu(
-                conv(event_times, enc_output, non_pad_mask), 0.1
+                conv(event_times, enc_output), 0.1
             )
 
         return enc_output

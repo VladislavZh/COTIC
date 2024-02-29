@@ -3,7 +3,7 @@ _target_: src.datamodules.base_event_sequence_datamodule.EventDataModule
 num_event_types: ${num_types}
 data_dir: ${data_dir}
 normalizer: "src.utils.data_utils.normalizers.ExponentialNormalizerP99"
-batch_size_train: 16
-batch_size_val_test: 16
+batch_size_train: 32
+batch_size_val_test: 32
 num_workers: 4
 pin_memory: True

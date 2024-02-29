@@ -2,29 +2,21 @@ _target_: src.models.base_model.BaseEventModule
 
 net:
   _target_: src.models.components.cotic.cotic.COTIC
-  in_channels: 64
-  kernel_size: 7
-  nb_filters: 64
+  in_channels: 256
+  kernel_size: 5
+  nb_filters: 256
   nb_layers: 9
   num_types: ${num_types}
 intensity_head:
-  _target_: src.models.components.cotic.head.intensity_head.IntensityHead
-  kernel_size: 7
+  _target_: src.models.components.cotic.head.intensity_head.IntensityHeadLinear
+  kernel_size: 5
   nb_filters: ${model.net.nb_filters}
-  mlp_layers:
-    - 32
-#    - 32
-#    - 16
   num_types: ${num_types}
 downstream_head:
-  _target_: src.models.components.cotic.head.downstream_head.DownstreamHead
+  _target_: src.models.components.cotic.head.downstream_head.DownstreamHeadLinear
   nb_filters: ${model.net.nb_filters}
-  mlp_layers:
-    - 32
-#    - 32
-#    - 16
   num_types: ${num_types}
-uniform_sample_size: 5
+uniform_sample_size: 50
 optimizer:
   _target_: adan_pytorch.Adan
   _partial_: true
