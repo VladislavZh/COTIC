@@ -151,3 +151,4 @@ wandb/
 notebook*
 new_data/*
 src_old/*
+checkpoints/*

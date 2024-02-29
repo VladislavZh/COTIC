@@ -132,6 +132,37 @@ class ContinuousConvolutionBase(nn.Module, ABC):
 
 
 class ContinuousConv1D(ContinuousConvolutionBase):
+    def __init__(
+            self,
+            kernel_size: int,
+            input_channels: int,
+            output_channels: int,
+            dilation: int
+    ):
+        """
+        Initializes the ContinuousConv1D layer, a specialized convolution layer designed for continuous data streams,
+        by setting up the convolution kernel and bias parameters.
+
+        Parameters:
+        - kernel_size (int): The size of the convolution kernel, determining the extent of the convolution operation.
+        - input_channels (int): The number of channels in the input feature map.
+        - output_channels (int): The desired number of channels in the output feature map.
+        - dilation (int): The dilation factor for the convolution operation, controlling the spacing between kernel elements.
+
+        The constructor initializes the convolution kernel using a linear transformation and sets up a bias parameter
+        to be learned during training.
+        """
+        kernel_network = nn.Linear(input_channels, output_channels, bias=False)
+
+        super().__init__(
+            kernel_network=kernel_network,
+            kernel_size=kernel_size,
+            input_channels=input_channels,
+            output_channels=output_channels,
+            dilation=dilation
+        )
+        self.bias = nn.Parameter(torch.full(size=(input_channels, output_channels), fill_value=1 / output_channels))
+
     def forward(
             self,
             times: torch.Tensor,
@@ -139,47 +170,48 @@ class ContinuousConv1D(ContinuousConvolutionBase):
             non_pad_mask: torch.Tensor
     ) -> torch.Tensor:
         """
-        Conducts a continuous convolution operation on the input data_utils.
+        Executes a forward pass through the ContinuousConv1D layer, applying a continuous convolution operation to the
+        input features based on the provided event times and a non-padding mask.
 
-        This method applies the continuous convolution to the input features based on the given
-        event times and a non-padding mask. It leverages a kernel network to compute the convolution
-        kernel values and combines them with the input features to produce the output tensor.
-
-        Args:
-            times (torch.Tensor): A tensor of shape (batch_size, seq_len) containing the event times.
-                                  Each entry in this tensor represents a timestamp for the corresponding
-                                  event in the sequence.
-            features (torch.Tensor): A tensor of shape (batch_size, seq_len, input_channels) containing
-                                     the features associated with each event. These features are the
-                                     inputs to the convolution operation.
-            non_pad_mask (torch.Tensor): A boolean tensor of shape (batch_size, seq_len) indicating
-                                         the non-padding elements in the sequence. This mask helps
-                                         in differentiating actual data_utils from padded data_utils in operations.
+        Parameters:
+        - times (torch.Tensor): A tensor of shape (batch_size, seq_len), containing the times of events in the sequence.
+        - features (torch.Tensor): A tensor of shape (batch_size, seq_len, input_channels), containing the input features
+          for each event in the sequence.
+        - non_pad_mask (torch.Tensor): A tensor of shape (batch_size, seq_len), indicating the non-padding elements in
+          the sequence, used to ignore padding in the convolution operation.
 
         Returns:
-            torch.Tensor: The output of the continuous convolution operation. It is a tensor of shape
-                          (batch_size, seq_len, output_channels) where each element in the sequence
-                          has been convolved with the kernel function, considering the continuous nature
-                          of the data_utils.
+        - torch.Tensor: The output of the layer, a tensor of shape (batch_size, (sim_size+1)*(seq_len-1)+1, output_channels),
+          representing the convolved features, adjusted for bias and normalized.
+
+        The method combines linearly transformed features with bias-adjusted features, constructs a convolution matrix
+        from the modified features, and applies a continuous convolution operation, followed by normalization and a
+        skip connection.
         """
+
+        modified_features = self.kernel_network(features)
+        features_bias = features @ self.bias  # shape = (bs, seq_len, out_channels)
+
+        all_features = torch.concat([modified_features, features_bias], dim=-1)
 
         delta_times, features_kern, dt_mask = self.construct_conv_matrix(
             times,
-            features,
+            all_features,
             non_pad_mask
         )
         delta_times /= self.dilation
+        features_kern_linear = features_kern[..., :self.output_channels]
+        features_kern_bias = features_kern[..., self.output_channels:]
 
-        delta_times = delta_times.unsqueeze(-1)
-
-        kernel_values = self.kernel_network(delta_times)
-        kernel_values[~dt_mask, ...] = 0
-
-        out = features_kern.unsqueeze(-1) * kernel_values
-        out = out.sum(dim=(1, 3))
+        out = torch.sum(
+            delta_times.unsqueeze(-1) * features_kern_linear +
+            features_kern_bias,
+            dim=1
+        )  # shape = (bs, seq_len, out_channels)
 
         out += self.skip_connection(features.transpose(1, 2)).transpose(1, 2)
         out = self.layer_norm(out)
+
         return out
 
 

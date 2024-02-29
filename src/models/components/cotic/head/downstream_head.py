@@ -36,7 +36,7 @@ class DownstreamHead(nn.Module):
         num_types: int,
         type_loss_coeff: float = 1,
         time_loss_coeff: float = 1,
-        reductions: dict = frozendict(type="sum", time="sum")
+        reductions: dict = frozendict(type="mean", time="mean")
     ) -> None:
         super().__init__()
         self.activation = nn.LeakyReLU(0.1)

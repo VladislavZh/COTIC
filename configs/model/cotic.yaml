@@ -2,38 +2,33 @@ _target_: src.models.base_model.BaseEventModule
 
 net:
   _target_: src.models.components.cotic.cotic.COTIC
-  in_channels: 32
-  kernel_size: 3
-  nb_filters: 32
+  in_channels: 64
+  kernel_size: 7
+  nb_filters: 64
   nb_layers: 9
   num_types: ${num_types}
-  kernel_network:
-    _target_: src.models.components.cotic.kernels.LinearKernel
-    in_channels: ${model.net.in_channels}
-    out_channels: ${model.net.nb_filters}
-    dropout: 0.1
 intensity_head:
   _target_: src.models.components.cotic.head.intensity_head.IntensityHead
-  kernel_size: 3
+  kernel_size: 7
   nb_filters: ${model.net.nb_filters}
   mlp_layers:
     - 32
-    - 16
-    - 8
+#    - 32
+#    - 16
   num_types: ${num_types}
 downstream_head:
   _target_: src.models.components.cotic.head.downstream_head.DownstreamHead
   nb_filters: ${model.net.nb_filters}
   mlp_layers:
     - 32
-    - 16
-    - 8
+#    - 32
+#    - 16
   num_types: ${num_types}
-uniform_sample_size: 40
+uniform_sample_size: 5
 optimizer:
   _target_: adan_pytorch.Adan
   _partial_: true
-  lr: 1e-4
+  lr: 1e-3
   betas:
     - 0.02
     - 0.08
@@ -46,7 +41,7 @@ scheduler:
   factor: 0.5
   patience: 10
   min_lr: 1e-6
-warmup_steps: 500
+warmup_steps: 1500
 scheduler_monitoring_params:
   monitor: val/loss
   mode: min

@@ -17,7 +17,6 @@ class COTIC(nn.Module):
     - nb_filters (int): Number of filters.
     - nb_layers (int): Number of convolutional layers.
     - num_types (int): Number of event types.
-    - kernel_network (nn.Module): Convolutional kernel module.
 
     Input Shape:
     Has beginning of stream event and zero padding
@@ -33,7 +32,7 @@ class COTIC(nn.Module):
     Examples:
     ```python
     # Create a COTIC model
-    model = COTIC(in_channels=64, kernel_size=3, nb_filters=32, nb_layers=2, num_types=10, kernel=my_kernel_module)
+    model = COTIC(in_channels=64, kernel_size=3, nb_filters=32, nb_layers=2, num_types=10)
 
     # Forward pass
     event_times = torch.tensor([[0, 0.1, 0.5, 1.2, 0], [0, 0.2, 0.7, 1.4, 0]])
@@ -51,8 +50,7 @@ class COTIC(nn.Module):
         kernel_size: int,
         nb_filters: int,
         nb_layers: int,
-        num_types: int,
-        kernel_network: nn.Module
+        num_types: int
     ) -> None:
         """
         Initialize a COTIC (Continuous-Time Convolutional) neural network module.
@@ -63,7 +61,6 @@ class COTIC(nn.Module):
         - nb_filters (int): Number of filters.
         - nb_layers (int): Number of convolutional layers.
         - num_types (int): Number of event types.
-        - kernel_network (nn.Module): Convolutional kernel module.
         """
         super().__init__()
         self.event_emb = nn.Embedding(num_types + 1, in_channels, padding_idx=0)
@@ -78,7 +75,6 @@ class COTIC(nn.Module):
         self.continuous_convolutions = nn.ModuleList(
             [
                 ContinuousConv1D(
-                    kernel_network.recreate(self.in_channels[i]),
                     kernel_size,
                     self.in_channels[i],
                     nb_filters,
