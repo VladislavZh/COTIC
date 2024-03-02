@@ -9,7 +9,7 @@ net:
   num_types: ${num_types}
   dropout: 0.1
 joined_head:
-  _target_: src.models.components.cotic.head.joined_head.ProbabilisticJoinedHead
+  _target_: src.models.components.cotic.head.joined_head.ProbabilisticJoinedHead # JoinedHead
   intensity_head:
     _target_: src.models.components.cotic.head.intensity_head.IntensityHeadLinear
     kernel_size: 1
@@ -17,13 +17,13 @@ joined_head:
     num_types: ${num_types}
   downstream_head:
     _target_: src.models.components.cotic.head.downstream_head.ProbabilisticDownstreamHead # DownstreamHeadSklearnLinear #DownstreamHeadLinear
-#    nb_filters: ${model.net.nb_filters}
-#    num_types: ${num_types}
-##    type_loss_coeff: 1
-##    time_loss_coeff: 10
-##    reductions:
-##      type: mean
-##      time: mean
+#    nb_filters: ${model.net.nb_filters} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
+#    num_types: ${num_types} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
+##    type_loss_coeff: 1 # DownstreamHeadLinear
+##    time_loss_coeff: 10 # DownstreamHeadLinear
+##    reductions: 2 # DownstreamHeadLinear
+##      type: mean # DownstreamHeadLinear
+##      time: mean # DownstreamHeadLinear
   uniform_sample_size: 20
 optimizer:
   _target_: torch.optim.Adam
