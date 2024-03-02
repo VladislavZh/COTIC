@@ -349,13 +349,14 @@ class DownstreamHeadSklearnLinear:
 
 
 class ProbabilisticDownstreamHead:
-    def __init__(self, compute_every_n_epochs: int = 10) -> None:
+    def __init__(self, compute_every_n_epochs: int = 10, sub_batch_size: int = 100) -> None:
         self.epoch = 0
         self.training = False
         self.batch_index = 0
         self.change = False
         self.compute_every_n_epochs = compute_every_n_epochs
         self.returns = dict(train=[], val=[])
+        self.sub_batch_size = sub_batch_size
 
     @staticmethod
     def compute_cumulative_trapezoidal(times, values, interpolate_initial=True):
@@ -465,12 +466,12 @@ class ProbabilisticDownstreamHead:
 
         with torch.no_grad():
             intensity = []
-            for i in range(0, len(delta_times), 30):
-                sub_batch_size = len(delta_times[i:i + 30])
+            for i in range(0, len(delta_times), self.sub_batch_size):
+                sub_batch_size = len(delta_times[i:i + self.sub_batch_size])
                 sub_intensity = intensity_head.compute_lambdas(
                     times,
                     embeddings,
-                    delta_times[i:i + 30],
+                    delta_times[i:i + self.sub_batch_size],
                     scale=False
                 )
                 mask = torch.ones(sub_intensity.shape[1]).bool().to(times.device)

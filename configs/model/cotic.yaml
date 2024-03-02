@@ -4,8 +4,8 @@ net:
   _target_: src.models.components.cotic.cotic.COTIC
   in_channels: 256
   kernel_size: 7
-  nb_filters: 512
-  nb_layers: 7
+  nb_filters: 256 # 512
+  nb_layers: 9 # 7
   num_types: ${num_types}
   dropout: 0.1
 joined_head:
@@ -26,7 +26,7 @@ joined_head:
 ##      time: mean # DownstreamHeadLinear
   uniform_sample_size: 20
 optimizer:
-  _target_: torch.optim.Adam
+  _target_: adan_pytorch.Adan
   _partial_: true
   lr: 1e-3
   weight_decay: 1e-6
