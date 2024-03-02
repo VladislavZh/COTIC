@@ -6,6 +6,7 @@ from torch.optim import Optimizer
 
 from src.models.components.cotic.head.downstream_head import DownstreamHead
 from src.models.components.cotic.head.intensity_head import IntensityHead
+from src.models.components.cotic.head.joined_head import JoinedHead
 
 
 class BaseEventModule(LightningModule):
@@ -16,9 +17,7 @@ class BaseEventModule(LightningModule):
     def __init__(
             self,
             net: torch.nn.Module,
-            intensity_head: IntensityHead,
-            downstream_head: DownstreamHead,
-            uniform_sample_size: int,
+            joined_head: JoinedHead,
             optimizer: torch.optim.Optimizer,
             init_lr: float,
             scheduler: torch.optim.lr_scheduler,
@@ -40,10 +39,7 @@ class BaseEventModule(LightningModule):
         self.save_hyperparameters(logger=False)
 
         self.net = net
-        self.intensity_head = intensity_head
-        self.downstream_head = downstream_head
-
-        self.uniform_sample_size = uniform_sample_size
+        self.joined_head = joined_head
 
     def forward(self, batch: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, ...]:
         """
@@ -70,15 +66,15 @@ class BaseEventModule(LightningModule):
         """
         times, events = batch
         non_pad_mask = events.ne(0)
-        uniform_sample = torch.rand(self.uniform_sample_size).to(times.device).sort().values
+
         embeddings = self.forward(batch)
-        intensity_prediction = self.intensity_head(times, events, embeddings, non_pad_mask, uniform_sample)
-        downstream_predictions = self.downstream_head(
+        intensity_prediction, downstream_predictions = self.joined_head(
             times,
             events,
             embeddings,
             non_pad_mask,
-            self.trainer.datamodule.normalizer
+            self.trainer.datamodule.normalizer,
+            stage
         )
 
         return (

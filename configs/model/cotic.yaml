@@ -3,29 +3,33 @@ _target_: src.models.base_model.BaseEventModule
 net:
   _target_: src.models.components.cotic.cotic.COTIC
   in_channels: 256
-  kernel_size: 5
-  nb_filters: 256
-  nb_layers: 9
+  kernel_size: 7
+  nb_filters: 512
+  nb_layers: 7
   num_types: ${num_types}
-intensity_head:
-  _target_: src.models.components.cotic.head.intensity_head.IntensityHeadLinear
-  kernel_size: 5
-  nb_filters: ${model.net.nb_filters}
-  num_types: ${num_types}
-downstream_head:
-  _target_: src.models.components.cotic.head.downstream_head.DownstreamHeadLinear
-  nb_filters: ${model.net.nb_filters}
-  num_types: ${num_types}
-uniform_sample_size: 50
+  dropout: 0.1
+joined_head:
+  _target_: src.models.components.cotic.head.joined_head.ProbabilisticJoinedHead
+  intensity_head:
+    _target_: src.models.components.cotic.head.intensity_head.IntensityHeadLinear
+    kernel_size: 1
+    nb_filters: ${model.net.nb_filters}
+    num_types: ${num_types}
+  downstream_head:
+    _target_: src.models.components.cotic.head.downstream_head.ProbabilisticDownstreamHead # DownstreamHeadSklearnLinear #DownstreamHeadLinear
+#    nb_filters: ${model.net.nb_filters}
+#    num_types: ${num_types}
+##    type_loss_coeff: 1
+##    time_loss_coeff: 10
+##    reductions:
+##      type: mean
+##      time: mean
+  uniform_sample_size: 20
 optimizer:
-  _target_: adan_pytorch.Adan
+  _target_: torch.optim.Adam
   _partial_: true
   lr: 1e-3
-  betas:
-    - 0.02
-    - 0.08
-    - 0.01
-  weight_decay: 0.02
+  weight_decay: 1e-6
 init_lr: ${model.optimizer.lr}
 scheduler:
   _target_: torch.optim.lr_scheduler.ReduceLROnPlateau

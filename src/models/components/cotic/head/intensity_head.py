@@ -175,13 +175,15 @@ class IntensityHeadLinear(nn.Module):
             self,
             times: torch.Tensor,
             embeddings: torch.Tensor,
-            uniform_sample: torch.Tensor
+            uniform_sample: torch.Tensor,
+            scale: bool = True
     ) -> torch.Tensor:
         continuous_sample_embeddings = self.activation(
             self.convolution(
                 times,
                 embeddings,
-                uniform_sample
+                uniform_sample,
+                scale
             )
         )
 

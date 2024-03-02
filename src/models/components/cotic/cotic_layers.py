@@ -221,7 +221,8 @@ class ContinuousConv1DSim(ContinuousConvolutionBase):
             self,
             times: torch.Tensor,
             features: torch.Tensor,
-            uniform_sample: torch.Tensor
+            sample: torch.Tensor,
+            scale: bool = True
     ) -> torch.Tensor:
         """
         Performs the forward pass of the ContinuousConv1DSim layer, incorporating simulated time points.
@@ -230,7 +231,7 @@ class ContinuousConv1DSim(ContinuousConvolutionBase):
             times (torch.Tensor): A tensor of shape (batch_size, seq_len) containing the times of each real event.
             features (torch.Tensor): A tensor of shape (batch_size, seq_len, input_channels) containing the features
                                      associated with each real event.
-            uniform_sample (torch.Tensor): A tensor of shape (sim_size) containing uniformly sampled time points
+            sample (torch.Tensor): A tensor of shape (sim_size) containing uniformly sampled time points
                                             between real events, used for simulation.
 
         Returns:
@@ -239,7 +240,7 @@ class ContinuousConv1DSim(ContinuousConvolutionBase):
                           at simulated time points, typically larger than the input sequence length.
         """
 
-        assert torch.all(uniform_sample == uniform_sample.sort().values)
+        assert torch.all(sample == sample.sort().values)
 
         modified_features = self.kernel_network_weight(features)
         features_bias = features @ self.kernel_network_bias  # shape = (bs, seq_len, out_channels)
@@ -253,7 +254,7 @@ class ContinuousConv1DSim(ContinuousConvolutionBase):
         features_kern_linear = features_kern[..., :self.output_channels]
         features_kern_bias = features_kern[..., self.output_channels:]
 
-        uniform_delta_t_scale = delta_times[:, -2, 1:]  # equivalent to the times[1:] - times[:-1]
+        delta_t_scale = delta_times[:, -2, 1:]  # equivalent to the times[1:] - times[:-1]
 
         real_values = torch.sum(
             delta_times[:, :-1, ...].unsqueeze(-1) * features_kern_linear[:, :-1, ...] +
@@ -268,8 +269,9 @@ class ContinuousConv1DSim(ContinuousConvolutionBase):
         sim_values = (
                 sim_values[:, :, None, :] +
                 torch.sum(
-                    uniform_delta_t_scale[:, None, :, None, None] *
-                    uniform_sample[None, None, None, :, None] * features_kern_linear[:, 1:, :-1, None, :],
+                    delta_t_scale[:, None, :, None, None] *
+                    sample[None, None, None, :, None] * features_kern_linear[:, 1:, :-1, None, :] if scale
+                    else sample[None, None, None, :, None] * features_kern_linear[:, 1:, :-1, None, :],
                     dim=1
                 )
         )

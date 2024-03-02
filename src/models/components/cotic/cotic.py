@@ -50,7 +50,8 @@ class COTIC(nn.Module):
         kernel_size: int,
         nb_filters: int,
         nb_layers: int,
-        num_types: int
+        num_types: int,
+        dropout: float = 0.1
     ) -> None:
         """
         Initialize a COTIC (Continuous-Time Convolutional) neural network module.
@@ -84,6 +85,13 @@ class COTIC(nn.Module):
             ]
         )
 
+        self.dropouts = nn.ModuleList(
+            [
+                nn.Dropout(dropout)
+                for i in range(nb_layers)
+            ]
+        )
+
     def forward(
         self, event_times: torch.Tensor, event_types: torch.Tensor
     ) -> torch.Tensor:
@@ -102,9 +110,11 @@ class COTIC(nn.Module):
         """
         enc_output = self.event_emb(event_types)
 
-        for conv in self.continuous_convolutions:
-            enc_output = torch.nn.functional.leaky_relu(
-                conv(event_times, enc_output), 0.1
+        for dropout, conv in zip(self.dropouts, self.continuous_convolutions):
+            enc_output = dropout(
+                torch.nn.functional.leaky_relu(
+                    conv(event_times, enc_output), 0.1
+                )
             )
 
         return enc_output
