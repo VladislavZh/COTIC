@@ -30,9 +30,11 @@ defaults:
 original_work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
-dataset: so
+dataset: ???
 data_dir: ${original_work_dir}/data/${dataset}
-num_types: 22
+num_types: ???
+
+resume_from_checkpoint: null # ${original_work_dir}/checkpoints/probabilitstic_downstream/last.ckpt
 
 # pretty print config at the start of the run using Rich library
 print_config: True

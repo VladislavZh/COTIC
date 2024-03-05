@@ -144,7 +144,8 @@ class ContinuousConv1D(ContinuousConvolutionBase):
     def forward(
             self,
             times: torch.Tensor,
-            features: torch.Tensor
+            features: torch.Tensor,
+            non_pad_mask: torch.Tensor
     ) -> torch.Tensor:
         """
         Performs the forward pass of the ContinuousConv1D layer.
@@ -179,7 +180,7 @@ class ContinuousConv1D(ContinuousConvolutionBase):
         )  # shape = (bs, seq_len, out_channels)
 
         out += self.skip_connection(features)
-        out = self.layer_norm(out)
+        out[non_pad_mask, :] = self.layer_norm(out[non_pad_mask, :])
 
         return out
 

@@ -86,7 +86,15 @@ def train(config: DictConfig) -> Optional[float]:
     # Train the model
     if config.get("train"):
         log.info("Starting training!")
-        trainer.fit(model=model, datamodule=datamodule)
+        if config.get("resume_from_checkpoint") is not None:
+            print("Resuming from ckpt.")
+            trainer.fit(
+                model=model,
+                datamodule=datamodule,
+                ckpt_path=config.get("resume_from_checkpoint")
+            )
+        else:
+            trainer.fit(model=model, datamodule=datamodule)
 
     # Get metric score for hyperparameter optimization
     optimized_metric = config.get("optimized_metric")
