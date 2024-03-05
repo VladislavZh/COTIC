@@ -17,7 +17,7 @@ joined_head:
     num_types: ${num_types}
   downstream_head:
     _target_: src.models.components.cotic.head.downstream_head.DownstreamHeadSklearnLinear #ProbabilisticDownstreamHead # DownstreamHeadSklearnLinear #DownstreamHeadLinear
-    compute_every_n_epochs: 10
+#    compute_every_n_epochs: 10
     nb_filters: ${model.net.nb_filters} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
     num_types: ${num_types} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
 ##    type_loss_coeff: 1 # DownstreamHeadLinear
