@@ -18,8 +18,8 @@ joined_head:
   downstream_head:
     _target_: src.models.components.cotic.head.downstream_head.ProbabilisticDownstreamHead # DownstreamHeadSklearnLinear #DownstreamHeadLinear
     compute_every_n_epochs: 10
-    nb_filters: ${model.net.nb_filters} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
-    num_types: ${num_types} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
+#    nb_filters: ${model.net.nb_filters} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
+#    num_types: ${num_types} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
 ##    type_loss_coeff: 1 # DownstreamHeadLinear
 ##    time_loss_coeff: 10 # DownstreamHeadLinear
 ##    reductions: 2 # DownstreamHeadLinear
