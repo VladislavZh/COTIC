@@ -112,7 +112,10 @@ class EventDataset(Dataset):
         event_times, event_types = self.__event_times[idx], self.__event_types[idx]
 
         if self.crop_size is not None:
-            begin_idx = random.randint(0, event_times.shape[-1] - self.crop_size - 1)
+            non_zero_ids = torch.nonzero(event_types)
+            max_idx = torch.max(non_zero_ids[:, -1]).item()
+
+            begin_idx = random.randint(0, max_idx - self.crop_size - 1)
             end_idx = begin_idx + self.crop_size
             event_times = event_times[..., begin_idx:end_idx]
             event_types = event_types[..., begin_idx:end_idx]
