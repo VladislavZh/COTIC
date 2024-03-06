@@ -33,12 +33,11 @@ optimizer:
   weight_decay: 1e-6
 init_lr: ${model.optimizer.lr}
 scheduler:
-  _target_: torch.optim.lr_scheduler.CyclicLR
+  _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
   _partial_: true
-  base_lr: 1e-5
-  max_lr: 1e-3
-  step_size_up: 200
-  cycle_momentum: false
+  T_0: 200
+  T_mult: 1
+  eta_min: 1e-5
 #  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
 #  _partial_: true
 #  factor: 0.5
