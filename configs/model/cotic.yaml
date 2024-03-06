@@ -38,6 +38,7 @@ scheduler:
   base_lr: 1e-5
   max_lr: 1e-3
   step_size_up: 200
+  cycle_momentum: false
 #  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
 #  _partial_: true
 #  factor: 0.5
