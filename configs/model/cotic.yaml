@@ -29,7 +29,7 @@ joined_head:
 optimizer:
   _target_: torch.optim.Adam
   _partial_: true
-  lr: 1e-3
+  lr: 1e-4
   weight_decay: 1e-6
 init_lr: ${model.optimizer.lr}
 scheduler:
@@ -37,7 +37,7 @@ scheduler:
   _partial_: true
   T_0: 200
   T_mult: 1
-  eta_min: 1e-5
+  eta_min: 1e-6
 #  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
 #  _partial_: true
 #  factor: 0.5
