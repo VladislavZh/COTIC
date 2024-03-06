@@ -177,6 +177,8 @@ class BaseEventModule(LightningModule):
         using_native_amp: bool = False,
         using_lbfgs: bool = False,
     ) -> None:
+        if optimizer_closure is not None:
+            optimizer_closure()
         # manually warm up lr without a scheduler
         if self.trainer.global_step < self.hparams.warmup_steps:
             lr_scale = min(1.0, float(self.trainer.global_step + 1) / self.hparams.warmup_steps)
