@@ -29,15 +29,19 @@ joined_head:
 optimizer:
   _target_: torch.optim.Adam
   _partial_: true
-  lr: 1e-4
+  lr: 1e-3
   weight_decay: 1e-6
 init_lr: ${model.optimizer.lr}
 scheduler:
-  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
   _partial_: true
-  factor: 0.5
-  patience: 10
-  min_lr: 1e-6
+  T_max: 200
+  eta_min: 1e-5
+#  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+#  _partial_: true
+#  factor: 0.5
+#  patience: 10
+#  min_lr: 1e-6
 warmup_steps: 1500
 scheduler_monitoring_params:
   monitor: val/loss
