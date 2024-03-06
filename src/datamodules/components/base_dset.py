@@ -1,6 +1,7 @@
-from typing import Type, Union
+from typing import Type, Union, Optional
 
 import torch
+import random
 from torch.utils.data import Dataset
 
 from src.utils.data_utils.normalizers import Normalizer
@@ -13,7 +14,13 @@ class EventDataset(Dataset):
     pads them, and returns event time and event type torch Tensors.
     """
 
-    def __init__(self, event_times: list[torch.Tensor], event_types: list[torch.Tensor], num_event_types: int):
+    def __init__(
+            self,
+            event_times: list[torch.Tensor],
+            event_types: list[torch.Tensor],
+            num_event_types: int,
+            crop_size: Optional[int]
+    ):
         """
         Initializes the EventDataset.
 
@@ -23,8 +30,10 @@ class EventDataset(Dataset):
         - event_types (list[torch.Tensor]): List of torch.Tensor of shape=(length,),
                                             representing event types in {0, 1, ..., C-1}.
         - num_event_types (int): Number of unique event types.
+        - crop_size (int | None): Crop size value.
         """
         self.num_event_types = num_event_types
+        self.crop_size = crop_size
         self.__event_times, self.__event_types = self.__pad(event_times, event_types)
 
     def normalize_data(self, normalizer: Union[Type[Normalizer], Normalizer]) -> Normalizer:
@@ -101,4 +110,11 @@ class EventDataset(Dataset):
         - Tuple[torch.Tensor, torch.Tensor]: Tuple containing event times and event types at the given index.
         """
         event_times, event_types = self.__event_times[idx], self.__event_types[idx]
+
+        if self.crop_size is not None:
+            begin_idx = random.randint(0, event_times.shape[-1] - self.crop_size - 1)
+            end_idx = begin_idx + self.crop_size
+            event_times = event_times[..., begin_idx:end_idx]
+            event_types = event_types[..., begin_idx:end_idx]
+
         return event_times, event_types
