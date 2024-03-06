@@ -35,7 +35,7 @@ init_lr: ${model.optimizer.lr}
 scheduler:
   _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
   _partial_: true
-  T_0: 200
+  T_0: 1000
   T_mult: 1
   eta_min: 1e-6
 #  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
@@ -43,7 +43,7 @@ scheduler:
 #  factor: 0.5
 #  patience: 10
 #  min_lr: 1e-6
-warmup_steps: 1500
+warmup_steps: 0
 scheduler_monitoring_params:
 #  monitor: val/loss
 #  mode: min
