@@ -8,6 +8,7 @@ net:
   nb_layers: 7 # 7
   num_types: ${num_types}
   dropout: 0.1
+  dilation_factor: 2
 joined_head:
   _target_: src.models.components.cotic.head.joined_head.ProbabilisticJoinedHead # JoinedHead
   intensity_head:

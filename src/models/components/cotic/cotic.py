@@ -51,7 +51,8 @@ class COTIC(nn.Module):
         nb_filters: int,
         nb_layers: int,
         num_types: int,
-        dropout: float = 0.1
+        dropout: float = 0.1,
+        dilation_factor: float = 2
     ) -> None:
         """
         Initialize a COTIC (Continuous-Time Convolutional) neural network module.
@@ -64,10 +65,11 @@ class COTIC(nn.Module):
         - num_types (int): Number of event types.
         """
         super().__init__()
+        assert dilation_factor >= 1
         self.event_emb = nn.Embedding(num_types + 1, in_channels, padding_idx=0)
 
         self.in_channels = [in_channels] + [nb_filters] * nb_layers
-        self.dilation_factors = [2**i for i in range(0, nb_layers)]
+        self.dilation_factors = [int(dilation_factor**i) for i in range(0, nb_layers)]
 
         self.num_types = num_types
         self.nb_layers = nb_layers
