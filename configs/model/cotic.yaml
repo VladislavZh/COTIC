@@ -28,9 +28,9 @@ joined_head:
 ##      time: mean # DownstreamHeadLinear
   uniform_sample_size: 50
 optimizer:
-  _target_: torch.optim.SGD
+  _target_: adan_pytorch.Adan
   _partial_: true
-  lr: 1e-4
+  lr: 1e-3
   weight_decay: 1e-6
 init_lr: ${model.optimizer.lr}
 scheduler:
