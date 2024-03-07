@@ -30,8 +30,8 @@ joined_head:
 optimizer:
   _target_: adan_pytorch.Adan
   _partial_: true
-  lr: 1e-3
-  weight_decay: 1e-6
+  lr: 1
+  weight_decay: 1e-2
 init_lr: ${model.optimizer.lr}
 scheduler:
   _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
