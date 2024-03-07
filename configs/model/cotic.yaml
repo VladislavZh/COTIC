@@ -26,9 +26,9 @@ joined_head:
 ##    reductions: 2 # DownstreamHeadLinear
 ##      type: mean # DownstreamHeadLinear
 ##      time: mean # DownstreamHeadLinear
-  uniform_sample_size: 20
+  uniform_sample_size: 50
 optimizer:
-  _target_: torch.optim.Adam
+  _target_: torch.optim.SGD
   _partial_: true
   lr: 1e-4
   weight_decay: 1e-6
