@@ -65,10 +65,10 @@ hydra:
         low: 0.0
         high: 1.0
       model.net.in_channels:
-        suggest_type: int
+        type: int
         low: 16
         high: 512
       model.net.nb_filters:
-        suggest_type: int
+        type: int
         low: 16
         high: 512
