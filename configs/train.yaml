@@ -18,7 +18,7 @@ defaults:
   - debug: null
 
   # config for hyperparameter optimization
-  - hparams_search: null
+  - hparams_search: cotic.yaml
 
   # optional local config for machine/user specific settings
   # it's optional since it doesn't need to exist and is excluded from version control
