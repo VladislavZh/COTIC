@@ -54,4 +54,4 @@ seed: null
 
 # default name for the experiment, determines logging folder path
 # (you can overwrite this name in experiment configs)
-name: "optuna_bs=${datamodule.batch_size_train}_lr=${model.optimizer.lr}_decay=$model.optimizer.weight_decay}_lrs=${model.net.nb_layers}_df=${model.net.dilation_factor}_drop=${model.net.dropout}_in=${model.net.in_channels}_nb=${model.net.nb_filters}"
+name: "optuna_bs=${datamodule.batch_size_train}_lr=${model.optimizer.lr}_decay=${model.optimizer.weight_decay}_lrs=${model.net.nb_layers}_df=${model.net.dilation_factor}_drop=${model.net.dropout}_in=${model.net.in_channels}_nb=${model.net.nb_filters}"
