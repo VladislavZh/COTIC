@@ -49,7 +49,7 @@ hydra:
       model.optimizer.lr:
         type: float
         low: 0.00001
-        high: 0.2
+        high: 0.1
       model.optimizer.weight_decay:
         type: float
         low: 1e-8
