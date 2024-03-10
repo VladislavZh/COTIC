@@ -169,8 +169,10 @@ class ContinuousConv1D(ContinuousConvolutionBase):
             times,
             all_features
         )
+
         delta_times /= self.dilation
         delta_times -= 1
+
         features_kern_linear = features_kern[..., :self.output_channels]
         features_kern_bias = features_kern[..., self.output_channels:]
 
@@ -257,6 +259,7 @@ class ContinuousConv1DSim(ContinuousConvolutionBase):
         features_kern_bias = features_kern[..., self.output_channels:]
 
         delta_t_scale = delta_times[:, -2, 1:]  # equivalent to the times[1:] - times[:-1]
+        delta_times -= 1
 
         real_values = torch.sum(
             delta_times[:, :-1, ...].unsqueeze(-1) * features_kern_linear[:, :-1, ...] +
