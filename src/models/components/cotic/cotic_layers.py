@@ -170,6 +170,7 @@ class ContinuousConv1D(ContinuousConvolutionBase):
             all_features
         )
         delta_times /= self.dilation
+        delta_times -= 1
         features_kern_linear = features_kern[..., :self.output_channels]
         features_kern_bias = features_kern[..., self.output_channels:]
 

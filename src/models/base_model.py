@@ -21,7 +21,6 @@ class BaseEventModule(LightningModule):
             optimizer: torch.optim.Optimizer,
             init_lr: float,
             scheduler: torch.optim.lr_scheduler,
-            warmup_steps: int,
             scheduler_monitoring_params: dict
     ) -> None:
         """
@@ -165,25 +164,6 @@ class BaseEventModule(LightningModule):
         - batch_idx: Index of the current batch.
         """
         self.run_evaluation(batch, "test")
-
-    # def optimizer_step(
-    #     self,
-    #     epoch: int,
-    #     batch_idx: int,
-    #     optimizer: Union[Optimizer, LightningOptimizer],
-    #     optimizer_idx: int = 0,
-    #     optimizer_closure: Optional[Callable[[], Any]] = None,
-    #     on_tpu: bool = False,
-    #     using_native_amp: bool = False,
-    #     using_lbfgs: bool = False,
-    # ) -> None:
-    #     # manually warm up lr without a scheduler
-    #     if self.trainer.global_step < self.hparams.warmup_steps:
-    #         lr_scale = min(1.0, float(self.trainer.global_step + 1) / self.hparams.warmup_steps)
-    #         for pg in optimizer.param_groups:
-    #             pg["lr"] = lr_scale * self.hparams.init_lr
-    #
-    #     optimizer.step(closure=optimizer_closure)
 
     def configure_optimizers(self):
         """
