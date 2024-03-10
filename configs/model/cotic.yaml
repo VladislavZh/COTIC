@@ -42,4 +42,4 @@ scheduler_monitoring_params:
   monitor: val/loss
   mode: min
   verbose: true
-  interval: epoch
+  interval: step
