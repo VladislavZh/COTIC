@@ -2,13 +2,13 @@ _target_: src.models.base_model.BaseEventModule
 
 net:
   _target_: src.models.components.cotic.cotic.COTIC
-  in_channels: 256
+  in_channels: 192
   kernel_size: 3
-  nb_filters: 128
-  nb_layers: 11 # 7
+  nb_filters: 512
+  nb_layers: 8 # 7
   num_types: ${num_types}
-  dropout: 0.3
-  dilation_factor: 1.38
+  dropout: 0.2
+  dilation_factor: 1.29
 joined_head:
   _target_: src.models.components.cotic.head.joined_head.ProbabilisticJoinedHead # JoinedHead
   intensity_head:
@@ -30,8 +30,8 @@ joined_head:
 optimizer:
   _target_: adan_pytorch.Adan
   _partial_: true
-  lr: 0.07
-  weight_decay: 0.008
+  lr: 0.014
+  weight_decay: 0.0033
 init_lr: ${model.optimizer.lr}
 scheduler:
   _target_: torch.optim.lr_scheduler.CosineAnnealingLR
