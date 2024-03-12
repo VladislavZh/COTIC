@@ -190,9 +190,10 @@ class IntensityHeadLinear(nn.Module):
         )
 
         continuous_sample_embeddings = self.layer(continuous_sample_embeddings)
-        params = torch.nn.functional.softplus(self.softplus_params, 1)
+        params = torch.abs(self.softplus_params)
         pre_lambdas = continuous_sample_embeddings * params
         lambdas = torch.exp(pre_lambdas) * params
+        lambdas[pre_lambdas > 1] = np.e * params + params * pre_lambdas
 
         return lambdas
 
