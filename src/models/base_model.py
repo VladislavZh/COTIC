@@ -76,6 +76,8 @@ class BaseEventModule(LightningModule):
             stage
         )
 
+        print(intensity_prediction.loss)
+
         return (
             intensity_prediction.loss + downstream_predictions.loss
             if downstream_predictions.loss is not None
