@@ -168,7 +168,7 @@ class IntensityHeadLinear(nn.Module):
         self.activation = nn.LeakyReLU(0.1)
         self.layer = nn.Linear(nb_filters, num_types)
 
-        self.softplus = nn.Softplus(1)
+        self.softplus = nn.Softplus(num_types)
         self.num_types = num_types
 
     def compute_lambdas(
