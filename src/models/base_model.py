@@ -137,7 +137,7 @@ class BaseEventModule(LightningModule):
         """
         loss, negative_log_likelihood, return_time_mae, event_type_accuracy = self.step(batch, stage)
 
-        self.log_likelihood_metric[stage].update(-negative_log_likelihood)
+        self.log_likelihood_metric[stage].update(-negative_log_likelihood.cpu())
         self.return_time_mae[stage].update(return_time_mae)
         self.event_type_accuracy[stage].update(event_type_accuracy)
 
