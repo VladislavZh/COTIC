@@ -169,7 +169,7 @@ class IntensityHeadLinear(nn.Module):
         self.activation = nn.LeakyReLU(0.1)
         self.layer = nn.Linear(nb_filters, num_types)
 
-        # self.softplus = nn.Softplus(num_types)
+        self.softplus = nn.Softplus(1)
         self.softplus_params = nn.Parameter(torch.full((1, 1, num_types), np.log(num_types)))
         self.num_types = num_types
 
@@ -190,10 +190,8 @@ class IntensityHeadLinear(nn.Module):
         )
 
         continuous_sample_embeddings = self.layer(continuous_sample_embeddings)
-        params = torch.abs(self.softplus_params)
-        lambdas = torch.exp(continuous_sample_embeddings) * params
-        lambdas_linear = np.e * params * (1 + continuous_sample_embeddings)
-        lambdas[continuous_sample_embeddings > 1] = lambdas_linear[continuous_sample_embeddings > 1]
+
+        lambdas = self.softplus(continuous_sample_embeddings) * self.softplus_params.exp()
 
         return lambdas
 
