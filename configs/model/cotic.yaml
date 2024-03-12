@@ -30,14 +30,14 @@ joined_head:
 optimizer:
   _target_: adan_pytorch.Adan
   _partial_: true
-  lr: 0.014
+  lr: 0.005
   weight_decay: 0.0033
 init_lr: ${model.optimizer.lr}
 scheduler:
   _target_: torch.optim.lr_scheduler.CosineAnnealingLR
   _partial_: true
   T_max: 1500
-  eta_min: 1e-6
+  eta_min: 1e-4
 scheduler_monitoring_params:
   monitor: val/loss
   mode: min
