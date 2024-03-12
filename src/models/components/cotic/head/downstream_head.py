@@ -486,17 +486,13 @@ class ProbabilisticDownstreamHead:
 
         metrics = dict()
 
-        metrics['return_time_mae'] = np.mean(
-            np.abs(
-                normalizer.denormalize(
-                    return_times[non_pad_mask[:, 1:]] - (times[:, 1:] - times[:, :-1])[non_pad_mask[:, 1:]]
-                ).cpu().numpy()
-            )
+        metrics['return_time_mae'] = torch.abs(
+            normalizer.denormalize(
+                return_times[non_pad_mask[:, 1:]] - (times[:, 1:] - times[:, :-1])[non_pad_mask[:, 1:]]
+            ).cpu()
         )
 
-        metrics['event_type_accuracy'] = np.mean(
-            (event_types == (events - 1)[:, 1:])[non_pad_mask[:, 1:]].cpu().numpy().astype(float)
-        )
+        metrics['event_type_accuracy'] = (event_types == (events - 1)[:, 1:])[non_pad_mask[:, 1:]].cpu().float()
 
         return Predictions(metrics=metrics)
 

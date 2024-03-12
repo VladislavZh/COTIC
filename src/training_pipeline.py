@@ -113,7 +113,7 @@ def train(config: DictConfig) -> Optional[float]:
             # if not config.get("train") or config.trainer.get("fast_dev_run"):
             #     ckpt_path = None
             log.info("Starting testing!")
-            trainer.test(model=model, datamodule=datamodule)
+            trainer.test(model=model, datamodule=datamodule, ckpt_path=trainer.checkpoint_callback.best_model_path)
 
         # Make sure everything closed properly
         log.info("Finalizing!")

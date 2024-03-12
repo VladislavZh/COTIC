@@ -7,4 +7,4 @@ import torch
 @dataclass
 class Predictions:
     loss: Optional[torch.Tensor] = None
-    metrics: Optional[dict[str, float]] = None
+    metrics: Optional[dict[str, torch.Tensor]] = None

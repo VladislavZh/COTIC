@@ -1,11 +1,8 @@
-from typing import Any, Union, Optional, Callable
+from typing import Any
 import torch
 from pytorch_lightning import LightningModule
-from pytorch_lightning.core.optimizer import LightningOptimizer
-from torch.optim import Optimizer
+from torchmetrics import MaxMetric, MeanMetric
 
-from src.models.components.cotic.head.downstream_head import DownstreamHead
-from src.models.components.cotic.head.intensity_head import IntensityHead
 from src.models.components.cotic.head.joined_head import JoinedHead
 
 
@@ -39,6 +36,32 @@ class BaseEventModule(LightningModule):
 
         self.net = net
         self.joined_head = joined_head
+
+        self.log_likelihood_metric = {
+            'train': MeanMetric(),
+            'val': MeanMetric(),
+            'test': MeanMetric()
+        }
+        self.return_time_mae = {
+            'train': MeanMetric(),
+            'val': MeanMetric(),
+            'test': MeanMetric()
+        }
+        self.event_type_accuracy = {
+            'train': MeanMetric(),
+            'val': MeanMetric(),
+            'test': MeanMetric()
+        }
+        self.best_log_likelihood = MaxMetric()
+
+    def reset_all_metrics(self, stage: str):
+        self.log_likelihood_metric[stage].reset()
+        self.return_time_mae[stage].reset()
+        self.event_type_accuracy[stage].reset()
+
+    def on_train_start(self) -> None:
+        self.reset_all_metrics('val')
+        self.best_log_likelihood.reset()
 
     def forward(self, batch: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, ...]:
         """
@@ -87,19 +110,17 @@ class BaseEventModule(LightningModule):
             downstream_predictions.metrics["event_type_accuracy"]
         )
 
-    def log_downstream(
+    def log_metrics(
             self,
+            log_likelihood: float,
             return_time_mae: float,
             event_type_accuracy: float,
             stage: str
     ) -> None:
         """
         Log downstream predictions' metrics for a given stage.
-
-        Args:
-        - downstream_predictions (DownstreamPredictions): Predictions from downstream.
-        - stage (str): Stage of operation (train/val/test).
         """
+        self.log(f"{stage}/log_likelihood", log_likelihood, on_step=False, on_epoch=True, prog_bar=True)
         self.log(f"{stage}/return_time_mae", return_time_mae, on_step=False, on_epoch=True, prog_bar=True)
         self.log(f"{stage}/event_type_accuracy", event_type_accuracy, on_step=False, on_epoch=True, prog_bar=True)
 
@@ -115,10 +136,12 @@ class BaseEventModule(LightningModule):
         - torch.Tensor: Loss value obtained during evaluation.
         """
         loss, negative_log_likelihood, return_time_mae, event_type_accuracy = self.step(batch, stage)
-        self.log(f"{stage}/log_likelihood", -negative_log_likelihood, on_step=stage == "train",
-                 on_epoch=stage != "train", prog_bar=False)
-        self.log_downstream(return_time_mae, event_type_accuracy, stage)
-        self.log(f"{stage}/loss", loss, on_step=stage == "train", on_epoch=stage != "train", prog_bar=False)
+
+        self.log_likelihood_metric[stage].update(-negative_log_likelihood)
+        self.return_time_mae[stage].update(return_time_mae)
+        self.event_type_accuracy[stage].update(event_type_accuracy)
+
+        self.log(f"{stage}/loss", loss, on_step=stage == "train", on_epoch=stage != "train", prog_bar=True)
 
         return loss
 
@@ -147,6 +170,15 @@ class BaseEventModule(LightningModule):
 
         return {"loss": loss}
 
+    def on_train_epoch_end(self) -> None:
+        self.log_metrics(
+            self.log_likelihood_metric['train'].compute().item(),
+            self.return_time_mae['train'].compute().item(),
+            self.event_type_accuracy['train'].compute().item(),
+            'train'
+        )
+        self.reset_all_metrics('train')
+
     def validation_step(self, batch: Any, batch_idx: int):
         """
         Validation step.
@@ -157,6 +189,17 @@ class BaseEventModule(LightningModule):
         """
         self.run_evaluation(batch, "val")
 
+    def on_validation_epoch_end(self) -> None:
+        self.log_metrics(
+            self.log_likelihood_metric['val'].compute().item(),
+            self.return_time_mae['val'].compute().item(),
+            self.event_type_accuracy['val'].compute().item(),
+            'val'
+        )
+        self.best_log_likelihood.update(self.log_likelihood_metric['val'].compute())
+        self.log(f"val/best_log_likelihood", self.best_log_likelihood.compute(), on_step=False, on_epoch=True, prog_bar=True)
+        self.reset_all_metrics('val')
+
     def test_step(self, batch: Any, batch_idx: int):
         """
         Test step.
@@ -166,6 +209,15 @@ class BaseEventModule(LightningModule):
         - batch_idx: Index of the current batch.
         """
         self.run_evaluation(batch, "test")
+
+    def on_test_epoch_end(self) -> None:
+        self.log_metrics(
+            self.log_likelihood_metric['test'].compute().item(),
+            self.return_time_mae['test'].compute().item(),
+            self.event_type_accuracy['test'].compute().item(),
+            'test'
+        )
+        self.reset_all_metrics('test')
 
     def configure_optimizers(self):
         """

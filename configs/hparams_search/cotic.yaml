@@ -8,7 +8,7 @@ defaults:
 
 # choose metric which will be optimized by Optuna
 # make sure this is the correct name of some metric logged in lightning module!
-optimized_metric: "val/log_likelihood"
+optimized_metric: "val/best_log_likelihood"
 
 # here we define Optuna hyperparameter search
 # it optimizes for value returned from function with @hydra.main decorator
@@ -42,25 +42,19 @@ hydra:
 
     # define range of hyperparameters
     search_space:
-      datamodule.batch_size_train:
-        type: int
-        low: 8
-        high: 64
       model.optimizer.lr:
         type: float
         low: 0.00001
-        high: 0.05
-      model.optimizer.weight_decay:
-        type: float
-        low: 1e-8
-        high: 0.01
-      model.optimizer._target_:
-        type: categorical
-        choices:
-          - adan_pytorch.Adan
-          - torch.optim.Adam
-          - torch.optim.SGD
+        high: 0.003
       model.scheduler.eta_min:
         type: float
         low: 0.0
-        high: 0.01
+        high: 0.003
+      model.scheduler.T_max:
+        type: int
+        low: 100
+        high: 10000
+      trainer.accumulate_grad_batches:
+        type: int
+        low: 1
+        high: 20
