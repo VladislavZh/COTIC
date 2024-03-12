@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -168,7 +169,8 @@ class IntensityHeadLinear(nn.Module):
         self.activation = nn.LeakyReLU(0.1)
         self.layer = nn.Linear(nb_filters, num_types)
 
-        self.softplus = nn.Softplus(num_types)
+        # self.softplus = nn.Softplus(num_types)
+        self.softplus_params = nn.Parameter(torch.full((1, 1, num_types), np.log(num_types)))
         self.num_types = num_types
 
     def compute_lambdas(
@@ -188,8 +190,14 @@ class IntensityHeadLinear(nn.Module):
         )
 
         continuous_sample_embeddings = self.layer(continuous_sample_embeddings)
+        params = torch.exp(self.softplus_params)
+        pre_softplus = continuous_sample_embeddings * params
+        lambdas = torch.log1p(pre_softplus.exp()) / params
+        lambdas[pre_softplus > 20] = pre_softplus
 
-        return self.softplus(continuous_sample_embeddings)
+        return lambdas
+
+        # return self.softplus(continuous_sample_embeddings)
 
     def forward(
             self,
