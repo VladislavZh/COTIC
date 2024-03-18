@@ -18,7 +18,7 @@ joined_head:
     num_types: ${num_types}
   downstream_head:
     _target_: src.models.components.cotic.head.downstream_head.ProbabilisticDownstreamHead # DownstreamHeadSklearnLinear #DownstreamHeadLinear
-    compute_every_n_epochs: 49
+    compute_every_n_epochs: 99
 #    nb_filters: ${model.net.nb_filters} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
 #    num_types: ${num_types} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
 ##    type_loss_coeff: 1 # DownstreamHeadLinear
@@ -30,14 +30,14 @@ joined_head:
 optimizer:
   _target_: adan_pytorch.Adan
   _partial_: true
-  lr: 0.005
+  lr: 0.001
   weight_decay: 0.0033
 init_lr: ${model.optimizer.lr}
-scheduler:
-  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
-  _partial_: true
-  T_max: 1500
-  eta_min: 1e-4
+scheduler: null
+#  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+#  _partial_: true
+#  T_max: 260
+#  eta_min: 1e-3
 scheduler_monitoring_params:
   monitor: val/loss
   mode: min
