@@ -28,10 +28,10 @@ joined_head:
 ##      time: mean # DownstreamHeadLinear
   uniform_sample_size: 50
 optimizer:
-  _target_: torch.optim.Adam
+  _target_: pytorch_adan.Adan
   _partial_: true
   lr: 0.001
-  weight_decay: 1e-6 #0.0033
+  weight_decay: 0.0033
 init_lr: ${model.optimizer.lr}
 scheduler: null
 #  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
