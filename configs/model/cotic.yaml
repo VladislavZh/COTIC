@@ -28,7 +28,7 @@ joined_head:
 ##      time: mean # DownstreamHeadLinear
   uniform_sample_size: 50
 optimizer:
-  _target_: pytorch_adan.Adan
+  _target_: adan_pytorch.Adan
   _partial_: true
   lr: 0.001
   weight_decay: 0.0033
