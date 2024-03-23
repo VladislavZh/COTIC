@@ -83,7 +83,7 @@ class ExponentialNormalizerP99(Normalizer):
         An instance of ExponentialNormalizer initialized with the computed lambda value.
         """
         # Calculate the 99th percentile
-        x_99 = torch.quantile(data, 0.99).item()
+        x_99 = torch.quantile(data[:16_000_000], 0.99).item()
 
         # Estimate E_trunc using the mean of the truncated data
         truncated_data = data[data <= x_99]
