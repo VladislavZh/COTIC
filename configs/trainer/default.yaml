@@ -8,7 +8,7 @@ min_epochs: 1
 max_epochs: 100
 
 accumulate_grad_batches: 1
-gradient_clip_val: 0.1
+gradient_clip_val: 0.01
 
 # number of validation steps to execute at the beginning of the training
 # num_sanity_val_steps: 0
