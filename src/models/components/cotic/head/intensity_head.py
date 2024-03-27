@@ -223,6 +223,6 @@ class IntensityHeadLinear(nn.Module):
             uniform_sample)
 
         loss = torch.sum(-torch.log(events_lambdas + 1e-8) * non_pad_mask) + torch.sum(integral * non_pad_mask[:, 1:])
-        loss /= torch.sum(non_pad_mask)
+        # loss /= torch.sum(non_pad_mask)
 
         return Predictions(loss=loss)
