@@ -542,4 +542,4 @@ class ProbabilisticDownstreamHead:
 
         self.batch_index += 1
 
-        return self.returns[stage][(self.batch_index - 1) % len(self.returns[stage])]
+        return self.returns[stage][self.batch_index % len(self.returns[stage])]
