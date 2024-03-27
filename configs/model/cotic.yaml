@@ -2,12 +2,12 @@ _target_: src.models.base_model.BaseEventModule
 
 net:
   _target_: src.models.components.cotic.cotic.COTIC
-  in_channels: 16
+  in_channels: 192
   kernel_size: 3
-  nb_filters: 16
-  nb_layers: 5 # 7
+  nb_filters: 512
+  nb_layers: 8 # 7
   num_types: ${num_types}
-  dropout: 0.1
+  dropout: 0.2
   dilation_factor: 1.29
 joined_head:
   _target_: src.models.components.cotic.head.joined_head.ProbabilisticJoinedHead # JoinedHead
@@ -26,11 +26,11 @@ joined_head:
 ##    reductions: 2 # DownstreamHeadLinear
 ##      type: mean # DownstreamHeadLinear
 ##      time: mean # DownstreamHeadLinear
-  uniform_sample_size: 50
+  uniform_sample_size: 10
 optimizer:
   _target_: torch.optim.Adam # adan_pytorch.Adan
   _partial_: true
-  lr: 0.001
+  lr: 0.0001
   weight_decay: 1e-6 #0.0033
 init_lr: ${model.optimizer.lr}
 scheduler: null
