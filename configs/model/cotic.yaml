@@ -30,7 +30,7 @@ joined_head:
 optimizer:
   _target_: torch.optim.Adam # adan_pytorch.Adan
   _partial_: true
-  lr: 0.0001
+  lr: 0.00001
   weight_decay: 1e-6 #0.0033
 init_lr: ${model.optimizer.lr}
 scheduler: null
