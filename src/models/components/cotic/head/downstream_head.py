@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -349,7 +351,7 @@ class DownstreamHeadSklearnLinear:
 
 
 class ProbabilisticDownstreamHead:
-    def __init__(self, compute_every_n_epochs: int = 10, sub_batch_size: int = 100) -> None:
+    def __init__(self, compute_every_n_epochs: Optional[int] = None, sub_batch_size: int = 100) -> None:
         self.epoch = 0
         self.training = False
         self.batch_index = 0
@@ -516,6 +518,9 @@ class ProbabilisticDownstreamHead:
                 stage,
                 intensity_head
             )
+
+        if self.compute_every_n_epochs is None:
+            return Predictions(metrics=dict(return_time_mae=torch.zeros((1,)), event_type_accuracy=torch.zeros((1,))))
 
         if stage != "train" and self.training:
             self.change = True
