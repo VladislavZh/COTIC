@@ -21,12 +21,14 @@ log = utils.get_logger(__name__)
 data_train = None
 data_val = None
 data_test = None
+normalizer = None
 
 
 def train(config: DictConfig) -> Optional[float]:
     global data_train
     global data_val
     global data_test
+    global normalizer
     try:
         """Contains the training pipeline. Can additionally evaluate model on a testset, using best
         weights achieved during training.
@@ -55,6 +57,7 @@ def train(config: DictConfig) -> Optional[float]:
         datamodule.data_train = data_train
         datamodule.data_val = data_val
         datamodule.data_test = data_test
+        datamodule.normalizer = normalizer
 
         # Init lightning model
         log.info(f"Instantiating model <{config.model._target_}>")
@@ -143,6 +146,7 @@ def train(config: DictConfig) -> Optional[float]:
         data_train = datamodule.data_train
         data_val = datamodule.data_val
         data_test = datamodule.data_test
+        normalizer = datamodule.normalizer
 
         # Return metric score for hyperparameter optimization
         return score
