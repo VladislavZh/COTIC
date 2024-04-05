@@ -33,11 +33,11 @@ optimizer:
   lr: 0.0001
   weight_decay: 1e-6 #0.0033
 init_lr: ${model.optimizer.lr}
-scheduler: null
-#  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
-#  _partial_: true
-#  T_max: 260
-#  eta_min: 1e-3
+scheduler:
+  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  _partial_: true
+  patience: 5
+  factor: 0.5
 scheduler_monitoring_params:
   monitor: val/loss
   mode: min

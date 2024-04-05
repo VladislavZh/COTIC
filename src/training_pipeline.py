@@ -18,8 +18,15 @@ from src import utils
 
 log = utils.get_logger(__name__)
 
+data_train = None
+data_val = None
+data_test = None
+
 
 def train(config: DictConfig) -> Optional[float]:
+    global data_train
+    global data_val
+    global data_test
     try:
         """Contains the training pipeline. Can additionally evaluate model on a testset, using best
         weights achieved during training.
@@ -45,6 +52,9 @@ def train(config: DictConfig) -> Optional[float]:
         # Init lightning datamodule
         log.info(f"Instantiating datamodule <{config.datamodule._target_}>")
         datamodule: LightningDataModule = hydra.utils.instantiate(config.datamodule)
+        datamodule.data_train = data_train
+        datamodule.data_val = data_val
+        datamodule.data_test = data_test
 
         # Init lightning model
         log.info(f"Instantiating model <{config.model._target_}>")
@@ -129,6 +139,10 @@ def train(config: DictConfig) -> Optional[float]:
         # Print path to best checkpoint
         if not config.trainer.get("fast_dev_run") and config.get("train"):
             log.info(f"Best model ckpt at {trainer.checkpoint_callback.best_model_path}")
+
+        data_train = datamodule.data_train
+        data_val = datamodule.data_val
+        data_test = datamodule.data_test
 
         # Return metric score for hyperparameter optimization
         return score
