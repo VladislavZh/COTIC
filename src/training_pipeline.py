@@ -57,7 +57,8 @@ def train(config: DictConfig) -> Optional[float]:
         datamodule.data_train = data_train
         datamodule.data_val = data_val
         datamodule.data_test = data_test
-        datamodule.normalizer = normalizer
+        if normalizer is not None:
+            datamodule.normalizer = normalizer
 
         # Init lightning model
         log.info(f"Instantiating model <{config.model._target_}>")
