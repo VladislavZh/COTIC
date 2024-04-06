@@ -111,6 +111,11 @@ def train(config: DictConfig) -> Optional[float]:
             else:
                 trainer.fit(model=model, datamodule=datamodule)
 
+        data_train = datamodule.data_train
+        data_val = datamodule.data_val
+        data_test = datamodule.data_test
+        normalizer = datamodule.normalizer
+
         # Get metric score for hyperparameter optimization
         optimized_metric = config.get("optimized_metric")
         if optimized_metric and optimized_metric not in trainer.callback_metrics:
@@ -142,11 +147,6 @@ def train(config: DictConfig) -> Optional[float]:
         # Print path to best checkpoint
         if not config.trainer.get("fast_dev_run") and config.get("train"):
             log.info(f"Best model ckpt at {trainer.checkpoint_callback.best_model_path}")
-
-        data_train = datamodule.data_train
-        data_val = datamodule.data_val
-        data_test = datamodule.data_test
-        normalizer = datamodule.normalizer
 
         # Return metric score for hyperparameter optimization
         return score
