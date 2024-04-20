@@ -23,7 +23,7 @@ class EventDataModule(LightningDataModule):
             data_dir: str = "data_utils/",
             normalizer: Optional[str] = None,
             batch_size_train: int = 20,
-            train_crop_size: Optional[int] = None,
+            train_random_crop: bool = False,
             batch_size_val_test: int = 1,
             dataset_size_train: Optional[int] = None,
             dataset_size_val: Optional[int] = None,
@@ -58,7 +58,7 @@ class EventDataModule(LightningDataModule):
         self.num_event_types = num_event_types
         self.data_dir = data_dir
         self.batch_size_train = batch_size_train
-        self.train_crop_size = train_crop_size
+        self.train_random_crop = train_random_crop
         self.batch_size_val_test = batch_size_val_test
         self.dataset_size_train = dataset_size_train
         self.dataset_size_val = dataset_size_val
@@ -70,20 +70,20 @@ class EventDataModule(LightningDataModule):
         self.data_val = None
         self.data_test = None
 
-    def load_event_data(self, data_path: str, dataset_size: Optional[int], crop_size: Optional[int] = None) -> EventDataset:
+    def load_event_data(self, data_path: str, dataset_size: Optional[int], train_random_crop: bool = False) -> EventDataset:
         """
         Loads event data_utils from a specified path and creates an EventData instance.
 
         Args:
             data_path (str): Path to the dataset.
             dataset_size (Optional[int]): Size of the dataset.
-            crop_size (Optional[int]): Crop size
+            train_random_crop (bool): Enable crop
 
         Returns:
             EventData: An instance of EventData with loaded data_utils.
         """
         times, events = load_time_series_data(data_path, dataset_size)
-        dataset = EventDataset(times, events, self.num_event_types, crop_size)
+        dataset = EventDataset(times, events, self.num_event_types, train_random_crop)
 
         if self.normalizer is not None:
             if isinstance(self.normalizer, str):
@@ -104,7 +104,7 @@ class EventDataModule(LightningDataModule):
         """
         if not self.data_train and not self.data_val and not self.data_test:
             self.data_train = self.load_event_data(
-                os.path.join(self.data_dir, "train"), self.dataset_size_train, self.train_crop_size
+                os.path.join(self.data_dir, "train"), self.dataset_size_train, self.train_random_crop
             )
             self.data_val = self.load_event_data(
                 os.path.join(self.data_dir, "val"), self.dataset_size_val
