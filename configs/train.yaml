@@ -54,4 +54,4 @@ seed: null
 
 # default name for the experiment, determines logging folder path
 # (you can overwrite this name in experiment configs)
-name: "optuna_lr=${model.optimizer.lr}_eta_min=${model.scheduler.eta_min}_T=${model.scheduler.T_max}_acc=${trainer.accumulate_grad_batches}"
+name: exp_0
