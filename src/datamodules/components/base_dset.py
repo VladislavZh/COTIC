@@ -18,8 +18,7 @@ class EventDataset(Dataset):
             self,
             event_times: list[torch.Tensor],
             event_types: list[torch.Tensor],
-            num_event_types: int,
-            train_random_crop: bool
+            num_event_types: int
     ):
         """
         Initializes the EventDataset.
@@ -29,11 +28,9 @@ class EventDataset(Dataset):
                                             representing event arrival times since the start.
         - event_types (list[torch.Tensor]): List of torch.Tensor of shape=(length,),
                                             representing event types in {0, 1, ..., C-1}.
-        - num_event_types (int): Number of unique event types.
-        - crop_size (int | None): Crop size value.
+        - num_event_types (int): Number of unique event types
         """
         self.num_event_types = num_event_types
-        self.train_random_crop = train_random_crop
         self.__event_times, self.__event_types = self.__pad(event_times, event_types)
 
     def normalize_data(self, normalizer: Union[Type[Normalizer], Normalizer]) -> Normalizer:
@@ -110,14 +107,5 @@ class EventDataset(Dataset):
         - Tuple[torch.Tensor, torch.Tensor]: Tuple containing event times and event types at the given index.
         """
         event_times, event_types = self.__event_times[idx], self.__event_types[idx]
-
-        if self.train_random_crop:
-            max_idx = int(torch.sum(event_types.ne(0)))
-            begin_idx = random.randint(0, max_idx - 1)
-            end_idx = random.randint(begin_idx + 1, max_idx)
-            event_times[:end_idx - begin_idx] = event_times[begin_idx:end_idx].clone()
-            event_times[end_idx - begin_idx:] = 0
-            event_types[:end_idx - begin_idx] = event_types[begin_idx:end_idx].clone()
-            event_types[end_idx - begin_idx:] = 0
 
         return event_times, event_types

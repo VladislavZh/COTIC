@@ -23,7 +23,6 @@ class EventDataModule(LightningDataModule):
             data_dir: str = "data_utils/",
             normalizer: Optional[str] = None,
             batch_size_train: int = 20,
-            train_random_crop: bool = False,
             batch_size_val_test: int = 1,
             dataset_size_train: Optional[int] = None,
             dataset_size_val: Optional[int] = None,
@@ -40,7 +39,6 @@ class EventDataModule(LightningDataModule):
             normalizer (str | None): Data normalizer name with from_data classmethod and
                                      normalize, denormalize methods.
             batch_size_train (int): Batch size for training data_utils loading.
-            train_crop_size (int | None): Crop size for training data_utils loading.
             batch_size_val_test (int): Batch size for validation and test data_utils loading.
             dataset_size_train (Optional[int]): Size of the training dataset.
             dataset_size_val (Optional[int]): Size of the validation dataset.
@@ -58,7 +56,6 @@ class EventDataModule(LightningDataModule):
         self.num_event_types = num_event_types
         self.data_dir = data_dir
         self.batch_size_train = batch_size_train
-        self.train_random_crop = train_random_crop
         self.batch_size_val_test = batch_size_val_test
         self.dataset_size_train = dataset_size_train
         self.dataset_size_val = dataset_size_val
@@ -70,20 +67,19 @@ class EventDataModule(LightningDataModule):
         self.data_val = None
         self.data_test = None
 
-    def load_event_data(self, data_path: str, dataset_size: Optional[int], train_random_crop: bool = False) -> EventDataset:
+    def load_event_data(self, data_path: str, dataset_size: Optional[int]) -> EventDataset:
         """
         Loads event data_utils from a specified path and creates an EventData instance.
 
         Args:
             data_path (str): Path to the dataset.
-            dataset_size (Optional[int]): Size of the dataset.
-            train_random_crop (bool): Enable crop
+            dataset_size (Optional[int]): Size of the dataset
 
         Returns:
             EventData: An instance of EventData with loaded data_utils.
         """
         times, events = load_time_series_data(data_path, dataset_size)
-        dataset = EventDataset(times, events, self.num_event_types, train_random_crop)
+        dataset = EventDataset(times, events, self.num_event_types)
 
         if self.normalizer is not None:
             if isinstance(self.normalizer, str):
@@ -104,7 +100,7 @@ class EventDataModule(LightningDataModule):
         """
         if not self.data_train and not self.data_val and not self.data_test:
             self.data_train = self.load_event_data(
-                os.path.join(self.data_dir, "train"), self.dataset_size_train, self.train_random_crop
+                os.path.join(self.data_dir, "train"), self.dataset_size_train
             )
             self.data_val = self.load_event_data(
                 os.path.join(self.data_dir, "val"), self.dataset_size_val
