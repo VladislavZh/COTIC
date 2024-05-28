@@ -301,7 +301,9 @@ class DownstreamHeadSklearnLinear:
             embeddings: torch.Tensor,
             non_pad_mask: torch.Tensor,
             normalizer: Normalizer,
-            stage: str
+            stage: str,
+            *args,
+            **kwargs
     ) -> Predictions:
         times = times.detach().cpu().numpy()
         events = events.detach().cpu().numpy()
