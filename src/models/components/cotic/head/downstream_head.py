@@ -258,7 +258,8 @@ class DownstreamHeadSklearnLinear:
         self,
         nb_filters: int,
         num_types: int,
-        fit_every_n_epochs: int = 10
+        fit_every_n_epochs: int = 10,
+        max_points: int = 10000
     ) -> None:
         self.return_time_model = LinearRegression()
         self.return_time_model.fit(
@@ -275,6 +276,7 @@ class DownstreamHeadSklearnLinear:
         self.epoch = 1
         self.change = False
         self.fit_every_n_epochs = fit_every_n_epochs
+        self.max_points = max_points
 
     def compute_return_times(
             self,
@@ -317,10 +319,10 @@ class DownstreamHeadSklearnLinear:
 
         if stage != "train" and len(self.X) > 0:
             self.return_time_model.fit(
-                np.concatenate(self.X), np.concatenate(self.y_times)
+                np.concatenate(self.X)[:self.max_points], np.concatenate(self.y_times)[:self.max_points]
             )
             self.event_type_model.fit(
-                np.concatenate(self.X), np.concatenate(self.y_types)
+                np.concatenate(self.X)[:self.max_points], np.concatenate(self.y_types)[:self.max_points]
             )
             self.X = []
             self.y_times = []
