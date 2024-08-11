@@ -37,6 +37,7 @@ class BaseEventModule(LightningModule):
         self.net = net
         self.joined_head = joined_head
 
+
         self.log_likelihood_metric = {
             'train': MeanMetric(),
             'val': MeanMetric(),

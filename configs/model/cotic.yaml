@@ -2,9 +2,9 @@ _target_: src.models.base_model.BaseEventModule
 
 net:
   _target_: src.models.components.cotic.cotic.COTIC
-  in_channels: 64
+  in_channels: 192
   kernel_size: 3
-  nb_filters: 64
+  nb_filters: 512
   nb_layers: 8
   num_types: ${num_types}
   dropout: 0.2
@@ -17,12 +17,12 @@ joined_head:
     nb_filters: ${model.net.nb_filters}
     num_types: ${num_types}
   downstream_head:
-    _target_: src.models.components.cotic.head.downstream_head.DownstreamHeadSklearnLinear # ProbabilisticDownstreamHead # DownstreamHeadSklearnLinear #DownstreamHeadLinear
-#    compute_every_n_epochs: null
-    nb_filters: ${model.net.nb_filters} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
-    num_types: ${num_types} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
-    fit_every_n_epochs: 1
-    max_points: 10000
+    _target_: src.models.components.cotic.head.downstream_head.ProbabilisticDownstreamHead # DownstreamHeadSklearnLinear #DownstreamHeadLinear
+    compute_every_n_epochs: null
+#    nb_filters: ${model.net.nb_filters} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
+#    num_types: ${num_types} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
+#    fit_every_n_epochs: 1
+#    max_points: 10000
 ##    type_loss_coeff: 1 # DownstreamHeadLinear
 ##    time_loss_coeff: 10 # DownstreamHeadLinear
 ##    reductions: 2 # DownstreamHeadLinear
