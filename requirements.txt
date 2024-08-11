@@ -1,7 +1,7 @@
 # --------- pytorch --------- #
 torch>=1.10.0
 torchvision>=0.11.0
-pytorch-lightning>=1.5.10
+pytorch-lightning==1.6.1
 torchmetrics>=0.7.0
 
 # --------- hydra --------- #
@@ -13,7 +13,7 @@ hydra-optuna-sweeper>=1.1.0
 # wandb
 # neptune-client
 # mlflow
-comet-ml
+# comet-ml
 # tensorboard
 
 # --------- linters --------- #
@@ -29,4 +29,4 @@ rich            # beautiful text formatting in terminal
 pytest          # tests
 sh              # for running bash commands in some tests
 pudb            # debugger
-scikit-learn
+pandas==2.2.0

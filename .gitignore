@@ -150,3 +150,5 @@ wandb/
 /*.ipynb
 notebook*
 new_data/*
+src_old/*
+checkpoints/*

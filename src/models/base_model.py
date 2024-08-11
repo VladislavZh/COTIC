@@ -1,213 +1,238 @@
-from typing import Any, List, Optional
-from collections.abc import Iterable
-
+from typing import Any
 import torch
 from pytorch_lightning import LightningModule
-from src.utils.metrics import MetricsCore
+from torchmetrics import MaxMetric, MeanMetric
 
-import time
-
-
-def get_optimizer(name, model_params, params):
-    optimizers = {
-        "adadelta": torch.optim.Adadelta,
-        "adagrad": torch.optim.Adagrad,
-        "adam": torch.optim.Adam,
-        "adamw": torch.optim.AdamW,
-        "sparseadam": torch.optim.SparseAdam,
-        "adamax": torch.optim.Adamax,
-        "asgd": torch.optim.ASGD,
-        "lbfgs": torch.optim.LBFGS,
-        "nadam": torch.optim.NAdam,
-        "radam": torch.optim.RAdam,
-        "rmsprop": torch.optim.RMSprop,
-        "rprop": torch.optim.Rprop,
-        "sgd": torch.optim.SGD,
-    }
-    return optimizers[name](params=model_params, **params)
+from src.models.components.cotic.head.joined_head import JoinedHead
 
 
 class BaseEventModule(LightningModule):
     """
-    Base event sequence lightning module
+    Base event sequence lightning module for neural network models.
     """
 
     def __init__(
-        self,
-        net: torch.nn.Module,
-        metrics: MetricsCore,
-        optimizer: dict,
-        scheduler: Optional[dict] = None,
-        head_start: Optional[int] = None,
-    ):
+            self,
+            net: torch.nn.Module,
+            joined_head: JoinedHead,
+            optimizer: torch.optim.Optimizer,
+            init_lr: float,
+            scheduler: torch.optim.lr_scheduler,
+            scheduler_monitoring_params: dict
+    ) -> None:
+        """
+        Initialize BaseEventModule.
+
+        Args:
+        - net (torch.nn.Module): The neural network model.
+        - joined_head (JoinedHead): Head object for intensity predictions and downstream predictions.
+        - optimizer (torch.optim.Optimizer): Optimizer for model training.
+        - scheduler (torch.optim.lr_scheduler): Learning rate scheduler.
+        - scheduler_monitoring_params (dict): Parameters for monitoring the scheduler.
+        """
         super().__init__()
 
         self.save_hyperparameters(logger=False)
 
         self.net = net
-        self.train_metrics = metrics
-        self.val_metrics = metrics.copy_empty()
-        self.test_metrics = metrics.copy_empty()
-        self.start_time = time.time()
+        self.joined_head = joined_head
 
-    def forward(self, batch):
+
+        self.log_likelihood_metric = {
+            'train': MeanMetric(),
+            'val': MeanMetric(),
+            'test': MeanMetric()
+        }
+        self.return_time_mae = {
+            'train': MeanMetric(),
+            'val': MeanMetric(),
+            'test': MeanMetric()
+        }
+        self.event_type_accuracy = {
+            'train': MeanMetric(),
+            'val': MeanMetric(),
+            'test': MeanMetric()
+        }
+        self.best_log_likelihood = MaxMetric()
+
+    def reset_all_metrics(self, stage: str):
+        self.log_likelihood_metric[stage].reset()
+        self.return_time_mae[stage].reset()
+        self.event_type_accuracy[stage].reset()
+
+    def on_train_start(self) -> None:
+        self.reset_all_metrics('val')
+        self.best_log_likelihood.reset()
+
+    def forward(self, batch: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, ...]:
+        """
+        Perform forward pass through the neural network.
+
+        Args:
+        - batch: Input data_utils batch.
+
+        Returns:
+        - Output from the neural network.
+        """
         return self.net(*batch)
 
-    def step(self, batch: Any, stage: str):
-        outputs = self.forward(batch)
+    def step(self, batch: Any, stage: str) -> tuple[torch.Tensor, float, float, float]:
+        """
+        Perform a training/validation/testing step.
 
-        if stage == "train":
-            loss = self.train_metrics.compute_loss_and_add_values(self, batch, outputs)
-        if stage == "val":
-            loss = self.val_metrics.compute_loss_and_add_values(self, batch, outputs)
-        if stage == "test":
-            loss = self.test_metrics.compute_loss_and_add_values(self, batch, outputs)
+        Args:
+        - batch: Input data_utils batch.
+        - stage (str): Stage of operation (train/val/test).
 
-        return loss, outputs
+        Returns:
+        - Tuple containing loss value, intensity predictions, and downstream predictions.
+        """
+        times, events = batch
+        non_pad_mask = events.ne(0)
+
+        embeddings = self.forward(batch)
+        intensity_prediction, downstream_predictions = self.joined_head(
+            times,
+            events,
+            embeddings,
+            non_pad_mask,
+            self.trainer.datamodule.normalizer,
+            stage
+        )
+
+        print(intensity_prediction.loss)
+
+        return (
+            intensity_prediction.loss + downstream_predictions.loss
+            if downstream_predictions.loss is not None
+            else intensity_prediction.loss,
+            intensity_prediction.loss,
+            downstream_predictions.metrics["return_time_mae"],
+            downstream_predictions.metrics["event_type_accuracy"]
+        )
+
+    def log_metrics(
+            self,
+            log_likelihood: float,
+            return_time_mae: float,
+            event_type_accuracy: float,
+            stage: str
+    ) -> None:
+        """
+        Log downstream predictions' metrics for a given stage.
+        """
+        self.log(f"{stage}/log_likelihood", log_likelihood, on_step=False, on_epoch=True, prog_bar=True)
+        self.log(f"{stage}/return_time_mae", return_time_mae, on_step=False, on_epoch=True, prog_bar=True)
+        self.log(f"{stage}/event_type_accuracy", event_type_accuracy, on_step=False, on_epoch=True, prog_bar=True)
+
+    def run_evaluation(self, batch: Any, stage: str) -> torch.Tensor:
+        """
+        Evaluation step for training, validation, or test.
+
+        Args:
+        - batch: Input data_utils batch.
+        - stage: Stage of operation (train/val/test).
+
+        Returns:
+        - torch.Tensor: Loss value obtained during evaluation.
+        """
+        loss, negative_log_likelihood, return_time_mae, event_type_accuracy = self.step(batch, stage)
+
+        self.log_likelihood_metric[stage].update(-negative_log_likelihood.cpu())
+        self.return_time_mae[stage].update(return_time_mae)
+        self.event_type_accuracy[stage].update(event_type_accuracy)
+
+        self.log(f"{stage}/loss", loss, on_step=stage == "train", on_epoch=stage != "train", prog_bar=True)
+
+        return loss
 
     def training_step(self, batch: Any, batch_idx: int):
-        loss, out = self.step(batch, "train")
-        if type(loss) != torch.Tensor:
-            assert len(loss) == 2
+        """
+        Training step.
 
-            self.log(
-                "train/loss",
-                loss[0] + loss[1],
-                on_step=False,
-                on_epoch=True,
-                prog_bar=False,
-            )
-            print(loss[0], loss[1])
+        Args:
+        - batch: Input data_utils batch.
+        - batch_idx: Index of the current batch.
 
-            if self.hparams.head_start is not None:
-                if self.current_epoch >= self.hparams.head_start:
-                    return {"loss": loss[0] + loss[1]}
-            return {"loss": loss[0]}
+        Returns:
+        - Dictionary with the loss value.
+        """
+        loss = self.run_evaluation(batch, "train")
 
-        self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
+        cur_lr = None
+        optimizers = self.trainer.optimizers
+        for optimizer in optimizers:
+            for param_group in optimizer.param_groups:
+                cur_lr = param_group["lr"]
+                break
+            break
 
-        # return {"loss": loss, "out": out}
+        self.log("lr", cur_lr, on_step=True, on_epoch=False, prog_bar=True)
+
         return {"loss": loss}
 
-    def training_epoch_end(self, outputs: List[Any]):
-        ll, return_time_metric, event_type_metric = self.train_metrics.compute_metrics()
-        self.train_metrics.clear_values()
-
-        self.log(
-            "train/log_likelihood", ll, on_step=False, on_epoch=True, prog_bar=True
+    def on_train_epoch_end(self) -> None:
+        self.log_metrics(
+            self.log_likelihood_metric['train'].compute().item(),
+            self.return_time_mae['train'].compute().item(),
+            self.event_type_accuracy['train'].compute().item(),
+            'train'
         )
-        self.log(
-            "train/return_time_metric",
-            return_time_metric,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-        )
-        self.log(
-            "train/event_type_metric",
-            event_type_metric,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-        )
+        self.reset_all_metrics('train')
 
     def validation_step(self, batch: Any, batch_idx: int):
-        loss, out = self.step(batch, "val")
+        """
+        Validation step.
 
-        if type(loss) != torch.Tensor:
-            assert len(loss) == 2
+        Args:
+        - batch: Input data_utils batch.
+        - batch_idx: Index of the current batch.
+        """
+        self.run_evaluation(batch, "val")
 
-            self.log(
-                "val/loss",
-                loss[0] + loss[1],
-                on_step=False,
-                on_epoch=True,
-                prog_bar=False,
-            )
-            return {"loss": loss[0] + loss[1]}
-
-        self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
-
-        return {"loss": loss, "out": out}
-
-    def validation_epoch_end(self, outputs: List[Any]):
-        ll, return_time_metric, event_type_metric = self.val_metrics.compute_metrics()
-        self.val_metrics.clear_values()
-
-        self.log("val/log_likelihood", ll, on_step=False, on_epoch=True, prog_bar=True)
-        self.log(
-            "val/return_time_metric",
-            return_time_metric,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
+    def on_validation_epoch_end(self) -> None:
+        self.log_metrics(
+            self.log_likelihood_metric['val'].compute().item(),
+            self.return_time_mae['val'].compute().item(),
+            self.event_type_accuracy['val'].compute().item(),
+            'val'
         )
-        self.log(
-            "val/event_type_metric",
-            event_type_metric,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-        )
-        self.log(
-            "training_time",
-            time.time() - self.start_time,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-        )
+        self.best_log_likelihood.update(self.log_likelihood_metric['val'].compute())
+        self.log(f"val/best_log_likelihood", self.best_log_likelihood.compute(), on_step=False, on_epoch=True, prog_bar=True)
+        self.reset_all_metrics('val')
 
     def test_step(self, batch: Any, batch_idx: int):
-        loss, out = self.step(batch, "test")
+        """
+        Test step.
 
-        if type(loss) != torch.Tensor:
-            assert len(loss) == 2
+        Args:
+        - batch: Input data_utils batch.
+        - batch_idx: Index of the current batch.
+        """
+        self.run_evaluation(batch, "test")
 
-            self.log(
-                "test/loss",
-                loss[0] + loss[1],
-                on_step=False,
-                on_epoch=True,
-                prog_bar=False,
-            )
-            return {"loss": loss[0] + loss[1]}
-
-        self.log("test/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
-
-        return {"loss": loss, "out": out}
-
-    def test_epoch_end(self, outputs: List[Any]):
-        ll, return_time_metric, event_type_metric = self.test_metrics.compute_metrics()
-        self.test_metrics.clear_values()
-
-        self.log("test/log_likelihood", ll, on_step=False, on_epoch=True)
-        self.log(
-            "test/return_time_metric", return_time_metric, on_step=False, on_epoch=True
+    def on_test_epoch_end(self) -> None:
+        self.log_metrics(
+            self.log_likelihood_metric['test'].compute().item(),
+            self.return_time_mae['test'].compute().item(),
+            self.event_type_accuracy['test'].compute().item(),
+            'test'
         )
-        self.log(
-            "test/event_type_metric", event_type_metric, on_step=False, on_epoch=True
-        )
+        self.reset_all_metrics('test')
 
     def configure_optimizers(self):
-        optimizer = get_optimizer(
-            self.hparams.optimizer["name"],
-            self.net.parameters(),
-            self.hparams.optimizer["params"],
-        )
-        schedulers = []
+        """
+        Configure optimizers for training.
+
+        Returns:
+        - Dictionary containing optimizer and optional learning rate scheduler.
+        """
+        optimizer = self.hparams.optimizer(params=self.parameters())
         if self.hparams.scheduler is not None:
-            params = self.hparams.scheduler
-            assert params.step is None or params.milestones is None
-            if params.step is not None:
-                schedulers = [
-                    torch.optim.lr_scheduler.StepLR(
-                        optimizer, params.step, gamma=params.gamma
-                    )
-                ]
-            elif params.milestones is not None:
-                schedulers = [
-                    torch.optim.lr_scheduler.MultiStepLR(
-                        optimizer, params.milestones, gamma=params.gamma
-                    )
-                ]
-        return [optimizer], schedulers
+            scheduler = self.hparams.scheduler(optimizer=optimizer)
+            # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=10, min_lr=1e-6)
+            scheduler_config = dict(self.hparams.scheduler_monitoring_params)
+            scheduler_config["scheduler"] = scheduler
+
+            return [optimizer], [scheduler_config]
+        return {"optimizer": optimizer}

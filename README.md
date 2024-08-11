@@ -55,7 +55,7 @@ git clone git@github.com:VladislavZh/CCNN.git
 cd CCNN
 
 # [OPTIONAL] create conda environment
-conda create -n myenv python=3.8
+conda create -n myenv python=3.9
 conda activate myenv
 
 # install pytorch according to instructions
@@ -80,7 +80,7 @@ Train different model architectures with comet logger:
 Change api_key, project_name, workspace in [configs/logger/comet.yaml](configs/logger/comet.yaml) 
 
 ```bash
-python train.py --config-name=train.yaml data_dir=/content/data/ model.net.num_types=count_of_event_type
+python train.py --config-name=train.yaml data_dir=/content/data_utils/ model.net.num_types=count_of_event_type
 ```
 
 *data_dir* should be a folder with csv files where each file represent a sequence with event and timestamp.

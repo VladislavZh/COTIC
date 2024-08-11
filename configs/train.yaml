@@ -18,7 +18,7 @@ defaults:
   - debug: null
 
   # config for hyperparameter optimization
-  - hparams_search: null
+  - hparams_search: cotic.yaml
 
   # optional local config for machine/user specific settings
   # it's optional since it doesn't need to exist and is excluded from version control
@@ -30,10 +30,11 @@ defaults:
 original_work_dir: ${hydra:runtime.cwd}
 
 # path to folder with data
-dataset: meme
-data_dir: ${original_work_dir}/new_data/${dataset}
-unix_time: False
-num_types: 4977
+dataset: ???
+data_dir: ${original_work_dir}/data/${dataset}
+num_types: ???
+
+resume_from_checkpoint: null # ${original_work_dir}/checkpoints/probabilitstic_downstream/last.ckpt
 
 # pretty print config at the start of the run using Rich library
 print_config: True
@@ -53,4 +54,4 @@ seed: null
 
 # default name for the experiment, determines logging folder path
 # (you can overwrite this name in experiment configs)
-name: ${dataset}_${model.net._target_}_test
+name: exp_0

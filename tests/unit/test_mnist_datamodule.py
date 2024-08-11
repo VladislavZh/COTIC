@@ -17,8 +17,8 @@ def test_mnist_datamodule(batch_size):
         and not datamodule.data_test
     )
 
-    assert os.path.exists(os.path.join("data", "MNIST"))
-    assert os.path.exists(os.path.join("data", "MNIST", "raw"))
+    assert os.path.exists(os.path.join("data_utils", "MNIST"))
+    assert os.path.exists(os.path.join("data_utils", "MNIST", "raw"))
 
     datamodule.setup()
 
