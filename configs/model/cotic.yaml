@@ -1,45 +1,47 @@
 _target_: src.models.base_model.BaseEventModule
 
 net:
-  _target_: src.models.components.cotic.COTIC
-  in_channels: 32
-  kernel_size: 9
-  nb_filters: 16
-  nb_layers: 5
+  _target_: src.models.components.cotic.cotic.COTIC
+  in_channels: 192
+  kernel_size: 3
+  nb_filters: 512
+  nb_layers: 8
   num_types: ${num_types}
-  kernel:
-    _target_: src.models.components.cotic.Kernel
-    hidden1: 8
-    hidden2: 4
-    hidden3: 8
-    in_channels: ${model.net.nb_filters}
-    out_channels: ${model.net.nb_filters}
-  head:
-    _target_: src.models.components.cotic.PredictionHead
-    in_channels: ${model.net.nb_filters}
+  dropout: 0.2
+  dilation_factor: 1.29
+joined_head:
+  _target_: src.models.components.cotic.head.joined_head.ProbabilisticJoinedHead # JoinedHead
+  intensity_head:
+    _target_: src.models.components.cotic.head.intensity_head.IntensityHeadLinear
+    kernel_size: 1
+    nb_filters: ${model.net.nb_filters}
     num_types: ${num_types}
-metrics:
-  _target_: src.metrics.cont_cnn.CCNNMetrics #src.metrics.cotic.CCNNMetrics
-  return_time_metric:
-    _target_: src.utils.metrics.MAE
-  event_type_metric:
-    _target_: src.utils.metrics.Accuracy
-  type_loss_coeff: 1
-  time_loss_coeff: 10
-  reductions:
-    log_likelihood: mean
-    type: sum
-    time: mean
-  sim_size: 36
+  downstream_head:
+    _target_: src.models.components.cotic.head.downstream_head.ProbabilisticDownstreamHead # DownstreamHeadSklearnLinear #DownstreamHeadLinear
+    compute_every_n_epochs: null
+#    nb_filters: ${model.net.nb_filters} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
+#    num_types: ${num_types} # DownstreamHeadSklearnLinear, DownstreamHeadLinear
+#    fit_every_n_epochs: 1
+#    max_points: 10000
+##    type_loss_coeff: 1 # DownstreamHeadLinear
+##    time_loss_coeff: 10 # DownstreamHeadLinear
+##    reductions: 2 # DownstreamHeadLinear
+##      type: mean # DownstreamHeadLinear
+##      time: mean # DownstreamHeadLinear
+  uniform_sample_size: 50
 optimizer:
-  name: adam
-  params:
-    lr: 0.001
-    weight_decay: 1e-8
-scheduler: null
-#  step: 40
-#  milestones: null
-##    - 40
-##    - 75
-#  gamma: 0.1
-head_start: 1
+  _target_: adan_pytorch.Adan
+  _partial_: true
+  lr: 0.001
+  weight_decay: 0.003
+init_lr: ${model.optimizer.lr}
+scheduler:
+  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  _partial_: true
+  patience: 5
+  factor: 0.5
+scheduler_monitoring_params:
+  monitor: val/loss
+  mode: min
+  verbose: true
+  interval: epoch

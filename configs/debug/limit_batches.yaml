@@ -1,6 +1,6 @@
 # @package _global_
 
-# uses only 1% of the training data and 5% of validation/test data
+# uses only 1% of the training data_utils and 5% of validation/test data_utils
 
 defaults:
   - default.yaml

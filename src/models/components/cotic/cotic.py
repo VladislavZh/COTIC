@@ -1,13 +1,49 @@
 import torch
 import torch.nn as nn
-import numpy as np
-import copy
 
-from .cotic_layers import ContConv1d, ContConv1dSim
-from .kernels import Kernel, LinearKernel
+from .cotic_layers import ContinuousConv1D
 
 
 class COTIC(nn.Module):
+    """
+    Continuous-Time Convolutional (COTIC) neural network module for processing continuous-time event sequences.
+
+    This module is designed for modeling event sequences with continuous-time information
+    using convolutional neural networks.
+
+    Args:
+    - in_channels (int): Number of input channels.
+    - kernel_size (int): Size of the convolutional kernel.
+    - nb_filters (int): Number of filters.
+    - nb_layers (int): Number of convolutional layers.
+    - num_types (int): Number of event types.
+
+    Input Shape:
+    Has beginning of stream event and zero padding
+        - event_times (torch.Tensor): Shape = (batch_size, sequence_length),
+          representing the continuous event arrival times.
+        - event_types (torch.Tensor): Shape = (batch_size, sequence_length),
+          representing event types (integers).
+
+    Output Shape:
+        - torch.Tensor: Shape = (batch_size, sequence_length, nb_filters),
+          encoder output for the input event sequence.
+
+    Examples:
+    ```python
+    # Create a COTIC model
+    model = COTIC(in_channels=64, kernel_size=3, nb_filters=32, nb_layers=2, num_types=10)
+
+    # Forward pass
+    event_times = torch.tensor([[0, 0.1, 0.5, 1.2, 0], [0, 0.2, 0.7, 1.4, 0]])
+    event_types = torch.tensor([[5, 1, 3, 2, 0], [5, 2, 4, 1, 0]])
+    encoder_output = model(event_times, event_types)
+    ```
+
+    Note:
+    - In the input `event_times`, event arrival times should be in chronological order.
+    - The input `event_types` should represent event types as integers.
+    """
     def __init__(
         self,
         in_channels: int,
@@ -15,89 +51,74 @@ class COTIC(nn.Module):
         nb_filters: int,
         nb_layers: int,
         num_types: int,
-        kernel: nn.Module,
-        head: nn.Module,
+        dropout: float = 0.1,
+        dilation_factor: float = 2
     ) -> None:
+        """
+        Initialize a COTIC (Continuous-Time Convolutional) neural network module.
+
+        Args:
+        - in_channels (int): Number of input channels.
+        - kernel_size (int): Size of the convolutional kernel.
+        - nb_filters (int): Number of filters.
+        - nb_layers (int): Number of convolutional layers.
+        - num_types (int): Number of event types.
+        """
         super().__init__()
-        self.event_emb = nn.Embedding(num_types + 2, in_channels, padding_idx=0)
+        assert dilation_factor >= 1
+        self.event_emb = nn.Embedding(num_types + 1, in_channels, padding_idx=0)
 
         self.in_channels = [in_channels] + [nb_filters] * nb_layers
-        include_zero_lag = [True] + [True] * nb_layers
-        self.dilation_factors = [2**i for i in range(0, nb_layers)]
+        self.dilation_factors = [int(dilation_factor**i) for i in range(0, nb_layers)]
 
         self.num_types = num_types
         self.nb_layers = nb_layers
         self.nb_filters = nb_filters
 
-        self.convs = nn.ModuleList(
+        self.continuous_convolutions = nn.ModuleList(
             [
-                ContConv1d(
-                    kernel.recreate(self.in_channels[i]),
+                ContinuousConv1D(
                     kernel_size,
                     self.in_channels[i],
                     nb_filters,
-                    self.dilation_factors[i],
-                    include_zero_lag[i],
+                    self.dilation_factors[i]
                 )
                 for i in range(nb_layers)
             ]
         )
 
-        self.final_list = nn.ModuleList(
+        self.dropouts = nn.ModuleList(
             [
-                ContConv1dSim(
-                    kernel.recreate(self.nb_filters), 1, nb_filters, nb_filters
-                ),
-                nn.LeakyReLU(0.1),
-                nn.Linear(nb_filters, num_types),
-                nn.Softplus(100),
+                nn.Dropout(dropout)
+                for i in range(nb_layers)
             ]
         )
-
-        self.head = head
-
-    def __add_bos(self, event_times, event_types, lengths):
-        bs, L = event_times.shape
-        event_times = torch.concat(
-            [torch.zeros(bs, 1).to(event_times.device), event_times], dim=1
-        )
-        max_event_type = torch.max(event_types) + 1
-        tmp = (torch.ones(bs, 1).to(event_types.device) * max_event_type).long()
-        event_types = torch.concat([tmp, event_types], dim=1)
-        lengths += 1
-        return event_times, event_types, lengths
 
     def forward(
         self, event_times: torch.Tensor, event_types: torch.Tensor
     ) -> torch.Tensor:
         """
-        Forward pass that computes self.convs and return encoder output
+        Forward pass that computes continuous convolutions and returns encoder output.
 
-        args:
-            event_times - torch.Tensor, shape = (bs, L) event times
-            event_types - torch.Tensor, shape = (bs, L) event types
-            lengths - torch.Tensor, shape = (bs,) sequence lengths
+        Args:
+        - event_times (torch.Tensor): Shape = (batch_size, sequence_length),
+          representing the continuous event arrival times.
+        - event_types (torch.Tensor): Shape = (batch_size, sequence_length),
+          representing event types (integers).
+
+        Returns:
+        - torch.Tensor: Shape = (batch_size, sequence_length, nb_filters),
+          encoder output for the input event sequence.
         """
-        lengths = torch.sum(event_types.ne(0).type(torch.float), dim=1).long()
-        event_times, event_types, lengths = self.__add_bos(
-            event_times, event_types, lengths
-        )
-
         non_pad_mask = event_types.ne(0)
 
         enc_output = self.event_emb(event_types)
 
-        for i, conv in enumerate(self.convs):
-            enc_output = torch.nn.functional.leaky_relu(
-                conv(event_times, enc_output, non_pad_mask), 0.1
+        for dropout, conv in zip(self.dropouts, self.continuous_convolutions):
+            enc_output = dropout(
+                torch.nn.functional.leaky_relu(
+                    conv(event_times, enc_output, non_pad_mask), 0.1
+                )
             )
 
-        return enc_output, self.head(enc_output.detach())
-
-    def final(self, times, true_times, true_features, non_pad_mask, sim_size):
-        out = self.final_list[0](
-            times, true_times, true_features, non_pad_mask, sim_size
-        )
-        for layer in self.final_list[1:]:
-            out = layer(out)
-        return out
+        return enc_output
