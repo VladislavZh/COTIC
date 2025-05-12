@@ -11,7 +11,7 @@ from pytorch_lightning import (
     Trainer,
     seed_everything,
 )
-from pytorch_lightning.loggers import Logger
+from pytorch_lightning.loggers import LightningLoggerBase as Logger
 from pytorch_lightning.callbacks import DeviceStatsMonitor
 
 from src import utils

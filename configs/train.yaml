@@ -6,7 +6,7 @@ defaults:
   - datamodule: base_datamodule.yaml
   - model: cotic.yaml
   - callbacks: default.yaml
-  - logger: comet.yaml # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
+  - logger: csv #comet.yaml # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
   - trainer: default.yaml
   - log_dir: default.yaml
 
@@ -47,11 +47,11 @@ train: True
 
 # evaluate on test set, using best model weights achieved during training
 # lightning chooses best weights based on the metric specified in checkpoint callback
-test: True
+test: False
 
 # seed for random number generators in pytorch, numpy and python.random
 seed: null
 
 # default name for the experiment, determines logging folder path
 # (you can overwrite this name in experiment configs)
-name: exp_0
+name: ???

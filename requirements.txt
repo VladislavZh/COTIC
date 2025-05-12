@@ -30,3 +30,5 @@ pytest          # tests
 sh              # for running bash commands in some tests
 pudb            # debugger
 pandas==2.2.0
+frozendict
+scikit-learn
