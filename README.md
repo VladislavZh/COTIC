@@ -18,6 +18,11 @@ In this project, the problem of return time prediction
 and event type prediction is considered. To solve this problem, 
 we suggest a continuous time convolution model (COTIC).
 
+## Technical details
+
+All the experiments were conducted using one Nvidia A40 GPU.
+
+The number of parameters was up to 6M on the default setup. The training time was from 1 second for small dataset (MIMIC with 285 9-length sequences) up to 900 seconds for big long-sequence datasets (Transactions with 30k 900-length sequences) per epoch.
 
 ## Architecture of model
 
